@@ -15,7 +15,7 @@
 - [x] Task: Implement an in-memory `InventoryStore` (reserve stock, return a reservation id) with unit tests. [b0c3c80]
 - [x] Task: Implement `POST /inventory/reserve` http4s route (circe JSON in/out) wired to `InventoryStore`, with unit tests using http4s's `Request`/route-under-test pattern (no real server socket). [bf2d1a4]
 - [x] Task: Wire an Ember server `Main` entrypoint for `inventory-service`. [d027e80]
-- [ ] Task: Conductor - User Manual Verification 'inventory-service' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'inventory-service' (Protocol in workflow.md)
 
 ## Phase 4: order-service
 - [ ] Task: Add http4s (server, ember-server, dsl, circe) dependencies to `orderService`; depend on `purerest`.
