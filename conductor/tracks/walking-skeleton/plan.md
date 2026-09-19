@@ -1,6 +1,6 @@
 # Implementation Plan: Walking Skeleton
 
-## Phase 1: Multi-Module Build Scaffolding
+## Phase 1: Multi-Module Build Scaffolding [checkpoint: 9321c69]
 - [x] Task: Restructure `build.sbt` into an sbt multi-module build with subprojects `purerest` (`modules/purerest`), `orderService` (`modules/order-service`), `inventoryService` (`modules/inventory-service`); add shared dependency versions (Cats Effect 3, http4s, circe, munit) as `val`s at the root. [2a7b018]
 - [x] Task: Move/replace the scaffold's `src/main/scala/Main.scala` and `src/test/scala/MySuite.scala` — remove the g8 template stub, add a placeholder `Main` per module compiling against munit. [704716b]
 - [x] Task: Conductor - User Manual Verification 'Multi-Module Build Scaffolding' (Protocol in workflow.md)
