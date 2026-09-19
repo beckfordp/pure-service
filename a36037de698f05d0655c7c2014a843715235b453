@@ -1,0 +1,11 @@
+Phase Completion Verification Report: Phase 3 — inventory-service (walking-skeleton track)
+
+Automated test command: sbt test
+Result: 5 suites (purerest.PurerestSuite, purerest.client.HttpClientSuite, orderservice.OrderServiceSuite, inventoryservice.InventoryServiceSuite, inventoryservice.InventoryStoreSuite, inventoryservice.InventoryRoutesSuite), 9 total tests, 0 failed.
+
+Manual verification steps presented to user:
+1. sbt "inventoryService/run" — start the service.
+2. curl -i -X POST http://localhost:8081/inventory/reserve -H "Content-Type: application/json" -d '{"item":"widget","quantity":2}' — expect 201 Created with JSON reservation body.
+3. curl -i http://localhost:8081/nope — expect 404 Not Found.
+
+User confirmation: "yes" (explicit approval received).
