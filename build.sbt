@@ -23,7 +23,14 @@ lazy val purerest = project
   .in(file("modules/purerest"))
   .settings(commonSettings)
   .settings(
-    name := "purerest"
+    name := "purerest",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect" % catsEffectVersion,
+      "org.http4s" %% "http4s-ember-client" % http4sVersion,
+      "org.http4s" %% "http4s-circe" % http4sVersion,
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion
+    )
   )
 
 // order-service: REST API that places orders, calling inventory-service via
