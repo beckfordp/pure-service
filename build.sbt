@@ -58,7 +58,15 @@ lazy val inventoryService = project
   .dependsOn(purerest)
   .settings(commonSettings)
   .settings(
-    name := "inventory-service"
+    name := "inventory-service",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect" % catsEffectVersion,
+      "org.http4s" %% "http4s-ember-server" % http4sVersion,
+      "org.http4s" %% "http4s-dsl" % http4sVersion,
+      "org.http4s" %% "http4s-circe" % http4sVersion,
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion
+    )
   )
 
 // root: aggregates the modules so `sbt compile`/`sbt test` run across all of
