@@ -8,7 +8,7 @@
 ## Phase 2: purerest — Minimal HTTP Client
 - [x] Task: Add http4s (client, ember-client, circe) and circe dependencies to the `purerest` module. [1fae5a6]
 - [x] Task: Implement `purerest.client.HttpClient` — a tagless-final `Resource[F[_]: Async, Client[F]]` wrapper around http4s's `EmberClientBuilder`, with unit tests verifying the resource can be acquired and used against a stub route. [b7df93d]
-- [ ] Task: Conductor - User Manual Verification 'purerest — Minimal HTTP Client' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'purerest — Minimal HTTP Client' (Protocol in workflow.md)
 
 ## Phase 3: inventory-service
 - [ ] Task: Add http4s (server, ember-server, dsl, circe) dependencies to `inventoryService`; depend on `purerest`.
