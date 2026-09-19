@@ -1,0 +1,10 @@
+Task: Add http4s (server, ember-server, dsl, circe) dependencies to inventoryService (Phase 3, walking-skeleton track)
+
+Summary: Added cats-effect, http4s-ember-server, http4s-dsl, http4s-circe, circe-generic, circe-parser to inventoryService's libraryDependencies. inventoryService already depended on purerest (set up in Phase 1's build.sbt restructuring). No source changes.
+
+Files modified:
+- build.sbt (inventoryService project block)
+
+Why: Prepares inventory-service to implement its in-memory InventoryStore, POST /inventory/reserve route, and Ember server Main in the following tasks.
+
+Verification: `sbt inventoryService/update` resolves successfully. `sbt inventoryService/compile` still compiles.
