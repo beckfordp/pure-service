@@ -5,7 +5,7 @@
 - [x] Task: Move/replace the scaffold's `src/main/scala/Main.scala` and `src/test/scala/MySuite.scala` — remove the g8 template stub, add a placeholder `Main` per module compiling against munit. [704716b]
 - [x] Task: Conductor - User Manual Verification 'Multi-Module Build Scaffolding' (Protocol in workflow.md)
 
-## Phase 2: purerest — Minimal HTTP Client
+## Phase 2: purerest — Minimal HTTP Client [checkpoint: 6de0178]
 - [x] Task: Add http4s (client, ember-client, circe) and circe dependencies to the `purerest` module. [1fae5a6]
 - [x] Task: Implement `purerest.client.HttpClient` — a tagless-final `Resource[F[_]: Async, Client[F]]` wrapper around http4s's `EmberClientBuilder`, with unit tests verifying the resource can be acquired and used against a stub route. [b7df93d]
 - [x] Task: Conductor - User Manual Verification 'purerest — Minimal HTTP Client' (Protocol in workflow.md)
