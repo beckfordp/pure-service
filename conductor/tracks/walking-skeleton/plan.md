@@ -10,7 +10,7 @@
 - [x] Task: Implement `purerest.client.HttpClient` — a tagless-final `Resource[F[_]: Async, Client[F]]` wrapper around http4s's `EmberClientBuilder`, with unit tests verifying the resource can be acquired and used against a stub route. [b7df93d]
 - [x] Task: Conductor - User Manual Verification 'purerest — Minimal HTTP Client' (Protocol in workflow.md)
 
-## Phase 3: inventory-service
+## Phase 3: inventory-service [checkpoint: a36037d]
 - [x] Task: Add http4s (server, ember-server, dsl, circe) dependencies to `inventoryService`; depend on `purerest`. [653dcfc]
 - [x] Task: Implement an in-memory `InventoryStore` (reserve stock, return a reservation id) with unit tests. [b0c3c80]
 - [x] Task: Implement `POST /inventory/reserve` http4s route (circe JSON in/out) wired to `InventoryStore`, with unit tests using http4s's `Request`/route-under-test pattern (no real server socket). [bf2d1a4]
