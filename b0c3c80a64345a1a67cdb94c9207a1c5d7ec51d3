@@ -1,0 +1,11 @@
+Task: Implement in-memory InventoryStore (Phase 3, walking-skeleton track)
+
+Summary: Added inventoryservice.InventoryStore, a tagless-final trait with a Ref-backed in-memory implementation (InventoryStore.inMemory[F: Sync]). reserve(item, quantity) always succeeds, generates a UUID reservation id, and records the Reservation in the Ref map. Stock decrement / insufficient-stock rejection intentionally deferred per the track spec's "Explicitly Deferred" list. Followed Red-Green TDD.
+
+Files created:
+- modules/inventory-service/src/main/scala/inventoryservice/InventoryStore.scala
+- modules/inventory-service/src/test/scala/inventoryservice/InventoryStoreSuite.scala
+
+Why: Backs the POST /inventory/reserve route implemented in the next task.
+
+Verification: `sbt inventoryService/test` — 3 tests pass (InventoryServiceSuite + 2 InventoryStoreSuite tests). `sbt test` — full build green.
