@@ -1,0 +1,13 @@
+Task: Restructure build.sbt into an sbt multi-module build (Phase 1, walking-skeleton track)
+
+Summary: Rewrote build.sbt to define three subprojects (purerest, orderService, inventoryService) under modules/, each sharing commonSettings (scalaVersion, munit test dep). Added version vals for cats-effect (3.7.0), http4s (0.23.37), circe (0.14.16) for later phases to consume — not yet wired as dependencies. root is now an aggregate-only project.
+
+Files created/modified:
+- build.sbt (rewritten)
+- modules/purerest/src/{main,test}/scala/ (created, empty — untracked by git until populated)
+- modules/order-service/src/{main,test}/scala/ (created, empty)
+- modules/inventory-service/src/{main,test}/scala/ (created, empty)
+
+Why: Establishes the module boundaries the walking-skeleton track needs before any real code lands, per conductor/tracks/walking-skeleton/plan.md Phase 1.
+
+Verification: `sbt projects` lists purerest, orderService, inventoryService, root. `sbt compile` currently fails because the legacy scaffold src/main/scala/Main.scala (Scala 3 syntax) is picked up by root's now-unset (default Scala 2.12) scalaVersion — this is expected and resolved by the next task, which removes those legacy files.
