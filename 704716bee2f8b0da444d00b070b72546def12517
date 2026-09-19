@@ -1,0 +1,13 @@
+Task: Move/replace scaffold's Main.scala/MySuite.scala with per-module placeholders (Phase 1, walking-skeleton track)
+
+Summary: Removed the g8 scaffold's root-level src/main/scala/Main.scala and src/test/scala/MySuite.scala (which broke sbt compile after Task 1 turned root into an aggregate-only project with no scalaVersion). Added a minimal placeholder object + munit test to each of purerest, order-service, inventory-service, following Red-Green TDD: wrote failing tests referencing not-yet-existing objects, confirmed compile failure, then added the objects and confirmed sbt test passes.
+
+Files created/modified:
+- Deleted: src/main/scala/Main.scala, src/test/scala/MySuite.scala
+- modules/purerest/src/main/scala/purerest/Purerest.scala + test
+- modules/order-service/src/main/scala/orderservice/OrderService.scala + test
+- modules/inventory-service/src/main/scala/inventoryservice/InventoryService.scala + test
+
+Why: Proves the multi-module build (build.sbt from the previous task) actually compiles and runs tests end-to-end before real functionality is added in later phases. order-service/inventory-service placeholders deliberately avoid a throwaway @main since Phase 3/4 add the real Ember server entrypoints.
+
+Verification: `sbt test` passes (3 suites, 3 tests, 0 failures). `sbt compile` succeeds with no errors.
