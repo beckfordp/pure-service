@@ -1,0 +1,10 @@
+Task: Wire an Ember server Main entrypoint for inventory-service (Phase 3, walking-skeleton track)
+
+Summary: Added inventoryservice.Main (IOApp.Simple), building InventoryStore.inMemory[IO], wiring it into InventoryRoutes.routes[IO], and serving via EmberServerBuilder on host 0.0.0.0, port 8081 (overridable via INVENTORY_SERVICE_PORT env var). No automated test added — this is infrastructure wiring over already-tested logic (InventoryRoutesSuite covers route behavior); real server startup is exercised by this phase's closing manual verification task.
+
+Files created:
+- modules/inventory-service/src/main/scala/inventoryservice/Main.scala
+
+Why: Gives inventory-service an actual runnable process; order-service (Phase 4) will call it at this port.
+
+Verification: `sbt inventoryService/compile` compiles cleanly. `sbt test` — full build still green (5 tests, no regressions).
