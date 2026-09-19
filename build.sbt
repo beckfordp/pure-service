@@ -7,13 +7,18 @@ val catsEffectVersion = "3.7.0"
 val http4sVersion = "0.23.37"
 val circeVersion = "0.14.16"
 val munitVersion = "1.3.6"
+val munitCatsEffectVersion = "2.2.1"
 
 // Settings shared by every module in this build.
 lazy val commonSettings = Seq(
   scalaVersion := scala3Version,
 
-  // munit: test framework used across this project (Scala-native, no JUnit dependency).
-  libraryDependencies += "org.scalameta" %% "munit" % munitVersion % Test
+  libraryDependencies ++= Seq(
+    // munit: test framework used across this project (Scala-native, no JUnit dependency).
+    "org.scalameta" %% "munit" % munitVersion % Test,
+    // munit-cats-effect: lets test bodies return IO[Unit] and run under munit directly.
+    "org.typelevel" %% "munit-cats-effect" % munitCatsEffectVersion % Test
+  )
 )
 
 // purerest: the platform library providing cross-cutting microservice
@@ -29,7 +34,10 @@ lazy val purerest = project
       "org.http4s" %% "http4s-ember-client" % http4sVersion,
       "org.http4s" %% "http4s-circe" % http4sVersion,
       "io.circe" %% "circe-generic" % circeVersion,
-      "io.circe" %% "circe-parser" % circeVersion
+      "io.circe" %% "circe-parser" % circeVersion,
+      // Only used to stand up a stub server in purerest's own tests — purerest's
+      // main code has no server dependency.
+      "org.http4s" %% "http4s-ember-server" % http4sVersion % Test
     )
   )
 
