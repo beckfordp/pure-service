@@ -1,0 +1,12 @@
+Task: Implement purerest.client.HttpClient (Phase 2, walking-skeleton track)
+
+Summary: Added purerest.client.HttpClient.resource[F[_]: Async: Network]: Resource[F, Client[F]], wrapping http4s's EmberClientBuilder. Explicit Network constraint added per a cats-effect 3.7.0 deprecation warning (NetworkLowPriority.implicitForAsync deprecated — fixed by adding the constraint rather than relying on the implicit). Tests: (1) resource acquires/releases cleanly, (2) resource used to make a real GET request against a stub Ember server bound to an ephemeral port, asserting the response body. Followed Red-Green TDD: wrote the test referencing the not-yet-existing HttpClient first, confirmed compile failure, then implemented it.
+
+Files created/modified:
+- build.sbt: added munit-cats-effect to commonSettings (Test), http4s-ember-server to purerest (Test only, for the stub server)
+- modules/purerest/src/main/scala/purerest/client/HttpClient.scala (new)
+- modules/purerest/src/test/scala/purerest/client/HttpClientSuite.scala (new)
+
+Why: This is purerest's first real capability and the construction point later tracks extend with tracing/retry/circuit-breaker. order-service will use this in Phase 4 to call inventory-service.
+
+Verification: `sbt purerest/test` — 3 tests pass (PurerestSuite + 2 HttpClientSuite tests). `sbt test` — full build green (5 tests, 4 suites, 0 failures).
