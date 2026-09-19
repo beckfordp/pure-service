@@ -2,8 +2,14 @@ package inventoryservice
 
 import cats.effect.{Ref, Sync}
 import cats.syntax.all._
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
 
 final case class Reservation(id: String, item: String, quantity: Int)
+
+object Reservation {
+  implicit val codec: Codec[Reservation] = deriveCodec
+}
 
 trait InventoryStore[F[_]] {
   def reserve(item: String, quantity: Int): F[Reservation]
