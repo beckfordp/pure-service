@@ -1,0 +1,10 @@
+Task: Add http4s (client, ember-client, circe) and circe dependencies to purerest (Phase 2, walking-skeleton track)
+
+Summary: Added cats-effect, http4s-ember-client, http4s-circe, circe-generic, circe-parser to the purerest module's libraryDependencies. No source changes — this only prepares purerest to implement the HTTP client wrapper in the next task.
+
+Files modified:
+- build.sbt (purerest project block)
+
+Why: purerest's next task implements a tagless-final Resource[F[_]: Async, Client[F]] wrapper around http4s's Ember client, which needs these libraries.
+
+Verification: `sbt purerest/update` resolves all new dependencies successfully. `sbt purerest/compile` still compiles (no source uses the new deps yet).
