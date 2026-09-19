@@ -1,0 +1,13 @@
+Task: Implement POST /inventory/reserve http4s route (Phase 3, walking-skeleton track)
+
+Summary: Added inventoryservice.InventoryRoutes.routes[F: Concurrent], an HttpRoutes[F] wiring POST /inventory/reserve to InventoryStore.reserve, returning 201 Created with the Reservation as JSON. Added ReserveRequest case class + circe Codec (request body), and a Codec[Reservation] on InventoryStore.scala's companion (response body) — both via semiauto derivation. Route bound on Concurrent[F] (not Sync, not Async) — the minimal capability http4s-circe's EntityDecoder/EntityEncoder actually require. Followed Red-Green TDD.
+
+Files created/modified:
+- modules/inventory-service/src/main/scala/inventoryservice/InventoryStore.scala (added Codec[Reservation])
+- modules/inventory-service/src/main/scala/inventoryservice/ReserveRequest.scala (new)
+- modules/inventory-service/src/main/scala/inventoryservice/InventoryRoutes.scala (new)
+- modules/inventory-service/src/test/scala/inventoryservice/InventoryRoutesSuite.scala (new)
+
+Why: inventory-service's first real HTTP endpoint, exercised end-to-end by order-service in Phase 4.
+
+Verification: `sbt inventoryService/test` — 5 tests pass across 3 suites. `sbt test` — full build green.
