@@ -48,7 +48,15 @@ lazy val orderService = project
   .dependsOn(purerest)
   .settings(commonSettings)
   .settings(
-    name := "order-service"
+    name := "order-service",
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect" % catsEffectVersion,
+      "org.http4s" %% "http4s-ember-server" % http4sVersion,
+      "org.http4s" %% "http4s-dsl" % http4sVersion,
+      "org.http4s" %% "http4s-circe" % http4sVersion,
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-parser" % circeVersion
+    )
   )
 
 // inventory-service: REST API exposing stock reservation endpoints; a second,
