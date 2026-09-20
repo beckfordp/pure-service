@@ -1,0 +1,11 @@
+Phase Completion Verification Report: Phase 4 — order-service (walking-skeleton track)
+
+Automated test command: sbt test
+Result: 6 suites (purerest.PurerestSuite, purerest.client.HttpClientSuite, orderservice.OrderServiceSuite, orderservice.OrderStoreSuite, orderservice.OrderRoutesSuite, orderservice.OrderServiceIntegrationSuite, inventoryservice.InventoryServiceSuite, inventoryservice.InventoryStoreSuite, inventoryservice.InventoryRoutesSuite), 13 total tests, 0 failed.
+
+Manual verification steps presented to user:
+1. sbt "inventoryService/run" — start inventory-service.
+2. sbt "orderService/run" — start order-service.
+3. curl -i -X POST http://localhost:8080/orders -H "Content-Type: application/json" -d '{"item":"widget","quantity":1}' — expect 201 Created with JSON body including a non-empty reservationId, proving the real order-service -> inventory-service call path.
+
+User confirmation: "yes" (explicit approval received). This satisfies the walking-skeleton track's full acceptance criteria (spec.md).
