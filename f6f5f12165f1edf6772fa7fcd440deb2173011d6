@@ -1,0 +1,11 @@
+Task: Implement in-memory OrderStore (Phase 4, walking-skeleton track)
+
+Summary: Added orderservice.OrderStore, mirroring inventoryservice.InventoryStore's shape — a tagless-final trait with a Ref-backed in-memory implementation (OrderStore.inMemory[F: Sync]). create(item, quantity) generates a UUID order id and records the Order. OrderStore is a pure persistence concern — it does not call inventory-service; that's the POST /orders route's job (next task). Followed Red-Green TDD.
+
+Files created:
+- modules/order-service/src/main/scala/orderservice/OrderStore.scala
+- modules/order-service/src/test/scala/orderservice/OrderStoreSuite.scala
+
+Why: Backs the POST /orders route implemented in the next task.
+
+Verification: `sbt orderService/test` — 3 tests pass (OrderServiceSuite + 2 OrderStoreSuite tests). `sbt test` — full build green.
