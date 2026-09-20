@@ -1,0 +1,11 @@
+Task: Add integration test proving the full order-service -> inventory-service call path (Phase 4, walking-skeleton track)
+
+Summary: Added inventoryService % Test to orderService's .dependsOn(...) in build.sbt (Test-scope only — order-service's main code has zero dependency on inventory-service, preserving the microservice boundary from Task 3). Added OrderServiceIntegrationSuite: stands up a real inventory-service (InventoryStore + InventoryRoutes) on an ephemeral-port Ember server, acquires a real purerest HttpClient, builds a real InventoryClient pointed at that server, and runs a real POST /orders request through OrderRoutes — asserting 201 Created and a non-empty reservationId (proving it came from the real inventory-service, not a stub). No new production code — this task only assembles existing pieces. "Red" was the natural compile failure (inventoryservice package unresolved) before adding the Test dependency.
+
+Files created/modified:
+- build.sbt (orderService: added inventoryService % Test dependency)
+- modules/order-service/src/test/scala/orderservice/OrderServiceIntegrationSuite.scala (new)
+
+Why: Satisfies spec.md's Acceptance Criteria #3 — proving the full call path works end-to-end, not just at the unit level.
+
+Verification: `sbt orderService/test` — 5 tests pass across 4 suites. `sbt test` — full build green (13 tests total).
