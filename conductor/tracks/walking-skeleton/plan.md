@@ -18,7 +18,7 @@
 - [x] Task: Conductor - User Manual Verification 'inventory-service' (Protocol in workflow.md)
 
 ## Phase 4: order-service
-- [ ] Task: Add http4s (server, ember-server, dsl, circe) dependencies to `orderService`; depend on `purerest`.
+- [x] Task: Add http4s (server, ember-server, dsl, circe) dependencies to `orderService`; depend on `purerest`. [6a896f5]
 - [ ] Task: Implement an in-memory `OrderStore` (create order, return an order id) with unit tests.
 - [ ] Task: Implement `POST /orders` http4s route (circe JSON in/out) that calls inventory-service's reserve endpoint via purerest's `HttpClient`, then persists the order via `OrderStore`, with unit tests stubbing the inventory-service call.
 - [ ] Task: Wire an Ember server `Main` entrypoint for `order-service` (configurable inventory-service base URL).
