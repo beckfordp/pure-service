@@ -1,0 +1,10 @@
+Task: Wire an Ember server Main entrypoint for order-service (Phase 4, walking-skeleton track)
+
+Summary: Added orderservice.Main (IOApp.Simple). Builds OrderStore.inMemory[IO], acquires purerest's HttpClient.resource[IO] (the actual purerest consumption point), constructs InventoryClient[IO] from it plus a configurable inventory-service base URL (INVENTORY_SERVICE_BASE_URL, default http://localhost:8081), wires OrderRoutes, and serves via EmberServerBuilder on host 0.0.0.0, port 8080 (overridable via ORDER_SERVICE_PORT). HttpClient.resource[IO].use { ... } wraps the server's useForever so both resources release correctly (LIFO) on cancellation. No automated test added — infrastructure wiring over already-tested logic (OrderRoutesSuite); real behavior exercised by this phase's closing manual verification and the next task's integration test.
+
+Files created:
+- modules/order-service/src/main/scala/orderservice/Main.scala
+
+Why: Gives order-service an actual runnable process that consumes purerest's HttpClient exactly as intended — the whole point of the track.
+
+Verification: `sbt orderService/compile` compiles cleanly. `sbt test` — full build still green (12 tests, no regressions).
