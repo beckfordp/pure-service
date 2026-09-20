@@ -42,10 +42,12 @@ lazy val purerest = project
   )
 
 // order-service: REST API that places orders, calling inventory-service via
-// purerest's client to reserve stock.
+// purerest's client to reserve stock. Depends on inventoryService in Test
+// scope only, to run a real inventory-service in-process for integration
+// tests — main code has no dependency on inventory-service.
 lazy val orderService = project
   .in(file("modules/order-service"))
-  .dependsOn(purerest)
+  .dependsOn(purerest, inventoryService % Test)
   .settings(commonSettings)
   .settings(
     name := "order-service",
