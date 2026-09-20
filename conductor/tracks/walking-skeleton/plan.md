@@ -22,5 +22,5 @@
 - [x] Task: Implement an in-memory `OrderStore` (create order, return an order id) with unit tests. [f6f5f12]
 - [x] Task: Implement `POST /orders` http4s route (circe JSON in/out) that calls inventory-service's reserve endpoint via purerest's `HttpClient`, then persists the order via `OrderStore`, with unit tests stubbing the inventory-service call. [79abcb1]
 - [x] Task: Wire an Ember server `Main` entrypoint for `order-service` (configurable inventory-service base URL). [8ffe1ed]
-- [ ] Task: Add an integration-style test that runs inventory-service's routes in-process and exercises order-service's `POST /orders` handler end-to-end against it, proving the full call path.
+- [x] Task: Add an integration-style test that runs inventory-service's routes in-process and exercises order-service's `POST /orders` handler end-to-end against it, proving the full call path. [1abc0b8]
 - [ ] Task: Conductor - User Manual Verification 'order-service' (Protocol in workflow.md)
