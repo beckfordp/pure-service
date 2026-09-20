@@ -1,0 +1,12 @@
+Task: Implement POST /orders http4s route (Phase 4, walking-skeleton track)
+
+Summary: Added orderservice.InventoryClient — wraps a purerest Client[F] + base Uri into a narrow interface (reserve(item, quantity): F[ReservationView]) calling inventory-service's POST /inventory/reserve. order-service defines its own wire-contract types (ReservationView, private ReserveInventoryRequest) rather than importing inventory-service's types, per real microservice boundaries. Added orderservice.OrderRoutes.routes[F: Concurrent](store, inventory): HttpRoutes[F] wiring POST /orders — reserves stock via InventoryClient, then persists via OrderStore, returns 201 Created with order + reservation id. Tests stub InventoryClient (hand-written test double), not real HTTP — the real end-to-end HTTP path is deferred to the next task (integration test). Followed Red-Green TDD.
+
+Files created:
+- modules/order-service/src/main/scala/orderservice/InventoryClient.scala
+- modules/order-service/src/main/scala/orderservice/OrderRoutes.scala
+- modules/order-service/src/test/scala/orderservice/OrderRoutesSuite.scala
+
+Why: This is the track's centerpiece call path (order-service -> inventory-service), the construction point purerest's tracing/retry/circuit-breaker will extend in later tracks.
+
+Verification: `sbt orderService/test` — 4 tests pass across 3 suites. `sbt test` — full build green (12 tests total).
