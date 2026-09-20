@@ -1,0 +1,10 @@
+Task: Add http4s (server, ember-server, dsl, circe) dependencies to orderService (Phase 4, walking-skeleton track)
+
+Summary: Added cats-effect, http4s-ember-server, http4s-dsl, http4s-circe, circe-generic, circe-parser to orderService's libraryDependencies. Mirrors inventory-service's equivalent task. orderService already depended on purerest (Phase 1). Note: no direct http4s-ember-client dependency needed — orderService gets Client[F]/EmberClientBuilder transitively via purerest's compile-scoped dependency on it, since purerest is the sole place HTTP clients are constructed. No source changes.
+
+Files modified:
+- build.sbt (orderService project block)
+
+Why: Prepares order-service to implement its OrderStore, POST /orders route (calling inventory-service via purerest's client), and Ember server Main in the following tasks.
+
+Verification: `sbt orderService/update` resolves successfully. `sbt orderService/compile` still compiles.
