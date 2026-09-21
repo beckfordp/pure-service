@@ -10,7 +10,7 @@
 - [x] Task: Implement a client tracing middleware wrapping `Client[F]` (composing with `purerest.client.HttpClient`) — injects the active span's trace context into outgoing request headers, with unit tests verifying the propagation header appears on outgoing requests (e.g. a stub route capturing received headers). [a9b12d0]
 - [x] Task: Conductor - User Manual Verification 'purerest.tracing — Server + Client Middleware' (Protocol in workflow.md)
 
-## Phase 3: purerest.logging — Trace-Correlated Structured Logging
+## Phase 3: purerest.logging — Trace-Correlated Structured Logging [checkpoint: 1608d1e]
 - [x] Task: Add log4cats dependencies to the `purerest` module. [7761b05]
 - [x] Task: Implement `purerest.logging` — a contextual logger that includes the current trace id and span id in every log line when used within a traced scope, with unit tests verifying log output includes the correct ids (log4cats's testing utilities, or an equivalent captured-output approach). [fa2a83a]
 - [x] Task: Conductor - User Manual Verification 'purerest.logging — Trace-Correlated Structured Logging' (Protocol in workflow.md)
