@@ -8,6 +8,9 @@ val http4sVersion = "0.23.37"
 val circeVersion = "0.14.16"
 val munitVersion = "1.3.6"
 val munitCatsEffectVersion = "2.2.1"
+val otel4sVersion = "1.1.0"
+val openTelemetryVersion = "1.66.0"
+val log4catsVersion = "2.8.0"
 
 // Settings shared by every module in this build.
 lazy val commonSettings = Seq(
@@ -35,6 +38,14 @@ lazy val purerest = project
       "org.http4s" %% "http4s-circe" % http4sVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
+      // otel4s (oteljava backend): tracing API + a real OpenTelemetry Java SDK
+      // underneath, giving us real exporters (console, and in-memory for tests).
+      "org.typelevel" %% "otel4s-oteljava" % otel4sVersion,
+      // Console/logging span exporter, for manual verification when running a
+      // service locally.
+      "io.opentelemetry" % "opentelemetry-exporter-logging" % openTelemetryVersion,
+      // In-memory span exporter/testkit, for asserting on captured spans in tests.
+      "org.typelevel" %% "otel4s-oteljava-testkit" % otel4sVersion % Test,
       // Only used to stand up a stub server in purerest's own tests — purerest's
       // main code has no server dependency.
       "org.http4s" %% "http4s-ember-server" % http4sVersion % Test
