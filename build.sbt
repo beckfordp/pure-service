@@ -58,8 +58,12 @@ lazy val purerest = project
       "org.typelevel" %% "log4cats-core" % log4catsVersion,
       "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
       // SLF4J binding — without one, log lines are silently dropped (NOP logger).
-      // Runtime-only: never referenced directly in code.
-      "org.slf4j" % "slf4j-simple" % "2.0.19" % Runtime,
+      // Logback (not slf4j-simple) because its pattern layout can render MDC
+      // values (%X{trace_id}/%X{span_id}) — log4cats-slf4j pushes our per-call
+      // context Map into SLF4J's MDC around each log statement, and slf4j-simple's
+      // fixed layout has no way to display it. Runtime-only: never referenced
+      // directly in code; configured via logback.xml.
+      "ch.qos.logback" % "logback-classic" % "1.6.3" % Runtime,
       // In-memory capturing logger, for asserting on log output in tests.
       "org.typelevel" %% "log4cats-testing" % log4catsVersion % Test
     )
