@@ -1,0 +1,13 @@
+Task: Wire tracing + logging into inventory-service (Phase 4, tracing-and-logging track)
+
+Summary: InventoryRoutes.routes gained a required StructuredLogger[F] parameter, logging an info line on each successful reservation. Main now: builds a console tracer via Tracing.console, a trace-correlated logger via Logging.create, wraps InventoryRoutes.routes with ServerTracing.middleware, and serves the wrapped routes. Existing InventoryRoutesSuite tests updated minimally to pass NoOpLogger[IO] (mechanical signature-compat change only — assertions/response shapes unchanged). Also updated OrderServiceIntegrationSuite (order-service) since it constructs InventoryRoutes.routes directly for its in-process inventory-service stand-in. Added a new test proving a span is recorded when InventoryRoutes.routes is wrapped with ServerTracing.middleware and exercised.
+
+Files created/modified:
+- modules/inventory-service/src/main/scala/inventoryservice/InventoryRoutes.scala
+- modules/inventory-service/src/main/scala/inventoryservice/Main.scala
+- modules/inventory-service/src/test/scala/inventoryservice/InventoryRoutesSuite.scala
+- modules/order-service/src/test/scala/orderservice/OrderServiceIntegrationSuite.scala (mechanical compat fix)
+
+Why: This is inventory-service's half of the end-to-end tracing/logging proof; order-service's half is the next phase.
+
+Verification: `sbt inventoryService/test` — 5 tests pass. `sbt test` — full build green (18 tests).
