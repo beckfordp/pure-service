@@ -44,8 +44,11 @@ lazy val purerest = project
       // Console/logging span exporter, for manual verification when running a
       // service locally.
       "io.opentelemetry" % "opentelemetry-exporter-logging" % openTelemetryVersion,
-      // In-memory span exporter/testkit, for asserting on captured spans in tests.
-      "org.typelevel" %% "otel4s-oteljava-testkit" % otel4sVersion % Test,
+      // In-memory span exporter/testkit. Deliberately a normal compile dependency
+      // (not Test-scoped): purerest.tracing.Tracing.test is a public testing helper
+      // consumed by order-service's and inventory-service's own test suites, not
+      // just purerest's — Test-scope deps don't propagate to consuming modules.
+      "org.typelevel" %% "otel4s-oteljava-testkit" % otel4sVersion,
       // Only used to stand up a stub server in purerest's own tests — purerest's
       // main code has no server dependency.
       "org.http4s" %% "http4s-ember-server" % http4sVersion % Test
