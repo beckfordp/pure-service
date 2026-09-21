@@ -16,7 +16,7 @@
 - [x] Task: Conductor - User Manual Verification 'purerest.logging — Trace-Correlated Structured Logging' (Protocol in workflow.md)
 
 ## Phase 4: Wire into inventory-service
-- [ ] Task: Update `InventoryRoutes`/`Main` to wrap routes with purerest's server tracing middleware and use the trace-correlated logger when handling `POST /inventory/reserve`; existing `InventoryRoutesSuite` tests must continue to pass unmodified (response shape/status codes unchanged), plus a new test verifying a span is recorded when the wrapped routes are exercised.
+- [~] Task: Update `InventoryRoutes`/`Main` to wrap routes with purerest's server tracing middleware and use the trace-correlated logger when handling `POST /inventory/reserve`; existing `InventoryRoutesSuite` tests must continue to pass unmodified (response shape/status codes unchanged), plus a new test verifying a span is recorded when the wrapped routes are exercised.
 - [ ] Task: Conductor - User Manual Verification 'Wire into inventory-service' (Protocol in workflow.md)
 
 ## Phase 5: Wire into order-service + Prove End-to-End Trace Continuity

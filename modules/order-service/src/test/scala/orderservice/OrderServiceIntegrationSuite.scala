@@ -8,6 +8,7 @@ import org.http4s.circe.CirceEntityCodec._
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.{Method, Request, Status, Uri}
+import org.typelevel.log4cats.noop.NoOpLogger
 import purerest.client.HttpClient
 
 class OrderServiceIntegrationSuite extends CatsEffectSuite {
@@ -20,7 +21,7 @@ class OrderServiceIntegrationSuite extends CatsEffectSuite {
           .default[IO]
           .withHost(host"127.0.0.1")
           .withPort(port"0")
-          .withHttpApp(InventoryRoutes.routes[IO](inventoryStore).orNotFound)
+          .withHttpApp(InventoryRoutes.routes[IO](inventoryStore, NoOpLogger[IO]).orNotFound)
           .build
         httpClient <- HttpClient.resource[IO]
       } yield (inventoryServer, httpClient)
