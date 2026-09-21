@@ -1,0 +1,12 @@
+Fix discovered during Phase 4 manual verification (tracing-and-logging track): trace_id/span_id not visible in console log output
+
+Summary: The manual verification script (scripts/verify-inventory-service-tracing.sh, itself new this session) surfaced that although Logging.traceCorrelated correctly attaches trace_id/span_id to log context (proven by LoggingSuite's automated assertions), slf4j-simple's fixed console pattern has no way to render SLF4J MDC values, so the ids were invisible in the actual runtime log line despite being correctly present. Verified via log4cats source (Slf4jLoggerInternal.scala) that log4cats-slf4j does push context into real SLF4J MDC (MDC.clear(); ctx.foreach(MDC.put); body(); restore) around each call — confirming the fix (a Logback pattern with %X{trace_id}/%X{span_id}) would work before implementing it. Verified live via the script: log line now reads "[trace_id=..., span_id=...]" matching the printed span's ids exactly.
+
+Also fixed a real bug in the verification script itself: the readiness-probe's curl already prints "000" via -w on connection failure, but a redundant `|| echo "000"` fallback doubled it to "000000", breaking the `!=` "000" check and causing the script to falsely declare the server ready before sbt had even started (first run failed with curl: (7) Failed to connect).
+
+Files created/modified:
+- build.sbt: purerest's Runtime SLF4J binding swapped from slf4j-simple to logback-classic 1.6.3
+- modules/purerest/src/main/resources/logback.xml (new) — console pattern including %X{trace_id}/%X{span_id}
+- scripts/verify-inventory-service-tracing.sh (new this session, fixed readiness-probe bug)
+
+Verification: `sbt test` — full build green (18 tests, unchanged). Live run of the verification script confirms trace_id/span_id now visible in the log line and matching the printed span's ids.
