@@ -1,0 +1,12 @@
+Phase Completion Verification Report: Phase 4 — Wire into inventory-service (tracing-and-logging track)
+
+Automated test command: sbt test
+Result: 10 suites, 18 total tests, 0 failed.
+
+Manual verification: new script scripts/verify-inventory-service-tracing.sh — starts inventory-service, sends POST /inventory/reserve, confirms 201 Created + reservation body, and confirms both the printed span and the trace-correlated log line, with trace_id/span_id visibly matching between the two.
+
+During verification, two real issues were found and fixed:
+1. slf4j-simple couldn't render MDC values — switched to Logback (commit aeff761), confirmed log4cats-slf4j pushes context into real SLF4J MDC via source inspection first.
+2. A bug in the verification script's own readiness probe (doubled "000" status causing false-positive ready state) — fixed in the same commit.
+
+User confirmation: "yes proceed" (explicit approval received, after live confirmation the ids render correctly).
