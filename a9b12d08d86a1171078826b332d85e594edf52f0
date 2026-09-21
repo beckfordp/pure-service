@@ -1,0 +1,11 @@
+Task: Implement client tracing middleware (Phase 2, tracing-and-logging track)
+
+Summary: Added purerest.tracing.ClientTracing.middleware[F: Concurrent](tracer)(client: Client[F]): Client[F]. Injects the current span's trace context via tracer.propagate(Map.empty) into outgoing request headers (W3C traceparent), using Client[F]'s apply constructor. No-op passthrough when no span is active (verified by test). Discovered and fixed a real gap while building this: neither Tracing.console nor Tracing.test had a propagator registered (OpenTelemetrySdkBuilder and TracesTestkit both default to none), which would have made propagate/joinOrRoot silent no-ops — fixed in commit 1b56cef before this task.
+
+Files created/modified:
+- modules/purerest/src/main/scala/purerest/tracing/ClientTracing.scala (new)
+- modules/purerest/src/test/scala/purerest/tracing/ClientTracingSuite.scala (new)
+
+Why: Completes purerest's tracing capability — server middleware (previous task) + client middleware (this task) together enable full cross-service trace propagation, exercised end-to-end in Phase 5.
+
+Verification: `sbt purerest/test` — 7 tests pass. `sbt test` — full build green (15 tests).
