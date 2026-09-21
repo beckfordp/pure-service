@@ -2,6 +2,8 @@ package purerest.tracing
 
 import cats.effect.{Async, IO, Resource}
 import cats.syntax.all._
+import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
+import io.opentelemetry.context.propagation.ContextPropagators
 import io.opentelemetry.exporter.logging.LoggingSpanExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.trace.SdkTracerProvider
@@ -30,7 +32,13 @@ object Tracing {
             .builder()
             .addSpanProcessor(SimpleSpanProcessor.create(LoggingSpanExporter.create()))
             .build()
-          OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build()
+          OpenTelemetrySdk
+            .builder()
+            .setTracerProvider(tracerProvider)
+            // W3C Trace Context propagator — without this, Tracer.propagate/joinOrRoot
+            // are no-ops, since OpenTelemetrySdkBuilder defaults to no propagators.
+            .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+            .build()
         }
       )
       .evalMap(_.tracerProvider.get(instrumentationName))
@@ -39,9 +47,13 @@ object Tracing {
     * in tests.
     */
   def test[F[_]: {Async, LocalContextProvider}](instrumentationName: String): Resource[F, TestTracer[F]] =
-    TracesTestkit.inMemory[F]().evalMap { testkit =>
-      testkit.tracerProvider.get(instrumentationName).map(TestTracer(_, testkit.finishedSpans))
-    }
+    // W3CTraceContextPropagator registered explicitly — TracesTestkit.inMemory
+    // defaults to no propagators, which would make Tracer.propagate/joinOrRoot no-ops.
+    TracesTestkit
+      .inMemory[F](_.addTextMapPropagators(W3CTraceContextPropagator.getInstance()))
+      .evalMap { testkit =>
+        testkit.tracerProvider.get(instrumentationName).map(TestTracer(_, testkit.finishedSpans))
+      }
 
   /** Manual check: run via `sbt "purerest/runMain purerest.tracing.Tracing"` and
     * confirm a LoggingSpanExporter log line is printed for "demo-span".
