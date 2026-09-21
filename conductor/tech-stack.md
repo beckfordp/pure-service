@@ -17,9 +17,9 @@
 - **PostgreSQL**, accessed via **Skunk** or **Doobie** (order-service).
 
 ## Observability
-- **Tracing**: OpenTelemetry — propagated across service-to-service HTTP calls.
-- **Logging**: log4cats — structured, contextual logging correlated by trace id.
-- **Metrics**: Prometheus-compatible metrics for request/latency/error rates.
+- **Tracing**: OpenTelemetry via **otel4s** (Typelevel's Cats-Effect-native library, `oteljava` backend) — server/client purerest middleware propagates a W3C trace context across service-to-service HTTP calls. Console exporter for local/manual verification; in-memory exporter (otel4s's `TracesTestkit`) for automated tests. Real OTLP/collector export deferred.
+- **Logging**: log4cats (`log4cats-slf4j` backend) — structured, contextual logging correlated by trace id, via `purerest.logging.Logging`. SLF4J binding is **Logback**, not slf4j-simple — its pattern layout can render MDC values (`%X{trace_id}`/`%X{span_id}`), which log4cats-slf4j populates per log call; slf4j-simple's fixed layout cannot.
+- **Metrics**: Prometheus-compatible metrics for request/latency/error rates. (Still deferred to a later track.)
 
 ## Resilience
 - Retry policies and a circuit breaker, built on Cats Effect primitives — possibly leaning on an existing library (e.g. cats-retry) rather than fully from scratch. Exposed as composable purerest combinators, no annotations.
