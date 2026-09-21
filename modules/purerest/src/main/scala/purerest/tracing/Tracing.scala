@@ -1,6 +1,6 @@
 package purerest.tracing
 
-import cats.effect.{Async, Resource}
+import cats.effect.{Async, IO, Resource}
 import cats.syntax.all._
 import io.opentelemetry.exporter.logging.LoggingSpanExporter
 import io.opentelemetry.sdk.OpenTelemetrySdk
@@ -22,7 +22,7 @@ object Tracing {
   /** A tracer that exports spans to the console (stdout), for manual verification
     * when running a service locally. No real collector/backend is configured.
     */
-  def console[F[_]: Async: LocalContextProvider](instrumentationName: String): Resource[F, Tracer[F]] =
+  def console[F[_]: {Async, LocalContextProvider}](instrumentationName: String): Resource[F, Tracer[F]] =
     OtelJava
       .resource[F](
         Async[F].delay {
@@ -38,8 +38,18 @@ object Tracing {
   /** A tracer backed by an in-memory span exporter, for asserting on captured spans
     * in tests.
     */
-  def test[F[_]: Async: LocalContextProvider](instrumentationName: String): Resource[F, TestTracer[F]] =
+  def test[F[_]: {Async, LocalContextProvider}](instrumentationName: String): Resource[F, TestTracer[F]] =
     TracesTestkit.inMemory[F]().evalMap { testkit =>
       testkit.tracerProvider.get(instrumentationName).map(TestTracer(_, testkit.finishedSpans))
     }
+
+  /** Manual check: run via `sbt "purerest/runMain purerest.tracing.Tracing"` and
+    * confirm a LoggingSpanExporter log line is printed for "demo-span".
+    */
+  def main(args: Array[String]): Unit = {
+    given cats.effect.unsafe.IORuntime = cats.effect.unsafe.implicits.global
+    console[IO]("manual-check")
+      .use(_.span("demo-span").use(_ => IO.unit))
+      .unsafeRunSync()
+  }
 }
