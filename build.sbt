@@ -53,7 +53,13 @@ lazy val purerest = project
       // main code has no server dependency.
       "org.http4s" %% "http4s-ember-server" % http4sVersion % Test,
       // Only used to build routes in purerest's own middleware tests.
-      "org.http4s" %% "http4s-dsl" % http4sVersion % Test
+      "org.http4s" %% "http4s-dsl" % http4sVersion % Test,
+      // log4cats: structured, tagless-final logging.
+      "org.typelevel" %% "log4cats-core" % log4catsVersion,
+      "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
+      // SLF4J binding — without one, log lines are silently dropped (NOP logger).
+      // Runtime-only: never referenced directly in code.
+      "org.slf4j" % "slf4j-simple" % "2.0.19" % Runtime
     )
   )
 
