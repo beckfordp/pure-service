@@ -1,0 +1,12 @@
+Task: Implement purerest.logging (Phase 3, tracing-and-logging track)
+
+Summary: Added purerest.logging.Logging.traceCorrelated[F: Sync](tracer, underlying: StructuredLogger[F]): StructuredLogger[F] — hand-implements all 20 StructuredLogger/Logger/MessageLogger/ErrorLogger methods, each calling tracer.currentSpanContext fresh per log call and stamping trace_id/span_id into the log context when a span is active. Logging.create is the real SLF4J-backed constructor via Slf4jLogger.fromName. Verified via log4cats source directly that StructuredLogger's built-in withContext/withModifiedContext helpers are synchronous and couldn't look up the dynamically-current span, hence the hand-written implementation. Tests use log4cats-testing's StructuredTestingLogger.impl (in-memory, captures LogMessage.ctx) rather than a real SLF4J logger.
+
+Files created/modified:
+- build.sbt (added log4cats-testing % Test to purerest)
+- modules/purerest/src/main/scala/purerest/logging/Logging.scala (new)
+- modules/purerest/src/test/scala/purerest/logging/LoggingSuite.scala (new)
+
+Why: Completes purerest's Phase 1-3 tracing/logging capability set; Phase 4/5 wire this and the tracing middleware into the actual services.
+
+Verification: `sbt purerest/test` — 9 tests pass. `sbt test` — full build green (17 tests).
