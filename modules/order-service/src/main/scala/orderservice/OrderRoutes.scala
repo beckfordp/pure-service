@@ -7,6 +7,7 @@ import io.circe.generic.semiauto.deriveCodec
 import org.http4s.HttpRoutes
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.dsl.Http4sDsl
+import org.typelevel.log4cats.StructuredLogger
 
 final case class CreateOrderRequest(item: String, quantity: Int)
 
@@ -21,7 +22,11 @@ object OrderResponse {
 }
 
 object OrderRoutes {
-  def routes[F[_]: Concurrent](store: OrderStore[F], inventory: InventoryClient[F]): HttpRoutes[F] = {
+  def routes[F[_]: Concurrent](
+      store: OrderStore[F],
+      inventory: InventoryClient[F],
+      logger: StructuredLogger[F]
+  ): HttpRoutes[F] = {
     val dsl = new Http4sDsl[F] {}
     import dsl._
     HttpRoutes.of[F] { case req @ POST -> Root / "orders" =>
@@ -29,6 +34,7 @@ object OrderRoutes {
         body <- req.as[CreateOrderRequest]
         reservation <- inventory.reserve(body.item, body.quantity)
         order <- store.create(body.item, body.quantity)
+        _ <- logger.info(s"created order ${order.id} for ${order.quantity} x ${order.item} (reservation ${reservation.id})")
         resp <- Created(OrderResponse(order.id, order.item, order.quantity, reservation.id))
       } yield resp
     }

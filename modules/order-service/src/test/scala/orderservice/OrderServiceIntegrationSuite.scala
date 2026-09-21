@@ -33,7 +33,7 @@ class OrderServiceIntegrationSuite extends CatsEffectSuite {
 
       for {
         orderStore <- OrderStore.inMemory[IO]
-        routes = OrderRoutes.routes[IO](orderStore, inventoryClient)
+        routes = OrderRoutes.routes[IO](orderStore, inventoryClient, NoOpLogger[IO])
         request = Request[IO](Method.POST, uri"/orders")
           .withEntity(CreateOrderRequest("widget", 5))
         response <- routes.orNotFound.run(request)
