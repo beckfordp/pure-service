@@ -1,0 +1,12 @@
+Phase Completion Verification Report: Phase 5 — Wire into order-service + Prove End-to-End Trace Continuity (tracing-and-logging track) — FINAL PHASE OF TRACK
+
+Automated test command: sbt test
+Result: 11 suites, 20 total tests, 0 failed.
+
+Manual verification: scripts/verify-order-service-trace-continuity.sh — runs both services from a single sbt session (bgRun, required since sbt refuses two concurrent launcher JVMs against the same build directory), sends a real POST /orders, confirms 201 Created + order body with reservationId, and confirms both services' printed spans share the same trace id with different span ids:
+- inventory-service: trace_id=8d7c9a8f6d06b9b41ad03ffeec8b1684, span_id=5f35a8e6f0dbbe98
+- order-service:     trace_id=8d7c9a8f6d06b9b41ad03ffeec8b1684, span_id=b4f4024ebab3ca34
+
+This is the live, cross-process confirmation of the automated OrderServiceTraceContinuitySuite's in-memory proof, and satisfies the track's spec.md Acceptance Criteria #1 in full.
+
+User confirmation: "yes proceed" (explicit approval received).
