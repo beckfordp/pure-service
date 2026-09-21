@@ -15,7 +15,7 @@
 - [x] Task: Implement `purerest.logging` — a contextual logger that includes the current trace id and span id in every log line when used within a traced scope, with unit tests verifying log output includes the correct ids (log4cats's testing utilities, or an equivalent captured-output approach). [fa2a83a]
 - [x] Task: Conductor - User Manual Verification 'purerest.logging — Trace-Correlated Structured Logging' (Protocol in workflow.md)
 
-## Phase 4: Wire into inventory-service
+## Phase 4: Wire into inventory-service [checkpoint: e5e30ae]
 - [x] Task: Update `InventoryRoutes`/`Main` to wrap routes with purerest's server tracing middleware and use the trace-correlated logger when handling `POST /inventory/reserve`; existing `InventoryRoutesSuite` tests must continue to pass unmodified (response shape/status codes unchanged), plus a new test verifying a span is recorded when the wrapped routes are exercised. [eef6d39]
 - [x] Task: Conductor - User Manual Verification 'Wire into inventory-service' (Protocol in workflow.md)
 
