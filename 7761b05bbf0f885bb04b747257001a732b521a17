@@ -1,0 +1,10 @@
+Task: Add log4cats dependencies to purerest (Phase 3, tracing-and-logging track)
+
+Summary: Added log4cats-core, log4cats-slf4j (compile) and slf4j-simple (Runtime-only) to purerest's libraryDependencies. No source changes. slf4j-simple chosen so log output is actually visible when running a service manually — SLF4J previously fell back to a silent no-op logger project-wide (visible as a warning in test output since the walking-skeleton track); this is now fixed as a side effect, confirmed by ember-server's own internal INFO log becoming visible in test output.
+
+Files modified:
+- build.sbt (purerest project block)
+
+Why: Prepares purerest to implement the trace-correlated contextual logger in the next task.
+
+Verification: `sbt purerest/update` resolves successfully. `sbt purerest/compile` still compiles. `sbt test` — full build green (15 tests), with visible slf4j-simple output confirming the binding is active.
