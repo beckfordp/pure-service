@@ -1,0 +1,14 @@
+Task: Implement purerest.tracing.Tracing (Phase 1, tracing-and-logging track)
+
+Summary: Added Tracing.console[F: Async: LocalContextProvider](name): Resource[F, Tracer[F]] — builds a real OpenTelemetry Java SdkTracerProvider with a LoggingSpanExporter, wrapped via OtelJava.resource, for manual/runtime use. Added Tracing.test[F: Async: LocalContextProvider](name): Resource[F, TestTracer[F]] — builds an in-memory exporter-backed tracer via otel4s's TracesTestkit, exposing finishedSpans: F[List[SpanData]] for test assertions. Also corrected build.sbt: otel4s-oteljava-testkit moved from Test-scope to a normal compile dependency of purerest, since Tracing.test is meant to be usable by consuming modules' own test suites (Phase 4/5 plan), and Test-scope deps don't propagate transitively.
+
+API research: fetched otel4s source directly from GitHub (OtelJava.scala, TracerProvider.scala, Tracer.scala, LocalProvider.scala, TracesTestkit.scala) rather than trusting AI-summarized doc fetches, after one summarized fetch turned out imprecise about TracerProvider.tracer()'s return type. This paid off — the implementation compiled and passed on the first attempt.
+
+Files created/modified:
+- build.sbt (otel4s-oteljava-testkit scope fix)
+- modules/purerest/src/main/scala/purerest/tracing/Tracing.scala (new)
+- modules/purerest/src/test/scala/purerest/tracing/TracingSuite.scala (new)
+
+Why: Seeds purerest's tracing capability — Phase 2 builds server/client middleware on top of these tracer constructors.
+
+Verification: `sbt purerest/test` — 3 tests pass. `sbt test` — full build green (11 tests).
