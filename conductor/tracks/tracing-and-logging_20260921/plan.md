@@ -11,7 +11,7 @@
 - [x] Task: Conductor - User Manual Verification 'purerest.tracing — Server + Client Middleware' (Protocol in workflow.md)
 
 ## Phase 3: purerest.logging — Trace-Correlated Structured Logging
-- [ ] Task: Add log4cats dependencies to the `purerest` module.
+- [x] Task: Add log4cats dependencies to the `purerest` module. [7761b05]
 - [ ] Task: Implement `purerest.logging` — a contextual logger that includes the current trace id and span id in every log line when used within a traced scope, with unit tests verifying log output includes the correct ids (log4cats's testing utilities, or an equivalent captured-output approach).
 - [ ] Task: Conductor - User Manual Verification 'purerest.logging — Trace-Correlated Structured Logging' (Protocol in workflow.md)
 
