@@ -1,0 +1,11 @@
+Task: Add integration test proving end-to-end trace continuity (Phase 5, tracing-and-logging track)
+
+Summary: Added OrderServiceTraceContinuitySuite. A single Tracing.test[IO] tracer is shared across: a real in-process inventory-service (Ember server on an ephemeral port, routes wrapped with ServerTracing.middleware), and order-service's outbound HttpClient (wrapped with ClientTracing.middleware, so the reservation call carries the active span's trace context) and inbound OrderRoutes (wrapped with ServerTracing.middleware). After running a real POST /orders request through the whole chain, asserts via otel4s's TraceExpectation/TraceForestExpectation/SpanExpectation matcher (TraceExpectations.check) that the captured spans form a tree: "POST /orders" as root, "POST /inventory/reserve" as its child — proving a single trace id spans both the inbound request and the outbound call it makes, per the decision made earlier in this track to use TraceExpectation rather than raw SpanData comparisons. This satisfies the track's spec.md Acceptance Criteria #1.
+
+Also fixed modules/purerest/src/main/scala/purerest/logging/Logging.scala, which had lost its package declaration, imports, and `object Logging {` opening line (an external edit corrupted the file, discovered via a failed purerest/compile before starting this task); restored and reverified full build green before proceeding.
+
+Files created/modified:
+- modules/order-service/src/test/scala/orderservice/OrderServiceTraceContinuitySuite.scala (new)
+- modules/purerest/src/main/scala/purerest/logging/Logging.scala (restored)
+
+Verification: `sbt orderService/testOnly orderservice.OrderServiceTraceContinuitySuite` passes on first attempt. `sbt test` — full build green (20 tests).
