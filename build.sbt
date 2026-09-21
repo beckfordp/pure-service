@@ -59,7 +59,9 @@ lazy val purerest = project
       "org.typelevel" %% "log4cats-slf4j" % log4catsVersion,
       // SLF4J binding — without one, log lines are silently dropped (NOP logger).
       // Runtime-only: never referenced directly in code.
-      "org.slf4j" % "slf4j-simple" % "2.0.19" % Runtime
+      "org.slf4j" % "slf4j-simple" % "2.0.19" % Runtime,
+      // In-memory capturing logger, for asserting on log output in tests.
+      "org.typelevel" %% "log4cats-testing" % log4catsVersion % Test
     )
   )
 
