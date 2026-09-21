@@ -8,7 +8,7 @@
 ## Phase 2: purerest.tracing — Server + Client Middleware
 - [x] Task: Implement a server tracing middleware wrapping `HttpRoutes[F]` — creates (or continues, if a W3C trace context is present in inbound headers) a span per request, with unit tests (in-memory exporter) verifying a span is recorded when a request is run through the wrapped routes. [40d4ef2]
 - [x] Task: Implement a client tracing middleware wrapping `Client[F]` (composing with `purerest.client.HttpClient`) — injects the active span's trace context into outgoing request headers, with unit tests verifying the propagation header appears on outgoing requests (e.g. a stub route capturing received headers). [a9b12d0]
-- [ ] Task: Conductor - User Manual Verification 'purerest.tracing — Server + Client Middleware' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'purerest.tracing — Server + Client Middleware' (Protocol in workflow.md)
 
 ## Phase 3: purerest.logging — Trace-Correlated Structured Logging
 - [ ] Task: Add log4cats dependencies to the `purerest` module.
@@ -21,5 +21,5 @@
 
 ## Phase 5: Wire into order-service + Prove End-to-End Trace Continuity
 - [ ] Task: Update `order-service`'s `Main`/`InventoryClient` to use purerest's client tracing middleware for the outbound call to inventory-service, and wrap `OrderRoutes` with the server tracing middleware for the inbound `POST /orders`; use the trace-correlated logger when handling the request. Existing `OrderRoutesSuite` tests must continue to pass unmodified.
-- [ ] Task: Add an integration test (extending `OrderServiceIntegrationSuite`'s real-inventory-service-on-ephemeral-port pattern) using the in-memory exporter to assert the inbound order-service span and the outbound inventory-service child span share the same trace id — this is the track's Acceptance Criteria #1.
+- [ ] Task: Add an integration test (extending `OrderServiceIntegrationSuite`'s real-inventory-service-on-ephemeral-port pattern) using the in-memory exporter to assert the inbound order-service span and the outbound inventory-service child span share the same trace id — this is the track's Acceptance Criteria #1. Use otel4s's `TraceExpectation`/`TraceForestExpectation`/`SpanExpectation` matcher (`TraceExpectations.check`) for this assertion, per the otel4s docs' recommended testkit pattern for verifying parent-child span hierarchies — not raw `SpanData` field comparisons.
 - [ ] Task: Conductor - User Manual Verification 'Wire into order-service + Prove End-to-End Trace Continuity' (Protocol in workflow.md)
