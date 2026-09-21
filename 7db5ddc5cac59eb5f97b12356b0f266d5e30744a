@@ -1,0 +1,13 @@
+Task: Wire tracing + logging into order-service (Phase 5, tracing-and-logging track)
+
+Summary: OrderRoutes.routes gained a required StructuredLogger[F] parameter, logging an info line on each successful order. Main now: builds a console tracer, a trace-correlated logger, wraps the outbound purerest HttpClient with ClientTracing.middleware BEFORE constructing InventoryClient (so the reservation call carries the active span's trace context), and wraps OrderRoutes with ServerTracing.middleware for the inbound POST /orders. Existing OrderRoutesSuite/OrderServiceIntegrationSuite tests updated minimally to pass NoOpLogger[IO] (mechanical signature-compat change only). Added a new test proving a span is recorded when OrderRoutes.routes is wrapped with ServerTracing.middleware and exercised.
+
+Files created/modified:
+- modules/order-service/src/main/scala/orderservice/OrderRoutes.scala
+- modules/order-service/src/main/scala/orderservice/Main.scala
+- modules/order-service/src/test/scala/orderservice/OrderRoutesSuite.scala
+- modules/order-service/src/test/scala/orderservice/OrderServiceIntegrationSuite.scala (mechanical compat fix)
+
+Why: Completes both halves of the end-to-end tracing/logging wiring — the next task proves trace continuity across the real HTTP hop.
+
+Verification: `sbt orderService/test` — 5 tests pass. `sbt test` — full build green (19 tests).
