@@ -2,7 +2,7 @@
 
 ## Phase 1: purerest.tracing — Tracer Construction
 - [x] Task: Add otel4s (core, oteljava, oteljava-testkit, exporter-console — exact artifacts confirmed at implementation time) dependencies to the `purerest` module. [769e13e]
-- [ ] Task: Implement `purerest.tracing.Tracing` — `Resource[F, Tracer[F]]` constructors for (a) console-exporting tracers (runtime/manual use) and (b) in-memory-exporting tracers exposing captured spans (test use), with unit tests verifying a created span is recorded by the in-memory exporter.
+- [x] Task: Implement `purerest.tracing.Tracing` — `Resource[F, Tracer[F]]` constructors for (a) console-exporting tracers (runtime/manual use) and (b) in-memory-exporting tracers exposing captured spans (test use), with unit tests verifying a created span is recorded by the in-memory exporter. [cb345dc]
 - [ ] Task: Conductor - User Manual Verification 'purerest.tracing — Tracer Construction' (Protocol in workflow.md)
 
 ## Phase 2: purerest.tracing — Server + Client Middleware
