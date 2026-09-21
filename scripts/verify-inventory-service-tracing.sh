@@ -17,7 +17,7 @@ LOG_FILE="$(mktemp -t inventory-service-verify)"
 
 echo "Starting inventory-service (sbt inventoryService/run) on port ${PORT}..."
 echo "Full output is being captured to: ${LOG_FILE}"
-sbt "inventoryService/run" >"$LOG_FILE" 2>&1 &
+sbt --no-server "inventoryService/run" >"$LOG_FILE" 2>&1 &
 SBT_PID=$!
 
 cleanup() {
