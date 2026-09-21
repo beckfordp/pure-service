@@ -1,0 +1,8 @@
+{
+  "track_id": "tracing-and-logging_20260921",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-09-21T12:38:54Z",
+  "updated_at": "2026-09-21T12:38:54Z",
+  "description": "purerest: Tracing + Structured Logging — OpenTelemetry (otel4s) distributed tracing and log4cats trace-correlated logging, propagated across the order-service to inventory-service call"
+}
