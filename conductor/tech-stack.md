@@ -2,7 +2,7 @@
 
 ## Language & Build
 - **Scala** 3.9.0
-- **sbt** (single module today; expected to grow into a multi-module build: `purerest`, `order-service`, `inventory-service`)
+- **sbt** — multi-module build: `purerest`, `order-service`, `inventory-service` (`modules/*`)
 
 ## Effect System
 - **Cats Effect 3** — the effect system underpinning purerest and both services. All public APIs are tagless-final / typeclass-based (`F[_]: Async`, etc.).
@@ -25,7 +25,8 @@
 - Retry policies and a circuit breaker, built on Cats Effect primitives — possibly leaning on an existing library (e.g. cats-retry) rather than fully from scratch. Exposed as composable purerest combinators, no annotations.
 
 ## Testing
-- **munit** — test framework (already present in the scaffold).
+- **munit** — test framework.
+- **munit-cats-effect** — lets test bodies return `IO[Unit]` directly, used across all effectful tests.
 
 ## Formatting
 - **scalafmt** — default Scala 3 style.
