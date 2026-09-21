@@ -19,7 +19,7 @@
 - [x] Task: Update `InventoryRoutes`/`Main` to wrap routes with purerest's server tracing middleware and use the trace-correlated logger when handling `POST /inventory/reserve`; existing `InventoryRoutesSuite` tests must continue to pass unmodified (response shape/status codes unchanged), plus a new test verifying a span is recorded when the wrapped routes are exercised. [eef6d39]
 - [x] Task: Conductor - User Manual Verification 'Wire into inventory-service' (Protocol in workflow.md)
 
-## Phase 5: Wire into order-service + Prove End-to-End Trace Continuity
+## Phase 5: Wire into order-service + Prove End-to-End Trace Continuity [checkpoint: d880805]
 - [x] Task: Update `order-service`'s `Main`/`InventoryClient` to use purerest's client tracing middleware for the outbound call to inventory-service, and wrap `OrderRoutes` with the server tracing middleware for the inbound `POST /orders`; use the trace-correlated logger when handling the request. Existing `OrderRoutesSuite` tests must continue to pass unmodified. [7db5ddc]
 - [x] Task: Add an integration test (extending `OrderServiceIntegrationSuite`'s real-inventory-service-on-ephemeral-port pattern) using the in-memory exporter to assert the inbound order-service span and the outbound inventory-service child span share the same trace id — this is the track's Acceptance Criteria #1. Use otel4s's `TraceExpectation`/`TraceForestExpectation`/`SpanExpectation` matcher (`TraceExpectations.check`) for this assertion, per the otel4s docs' recommended testkit pattern for verifying parent-child span hierarchies — not raw `SpanData` field comparisons. [fb4d935]
 - [x] Task: Conductor - User Manual Verification 'Wire into order-service + Prove End-to-End Trace Continuity' (Protocol in workflow.md)
