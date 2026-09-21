@@ -24,3 +24,6 @@
 - [x] Task: Wire an Ember server `Main` entrypoint for `order-service` (configurable inventory-service base URL). [8ffe1ed]
 - [x] Task: Add an integration-style test that runs inventory-service's routes in-process and exercises order-service's `POST /orders` handler end-to-end against it, proving the full call path. [1abc0b8]
 - [x] Task: Conductor - User Manual Verification 'order-service' (Protocol in workflow.md)
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions 9e19e81
