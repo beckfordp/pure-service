@@ -1,0 +1,12 @@
+Task: Implement server tracing middleware (Phase 2, tracing-and-logging track)
+
+Summary: Added purerest.tracing.ServerTracing.middleware[F: Concurrent](tracer)(routes: HttpRoutes[F]): HttpRoutes[F]. Extracts inbound headers into a Map[String,String] carrier (TextMapGetter[Map[String,String]] is provided out-of-the-box by otel4s), and runs the wrapped routes inside tracer.joinOrRoot(carrier) { tracer.span(spanName).use(...) } — continuing an extracted W3C trace context if present, otherwise starting a root span. Span name is "<METHOD> <path>". Verified via otel4s source (HttpRoutes.scala, TextMapGetter.scala) fetched directly from GitHub before writing code — compiled and passed on first attempt.
+
+Files created/modified:
+- build.sbt (added http4s-dsl % Test to purerest, for building test routes)
+- modules/purerest/src/main/scala/purerest/tracing/ServerTracing.scala (new)
+- modules/purerest/src/test/scala/purerest/tracing/ServerTracingSuite.scala (new)
+
+Why: This is purerest's server-side tracing capability; Phase 4 wires it into inventory-service's routes.
+
+Verification: `sbt purerest/test` — 5 tests pass. `sbt test` — full build green (13 tests).
