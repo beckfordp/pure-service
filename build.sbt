@@ -51,7 +51,9 @@ lazy val purerest = project
       "org.typelevel" %% "otel4s-oteljava-testkit" % otel4sVersion,
       // Only used to stand up a stub server in purerest's own tests — purerest's
       // main code has no server dependency.
-      "org.http4s" %% "http4s-ember-server" % http4sVersion % Test
+      "org.http4s" %% "http4s-ember-server" % http4sVersion % Test,
+      // Only used to build routes in purerest's own middleware tests.
+      "org.http4s" %% "http4s-dsl" % http4sVersion % Test
     )
   )
 
