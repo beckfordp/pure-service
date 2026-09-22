@@ -13,7 +13,7 @@
       tapir-swagger-ui-bundle) a256870
 - [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 648ba76
 
-## Phase 2: Convert inventory-service to tapir
+## Phase 2: Convert inventory-service to tapir [checkpoint: ef1fa63]
 
 - [x] Task: Write failing test asserting `POST /inventory/reserve` behaves identically (same
       request/response shape, status codes) when served via the new tapir-based routes 469b186
@@ -22,7 +22,7 @@
 - [x] Task: Reimplement `InventoryRoutes` using the endpoint + `purerest.docs` helper, replacing
       the `HttpRoutes.of[F]` pattern match; existing tests pass unchanged 469b186
 - [x] Task: Wire into `inventory-service`'s `Main`, exposing Swagger UI + OpenAPI route 2374c51
-- [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md) ef1fa63
 
 ## Phase 3: Convert order-service to tapir
 
