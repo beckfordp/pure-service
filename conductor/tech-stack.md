@@ -10,6 +10,9 @@
 ## HTTP
 - **http4s** — server and client, for both inbound (order-service, inventory-service) and outbound (purerest's resilient client) HTTP.
 
+## API Documentation
+- **tapir** (`tapir-core`, `tapir-http4s-server`, `tapir-json-circe`, `tapir-openapi-docs`, `tapir-swagger-ui-bundle`, version 1.11.25) — endpoints are described once as tapir `Endpoint`/`ServerEndpoint` values; `purerest.docs` interprets that same value into both the real `HttpRoutes[F]` (via `tapir-http4s-server`) and a generated OpenAPI spec + browsable Swagger UI (via `tapir-openapi-docs`/`tapir-swagger-ui-bundle`), so routes and docs can't drift apart. Replaces hand-written `HttpRoutes.of[F] { case ... }` pattern matches in `order-service`/`inventory-service`.
+
 ## JSON
 - **circe** — JSON encoding/decoding, via `http4s-circe` for http4s integration. Chosen for its idiomatic Typelevel fit, mature http4s support, and typed decode errors (aligns with the typed-error-handling guideline).
 
