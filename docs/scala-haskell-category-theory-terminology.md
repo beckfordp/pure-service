@@ -31,6 +31,170 @@ vs. a **final** encoding (interpret directly via the typeclass's own operations,
 structure). This terminology is shared verbatim across Haskell and Scala — Scala borrowed it
 wholesale from the Haskell/ML "finally tagless" literature.
 
+## Kleisli composition, in depth
+
+A **Kleisli arrow** is just a function `A => F[B]` — a function that returns an effect instead of
+a plain value. Two Kleisli arrows `A => F[B]` and `B => F[C]` don't compose with ordinary function
+composition (the types don't line up: you'd need `F[B] => C`, not `B => F[C]`). Kleisli composition
+is the version of `andThen`/`compose` that does line up, by threading the effect through — and it's
+literally `flatMap` under the hood: `(f andThen g)(a) = f(a).flatMap(g)`.
+
+`cats.data.Kleisli[F, A, B]` is a newtype wrapper around `A => F[B]` that gives you `.andThen`,
+`.compose`, `.map`, `.flatMap`, etc. for free, forming **the Kleisli category** for the monad `F`
+(objects: same as the base category; morphisms `A → B` are really `A → F[B]`; identity is
+`Kleisli(a => F.pure(a))`).
+
+### The most relevant example — it's already in this codebase
+
+`HttpRoutes[F]` and `HttpApp[F]` (http4s) are not their own bespoke types — they're **literal
+Kleisli type aliases**:
+```scala
+type HttpApp[F[_]]    = Kleisli[F, Request[F], Response[F]]
+type HttpRoutes[F[_]] = Kleisli[OptionT[F, *], Request[F], Response[F]]
+```
+This is *why* the middleware pattern we've been using (`ServerTracing.middleware`,
+`ClientTracing.middleware`) works at all — wrapping "a function from a request to an effectful
+response" in another function of the identical shape is precisely composing within the Kleisli
+category, whether or not you ever write the word `Kleisli`.
+
+### Rebuilding a familiar handler as explicit Kleisli composition
+
+`InventoryRoutes`'s handler body is a for-comprehension:
+```scala
+HttpRoutes.of[F] { case req @ POST -> Root / "inventory" / "reserve" =>
+  for {
+    body        <- req.as[ReserveRequest]
+    reservation <- store.reserve(body.item, body.quantity)
+    resp        <- Created(reservation)
+  } yield resp
+}
+```
+The exact same behavior, written as three named Kleisli arrows composed left-to-right instead of
+one inline chain:
+```scala
+import cats.data.Kleisli
+
+val parseRequest: Kleisli[F, Request[F], ReserveRequest] =
+  Kleisli(req => req.as[ReserveRequest])
+
+val reserve: Kleisli[F, ReserveRequest, Reservation] =
+  Kleisli(body => store.reserve(body.item, body.quantity))
+
+val respond: Kleisli[F, Reservation, Response[F]] =
+  Kleisli(reservation => Created(reservation))
+
+val handler: Kleisli[F, Request[F], Response[F]] =
+  parseRequest andThen reserve andThen respond
+```
+`handler.run(req)` and the for-comprehension version produce identical results — a for-comprehension
+over `F` *is* Kleisli composition, just written inline instead of as named, independently reusable
+stages. Composing named stages this way is useful when you actually want to reuse or reorder a
+piece of the pipeline on its own; inline `for` is usually clearer when you don't.
+
+### A real cats API surface, not just an alias
+
+`org.http4s.client.Client[F]` exposes this directly:
+```scala
+def toKleisli[A](f: Response[F] => F[A]): Kleisli[F, Request[F], A]
+```
+"Give me a callback for the response, and I'll hand you back a Kleisli arrow from request to your
+result" — a client is, at its core, a Kleisli arrow from `Request[F]` to `F[Response[F]]`
+(`Client[F].run(req): Resource[F, Response[F]]` is the resource-scoped cousin of the same idea).
+
+### Haskell side-by-side
+
+```haskell
+parseRequest :: Request -> IO ReserveRequest
+reserve      :: ReserveRequest -> IO Reservation
+respond      :: Reservation -> IO Response
+
+handler :: Request -> IO Response
+handler = parseRequest >=> reserve >=> respond
+```
+`>=>` ("the fish operator," `Control.Monad`) is Haskell's spelling of exactly the same composition
+as Scala's `Kleisli(...).andThen(...)` — both are the Kleisli category's composition operator for
+the monad in question, just one is a standalone infix operator on plain functions and the other
+requires wrapping the function in the `Kleisli` newtype first.
+
+## Kleisli, ReaderT, and Reader — literally the same type
+
+Not just related — in cats they're the *same* type, layered as aliases:
+```scala
+type ReaderT[F[_], A, B] = Kleisli[F, A, B]
+type Reader[A, B]        = ReaderT[Id, A, B]   // Id[X] = X — the "no effect" effect
+```
+`Kleisli` is the actual definition; `ReaderT` is the name Haskell/mtl users expect ("Reader
+transformer"), provided purely for familiarity — same type, same `.andThen`, same everything.
+`Reader[A, B]` is what you get when the effect `F` is specialized to `Id`, cats' identity
+functor/monad (`Id[X] = X`, no wrapping at all) — a `Reader[A, B]` is just `A => B` dressed in
+Kleisli's clothing, "reading" an environment `A` to produce a `B` with no effect involved. So the
+whole family collapses to one idea: *Kleisli, with the effect type sometimes trivial (`Id`, giving
+you `Reader`) and sometimes real (`IO`, `HttpRoutes`'s `OptionT[F, *]`, etc., giving you `ReaderT`)*.
+
+### `ReaderT`/`Kleisli` as deferred, composable execution
+
+A `Kleisli[F, A, B]` value is inert, the same way a `Resource` or an `IO` value is inert (see the
+`Resource`/`.use` section above) — it's a *description* of "given an `A`, here's how to produce an
+`F[B]`," not a running computation. Building one, and composing several together with `andThen`,
+does no work at all — it just assembles a bigger description out of smaller ones. Nothing executes
+until you call `.run(a)` (or `.apply(a)`) and supply the actual environment.
+
+`HttpRoutes[F]` in this project is exactly that in practice: `ServerTracing.middleware(tracer)(...)`
+wraps one `Kleisli` value in another, `EmberServerBuilder.withHttpApp(...)` wires the result in —
+all of this happens once, at startup, and none of it *runs* anything. The whole routes/middleware
+graph just sits there as a composed, unexecuted `Kleisli` value until a real `Request[F]` arrives
+and the server calls `.run(req)` on it, per request. Same idea for `Reader`/`ReaderT` generally:
+build the computation abstractly in terms of "given the environment, here's the result," compose
+freely, and only supply the real environment once, at the very end, when you're ready to run it.
+
+## How Kleisli's own instances are derived from `F`'s
+
+`Kleisli[F, A, B]` doesn't invent its `Functor`/`Applicative`/`Monad`/`SemigroupK` instances from
+scratch — each one is mechanically built from the *same* instance on `F` itself (fixing `A`,
+varying over `B`):
+
+- **`Functor[Kleisli[F, A, *]]`**, given `Functor[F]`: `map` just post-composes —
+  `Kleisli(a => F.map(run(a))(g))`.
+- **`Monad[Kleisli[F, A, *]]`**, given `Monad[F]`: this *is* Kleisli composition — `andThen` is
+  defined via `F`'s own `flatMap`, exactly as shown above (`f andThen g = a => f(a).flatMap(g)`).
+  No `Monad[F]`, no `.andThen` — the capability is borrowed wholesale, not reimplemented.
+- **`SemigroupK[Kleisli[F, A, *]]`**, given `SemigroupK[F]`: combine two Kleisli arrows by running
+  both and combining their `F[B]` results via `F`'s own `combineK`.
+
+That last one is where your Semigroup instinct was pointing, just needing the precise version —
+recall from earlier: a *datatype* **has an instance of** a typeclass, it isn't "a" typeclass. So:
+"`Kleisli[F, A, B]` **has a `SemigroupK` instance** whenever `F` does" — not "Kleisli is a
+Semigroup." And this isn't abstract — it's exactly what powers a real http4s idiom (not used in
+this codebase, but standard elsewhere):
+```scala
+val combined: HttpRoutes[F] = routes1 <+> routes2   // try routes1; if it 404s, fall through to routes2
+```
+`HttpRoutes[F] = Kleisli[OptionT[F, *], Request[F], Response[F]]` inherits its `SemigroupK`
+straight from `SemigroupK[OptionT[F, *]]`, whose `combineK` means "try the first `OptionT`; if it's
+`None`, try the second." Kleisli didn't define route-fallback logic itself — it just forwarded
+`OptionT`'s existing `SemigroupK` through its own composition.
+
+### The Semigroup → Monoid direction (and the Apply → Applicative parallel)
+
+One correction: it's `Monoid` that's built **on top of** `Semigroup`, not the reverse —
+`Monoid[A] extends Semigroup[A]`, adding an identity element (`empty`) to `Semigroup`'s single
+operation (`combine`). This is the *exact same shape* of relationship as `Applicative` on top of
+`Apply` from earlier in this doc — `Apply` gives you "combine two independent things"
+(`Semigroup`'s job, generalized to `F[_]`), `Applicative` adds "conjure one from nothing"
+(`pure`/`empty`). Same pattern, two rungs of the ladder, once for plain types and once for effects:
+
+| Plain type (`cats.kernel`) | Effectful (`cats`) |
+|---|---|
+| `Semigroup[A]` — `combine` | `Apply[F[_]]` — `ap`/`mapN` |
+| `Monoid[A]` — `Semigroup` + `empty` | `Applicative[F[_]]` — `Apply` + `pure` |
+
+Where an honest monoid *does* show up directly with Kleisli: fix `A = B` (an **endomorphism**,
+`Kleisli[F, A, A]`, "environment and result are the same type"). Composition (`andThen`) is
+associative, and `Kleisli(a => F.pure(a))` is a genuine identity element for that composition —
+together, effectful endomorphisms under Kleisli composition form a textbook monoid, generalizing
+the classic teaching example that plain endofunctions `A => A` form a monoid under ordinary
+function composition (identity = `identity`, combine = `andThen`).
+
 ## Programming-language machinery (no direct CT counterpart)
 
 | Concept | Scala | Haskell | Category Theory |
