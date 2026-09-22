@@ -1,0 +1,14 @@
+Task: Add tapir dependencies + purerest.docs helper (Phase 1)
+
+Summary: Added tapir-core/tapir-json-circe/tapir-http4s-server/tapir-openapi-docs/tapir-swagger-ui-bundle
+(v1.11.25) to purerest's dependencies, and a new purerest.docs.Docs.routes helper that interprets a
+List[ServerEndpoint[Any, F]] into an HttpRoutes[F] serving the endpoints themselves plus a mounted
+Swagger UI and generated OpenAPI yaml (via tapir's SwaggerInterpreter + Http4sServerInterpreter).
+
+Why: Foundation for converting InventoryRoutes/OrderRoutes to tapir in later phases, so routes and
+API docs are generated from one source of truth instead of drifting apart.
+
+Files:
+- build.sbt (tapir dependencies)
+- modules/purerest/src/main/scala/purerest/docs/Docs.scala (new)
+- modules/purerest/src/test/scala/purerest/docs/DocsSuite.scala (new, TDD red->green)
