@@ -6,6 +6,7 @@ import org.http4s.Uri
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import purerest.client.HttpClient
+import purerest.docs.Docs
 import purerest.logging.Logging
 import purerest.tracing.{ClientTracing, ServerTracing, Tracing}
 
@@ -28,7 +29,12 @@ object Main extends IOApp.Simple {
         _ <- HttpClient.resource[IO].use { httpClient =>
           val tracedClient = ClientTracing.middleware(tracer)(httpClient)
           val inventory = InventoryClient[IO](tracedClient, inventoryServiceBaseUri)
-          val routes = ServerTracing.middleware(tracer)(OrderRoutes.routes[IO](store, inventory, logger))
+          val docsRoutes = Docs.routes[IO](
+            "Order Service",
+            "1.0",
+            List(OrderRoutes.serverEndpoint[IO](store, inventory, logger))
+          )
+          val routes = ServerTracing.middleware(tracer)(docsRoutes)
           EmberServerBuilder
             .default[IO]
             .withHost(host"0.0.0.0")
