@@ -1,13 +1,17 @@
 package orderservice
 
-import cats.effect.Concurrent
+import cats.effect.Async
 import cats.syntax.all._
 import io.circe.Codec
 import io.circe.generic.semiauto.deriveCodec
 import org.http4s.HttpRoutes
-import org.http4s.circe.CirceEntityCodec._
-import org.http4s.dsl.Http4sDsl
 import org.typelevel.log4cats.StructuredLogger
+import sttp.model.StatusCode
+import sttp.tapir._
+import sttp.tapir.generic.auto._
+import sttp.tapir.json.circe._
+import sttp.tapir.server.ServerEndpoint
+import sttp.tapir.server.http4s.Http4sServerInterpreter
 
 final case class CreateOrderRequest(item: String, quantity: Int)
 
@@ -22,21 +26,31 @@ object OrderResponse {
 }
 
 object OrderRoutes {
-  def routes[F[_]: Concurrent](
+
+  private val createOrderEndpoint: PublicEndpoint[CreateOrderRequest, Unit, OrderResponse, Any] =
+    endpoint.post
+      .in("orders")
+      .in(jsonBody[CreateOrderRequest])
+      .out(statusCode(StatusCode.Created))
+      .out(jsonBody[OrderResponse])
+
+  def serverEndpoint[F[_]: Async](
       store: OrderStore[F],
       inventory: InventoryClient[F],
       logger: StructuredLogger[F]
-  ): HttpRoutes[F] = {
-    val dsl = new Http4sDsl[F] {}
-    import dsl._
-    HttpRoutes.of[F] { case req @ POST -> Root / "orders" =>
+  ): ServerEndpoint[Any, F] =
+    createOrderEndpoint.serverLogicSuccess[F] { req =>
       for {
-        body <- req.as[CreateOrderRequest]
-        reservation <- inventory.reserve(body.item, body.quantity)
-        order <- store.create(body.item, body.quantity)
+        reservation <- inventory.reserve(req.item, req.quantity)
+        order <- store.create(req.item, req.quantity)
         _ <- logger.info(s"created order ${order.id} for ${order.quantity} x ${order.item} (reservation ${reservation.id})")
-        resp <- Created(OrderResponse(order.id, order.item, order.quantity, reservation.id))
-      } yield resp
+      } yield OrderResponse(order.id, order.item, order.quantity, reservation.id)
     }
-  }
+
+  def routes[F[_]: Async](
+      store: OrderStore[F],
+      inventory: InventoryClient[F],
+      logger: StructuredLogger[F]
+  ): HttpRoutes[F] =
+    Http4sServerInterpreter[F]().toRoutes(List(serverEndpoint(store, inventory, logger)))
 }
