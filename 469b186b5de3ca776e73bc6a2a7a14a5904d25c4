@@ -1,0 +1,20 @@
+Task: Write failing test + define/reimplement InventoryRoutes as a tapir endpoint (Phase 2, tasks 1-3)
+
+Summary: Added a new PublicEndpoint (reserveEndpoint) describing POST /inventory/reserve
+(JSON body ReserveRequest -> 201 Created + JSON Reservation, schemas auto-derived via
+sttp.tapir.generic.auto). InventoryRoutes.serverEndpoint attaches the business logic
+(store.reserve + logging); InventoryRoutes.routes is now a thin wrapper around
+Http4sServerInterpreter[F]().toRoutes. Signature-compatible with the old implementation
+(Async instead of Concurrent, required by tapir's http4s interpreter).
+
+Why: Foundation for generating OpenAPI/Swagger docs (Docs.routes) from the same
+endpoint value that serves real traffic, instead of a separate hand-maintained spec.
+
+Files:
+- modules/inventory-service/src/main/scala/inventoryservice/InventoryRoutes.scala (modified)
+- modules/inventory-service/src/test/scala/inventoryservice/InventoryDocsSuite.scala (new)
+
+Verification: existing InventoryRoutesSuite (3 tests) passes unchanged, proving no
+behavior regression. New InventoryDocsSuite proves the endpoint is served correctly
+AND documented (docs.yaml contains "/inventory/reserve") when wired through
+purerest.docs.Docs.
