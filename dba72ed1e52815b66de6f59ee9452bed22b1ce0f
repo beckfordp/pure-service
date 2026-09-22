@@ -1,0 +1,20 @@
+Phase 3 checkpoint: Convert order-service to tapir
+
+Automated test command: sbt test (full build)
+Result: 25 passed, 0 failed (12 purerest + 6 inventory-service + 7 order-service)
+
+Manual verification: scripts/verify-order-service-swagger.sh
+- Started both inventory-service and order-service via a single sbt session (bgRun).
+- POST /orders -> 201 Created, correct order + reservationId (unchanged behavior,
+  including the real order-service -> inventory-service HTTP call).
+- GET /docs/ -> 200, Swagger UI page (order-service).
+- GET /docs/docs.yaml -> 200, OpenAPI spec titled "Order Service", describes /orders.
+All checks passed.
+
+This concludes the tapir track: both services now serve browsable, always-in-sync
+OpenAPI/Swagger documentation generated from the same tapir endpoint values that
+serve real traffic.
+
+Autonomous implementation run: per explicit user instruction on this /conductor:implement
+invocation, no AskUserQuestion prompts were used; manual verification was performed via
+the above self-written, self-executed script rather than pausing for the user.
