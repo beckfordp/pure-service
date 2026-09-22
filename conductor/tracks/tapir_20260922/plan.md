@@ -1,6 +1,6 @@
 # Implementation Plan: Adopt tapir for endpoint definitions
 
-## Phase 1: Tech-stack update + shared purerest tapir wiring
+## Phase 1: Tech-stack update + shared purerest tapir wiring [checkpoint: 648ba76]
 
 - [x] Task: Document tapir as a new tech-stack dependency in `tech-stack.md` (tapir-core,
       tapir-http4s-server, tapir-json-circe, tapir-openapi-docs, tapir-swagger-ui-bundle) before
@@ -11,7 +11,7 @@
 - [x] Task: Implement `purerest.docs` helper to pass the test (interpret endpoints via
       tapir-http4s-server; generate the OpenAPI doc via tapir-openapi-docs; mount via
       tapir-swagger-ui-bundle) a256870
-- [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md) 648ba76
 
 ## Phase 2: Convert inventory-service to tapir
 
