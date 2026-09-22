@@ -66,24 +66,27 @@ wait_ready "$INVENTORY_PORT" "inventory-service"
 wait_ready "$ORDER_PORT" "order-service"
 
 FAILED=0
+ORDER_RESPONSE="$(mktemp -t order-response)"
+ORDER_DOCS_UI="$(mktemp -t order-docs-ui)"
+ORDER_DOCS_YAML="$(mktemp -t order-docs-yaml)"
 
 echo
 echo "1. Confirming POST /orders still works end-to-end (real call to inventory-service)..."
-ORDER_STATUS="$(curl -s -o /tmp/order-response.json -w '%{http_code}' \
+ORDER_STATUS="$(curl -s -o "$ORDER_RESPONSE" -w '%{http_code}' \
   -X POST "http://localhost:${ORDER_PORT}/orders" \
   -H "Content-Type: application/json" \
   -d '{"item":"widget","quantity":3}')"
-if [ "$ORDER_STATUS" = "201" ] && grep -q '"item":"widget"' /tmp/order-response.json && grep -q '"reservationId"' /tmp/order-response.json; then
-  echo "   OK: 201 Created with expected order + reservationId: $(cat /tmp/order-response.json)"
+if [ "$ORDER_STATUS" = "201" ] && grep -q '"item":"widget"' "$ORDER_RESPONSE" && grep -q '"reservationId"' "$ORDER_RESPONSE"; then
+  echo "   OK: 201 Created with expected order + reservationId: $(cat "$ORDER_RESPONSE")"
 else
-  echo "   FAIL: expected 201 with a widget order + reservationId, got status ${ORDER_STATUS}: $(cat /tmp/order-response.json)" >&2
+  echo "   FAIL: expected 201 with a widget order + reservationId, got status ${ORDER_STATUS}: $(cat "$ORDER_RESPONSE")" >&2
   FAILED=1
 fi
 
 echo
 echo "2. Confirming order-service's Swagger UI is served at /docs/..."
-DOCS_STATUS="$(curl -s -L -o /tmp/order-docs-ui.html -w '%{http_code}' "http://localhost:${ORDER_PORT}/docs/")"
-if [ "$DOCS_STATUS" = "200" ] && grep -qi "swagger" /tmp/order-docs-ui.html; then
+DOCS_STATUS="$(curl -s -L -o "$ORDER_DOCS_UI" -w '%{http_code}' "http://localhost:${ORDER_PORT}/docs/")"
+if [ "$DOCS_STATUS" = "200" ] && grep -qi "swagger" "$ORDER_DOCS_UI"; then
   echo "   OK: 200, page mentions Swagger"
 else
   echo "   FAIL: expected 200 Swagger UI page at /docs/, got status ${DOCS_STATUS}" >&2
@@ -92,8 +95,8 @@ fi
 
 echo
 echo "3. Confirming order-service's generated OpenAPI yaml describes POST /orders..."
-YAML_STATUS="$(curl -s -o /tmp/order-docs.yaml -w '%{http_code}' "http://localhost:${ORDER_PORT}/docs/docs.yaml")"
-if [ "$YAML_STATUS" = "200" ] && grep -q "Order Service" /tmp/order-docs.yaml && grep -q "/orders" /tmp/order-docs.yaml; then
+YAML_STATUS="$(curl -s -o "$ORDER_DOCS_YAML" -w '%{http_code}' "http://localhost:${ORDER_PORT}/docs/docs.yaml")"
+if [ "$YAML_STATUS" = "200" ] && grep -q "Order Service" "$ORDER_DOCS_YAML" && grep -q "/orders" "$ORDER_DOCS_YAML"; then
   echo "   OK: 200, spec titled 'Order Service' and describes /orders"
 else
   echo "   FAIL: expected 200 OpenAPI yaml mentioning 'Order Service' and /orders, got status ${YAML_STATUS}" >&2

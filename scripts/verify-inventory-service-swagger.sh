@@ -47,24 +47,27 @@ if [ "$READY" -ne 1 ]; then
 fi
 
 FAILED=0
+RESERVE_RESPONSE="$(mktemp -t inventory-reserve-response)"
+DOCS_UI="$(mktemp -t inventory-docs-ui)"
+DOCS_YAML="$(mktemp -t inventory-docs-yaml)"
 
 echo
 echo "1. Confirming POST /inventory/reserve still behaves as before..."
-RESERVE_STATUS="$(curl -s -o /tmp/reserve-response.json -w '%{http_code}' \
+RESERVE_STATUS="$(curl -s -o "$RESERVE_RESPONSE" -w '%{http_code}' \
   -X POST "http://localhost:${PORT}/inventory/reserve" \
   -H "Content-Type: application/json" \
   -d '{"item":"widget","quantity":2}')"
-if [ "$RESERVE_STATUS" = "201" ] && grep -q '"item":"widget"' /tmp/reserve-response.json; then
-  echo "   OK: 201 Created with expected reservation body: $(cat /tmp/reserve-response.json)"
+if [ "$RESERVE_STATUS" = "201" ] && grep -q '"item":"widget"' "$RESERVE_RESPONSE"; then
+  echo "   OK: 201 Created with expected reservation body: $(cat "$RESERVE_RESPONSE")"
 else
-  echo "   FAIL: expected 201 with a widget reservation, got status ${RESERVE_STATUS}: $(cat /tmp/reserve-response.json)" >&2
+  echo "   FAIL: expected 201 with a widget reservation, got status ${RESERVE_STATUS}: $(cat "$RESERVE_RESPONSE")" >&2
   FAILED=1
 fi
 
 echo
 echo "2. Confirming the Swagger UI is served at /docs/..."
-DOCS_STATUS="$(curl -s -L -o /tmp/docs-ui.html -w '%{http_code}' "http://localhost:${PORT}/docs/")"
-if [ "$DOCS_STATUS" = "200" ] && grep -qi "swagger" /tmp/docs-ui.html; then
+DOCS_STATUS="$(curl -s -L -o "$DOCS_UI" -w '%{http_code}' "http://localhost:${PORT}/docs/")"
+if [ "$DOCS_STATUS" = "200" ] && grep -qi "swagger" "$DOCS_UI"; then
   echo "   OK: 200, page mentions Swagger"
 else
   echo "   FAIL: expected 200 Swagger UI page at /docs/, got status ${DOCS_STATUS}" >&2
@@ -73,8 +76,8 @@ fi
 
 echo
 echo "3. Confirming the generated OpenAPI yaml describes the real endpoint..."
-YAML_STATUS="$(curl -s -o /tmp/docs.yaml -w '%{http_code}' "http://localhost:${PORT}/docs/docs.yaml")"
-if [ "$YAML_STATUS" = "200" ] && grep -q "Inventory Service" /tmp/docs.yaml && grep -q "/inventory/reserve" /tmp/docs.yaml; then
+YAML_STATUS="$(curl -s -o "$DOCS_YAML" -w '%{http_code}' "http://localhost:${PORT}/docs/docs.yaml")"
+if [ "$YAML_STATUS" = "200" ] && grep -q "Inventory Service" "$DOCS_YAML" && grep -q "/inventory/reserve" "$DOCS_YAML"; then
   echo "   OK: 200, spec titled 'Inventory Service' and describes /inventory/reserve"
 else
   echo "   FAIL: expected 200 OpenAPI yaml mentioning 'Inventory Service' and /inventory/reserve, got status ${YAML_STATUS}" >&2
