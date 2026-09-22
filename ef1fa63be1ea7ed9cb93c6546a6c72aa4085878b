@@ -1,0 +1,15 @@
+Phase 2 checkpoint: Convert inventory-service to tapir
+
+Automated test command: sbt test (full build)
+Result: 24 passed, 0 failed (12 purerest + 6 inventory-service + 6 order-service)
+
+Manual verification: scripts/verify-inventory-service-swagger.sh
+- Started inventory-service via `sbt inventoryService/run`.
+- POST /inventory/reserve -> 201 Created, correct reservation body (unchanged behavior).
+- GET /docs/ -> 200, Swagger UI page.
+- GET /docs/docs.yaml -> 200, OpenAPI spec titled "Inventory Service", describes /inventory/reserve.
+All checks passed (script run and its output captured above/in this note's authoring session).
+
+Autonomous implementation run: per explicit user instruction on this /conductor:implement
+invocation, no AskUserQuestion prompts were used; manual verification was performed via
+the above self-written, self-executed script rather than pausing for the user.
