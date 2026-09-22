@@ -2,15 +2,15 @@
 
 ## Phase 1: Tech-stack update + shared purerest tapir wiring
 
-- [ ] Task: Document tapir as a new tech-stack dependency in `tech-stack.md` (tapir-core,
+- [x] Task: Document tapir as a new tech-stack dependency in `tech-stack.md` (tapir-core,
       tapir-http4s-server, tapir-json-circe, tapir-openapi-docs, tapir-swagger-ui-bundle) before
-      any code changes
-- [ ] Task: Write failing test for a `purerest.docs` helper that, given a list of tapir
+      any code changes 7908b9d
+- [x] Task: Write failing test for a `purerest.docs` helper that, given a list of tapir
       `ServerEndpoint[F, Any]`, produces an `HttpRoutes[F]` serving those endpoints plus mounted
-      OpenAPI-yaml/json and Swagger-UI routes
-- [ ] Task: Implement `purerest.docs` helper to pass the test (interpret endpoints via
+      OpenAPI-yaml/json and Swagger-UI routes a256870
+- [x] Task: Implement `purerest.docs` helper to pass the test (interpret endpoints via
       tapir-http4s-server; generate the OpenAPI doc via tapir-openapi-docs; mount via
-      tapir-swagger-ui-bundle)
+      tapir-swagger-ui-bundle) a256870
 - [ ] Task: Conductor - User Manual Verification 'Phase 1' (Protocol in workflow.md)
 
 ## Phase 2: Convert inventory-service to tapir
