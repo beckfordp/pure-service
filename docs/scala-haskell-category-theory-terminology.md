@@ -3,6 +3,43 @@
 A cross-reference for the terms used interchangeably (or near-interchangeably) across Scala
 (cats/cats-effect), Haskell, and Category Theory, as used in this codebase.
 
+## Contents
+
+- [Programming-language machinery (no direct CT counterpart)](#programming-language-machinery-no-direct-ct-counterpart) — start here: typeclass vs. datatype vs. kind
+- [Core algebraic hierarchy](#core-algebraic-hierarchy) — Functor → Apply → Applicative → Monad
+- [Structure / composition mechanisms](#structure--composition-mechanisms) — natural transformations, Kleisli, Writer, Free, tagless final
+- [Kleisli composition, in depth](#kleisli-composition-in-depth)
+- [Kleisli, ReaderT, and Reader — literally the same type](#kleisli-readert-and-reader--literally-the-same-type)
+- [How Kleisli's own instances are derived from `F`'s](#how-kleislis-own-instances-are-derived-from-fs)
+- [`SemigroupK` — and how it differs from `Semigroup`](#semigroupk--and-how-it-differs-from-semigroup)
+- [Cats' `Writer` type](#cats-writer-type)
+- [cats-effect specific](#cats-effect-specific)
+- [Notes on the Sync / Concurrent / Async hierarchy](#notes-on-the-sync--concurrent--async-hierarchy-cats-effect-specific-no-haskellct-row)
+
+## Programming-language machinery (no direct CT counterpart)
+
+Start here — the deep-dive sections below all lean on this vocabulary.
+
+| Concept | Scala | Haskell | Category Theory |
+|---|---|---|---|
+| Ad-hoc polymorphism mechanism | "typeclass" (trait + `given`/`implicit`) | "type class" (native `class`/`instance`) | *(none — a PL encoding, not a CT object)* |
+| A concrete instance of a typeclass | "instance" / "given instance" | "instance" | *(none — informally, "proof `F` satisfies the axioms")* |
+| A concrete carrier type | "datatype" / "data type" | "data type" (`data`/`newtype`) | **Object** (in the category of types) |
+| Function between datatypes | "function" / method | "function" | **Morphism** / arrow |
+| Type that takes a type parameter | "higher-kinded type," `F[_]`, kind `* -> *` | "type constructor," kind `* -> *` | *(none by that name — it's just the functor's object-mapping)* |
+
+**Typeclass vs. datatype, the actual test**: does the type represent *data* your program is about
+(constructed, passed around, returned — a datatype), or a *capability* something else can be shown
+to have (summoned implicitly as evidence, never held as business data — a typeclass)? A datatype
+**has an instance of** a typeclass — e.g. "`IO` has instances of `Monad`, `Sync`, `Concurrent`,
+`Async`"; "`Reservation` has an instance of `Codec`." This is a usage distinction, not something
+the language enforces structurally — a typeclass instance is, under the hood, just an ordinary
+Scala value like any other.
+
+**Kind is orthogonal to typeclass vs. datatype.** Typeclasses can be parameterized over a
+higher-kinded parameter (`Monad[F[_]]`) or an ordinary one (`Codec[A]`, `TextMapGetter[A]`) — same
+mechanism either way.
+
 ## Core algebraic hierarchy
 
 | Concept | Scala (cats) | Haskell | Category Theory |
@@ -344,28 +381,6 @@ different: `purerest.logging.Logging.traceCorrelated` performs a **real side eff
 ordinary `flatMap`. `Writer` performs **no side effect at all** — the "log" is pure, in-memory data
 riding along inside the return value, inspected by calling `.run`. Same word, unrelated mechanism;
 this codebase's tracing/logging is built entirely on the `F[Unit]`-side-effect style, not `Writer`.
-
-## Programming-language machinery (no direct CT counterpart)
-
-| Concept | Scala | Haskell | Category Theory |
-|---|---|---|---|
-| Ad-hoc polymorphism mechanism | "typeclass" (trait + `given`/`implicit`) | "type class" (native `class`/`instance`) | *(none — a PL encoding, not a CT object)* |
-| A concrete instance of a typeclass | "instance" / "given instance" | "instance" | *(none — informally, "proof `F` satisfies the axioms")* |
-| A concrete carrier type | "datatype" / "data type" | "data type" (`data`/`newtype`) | **Object** (in the category of types) |
-| Function between datatypes | "function" / method | "function" | **Morphism** / arrow |
-| Type that takes a type parameter | "higher-kinded type," `F[_]`, kind `* -> *` | "type constructor," kind `* -> *` | *(none by that name — it's just the functor's object-mapping)* |
-
-**Typeclass vs. datatype, the actual test**: does the type represent *data* your program is about
-(constructed, passed around, returned — a datatype), or a *capability* something else can be shown
-to have (summoned implicitly as evidence, never held as business data — a typeclass)? A datatype
-**has an instance of** a typeclass — e.g. "`IO` has instances of `Monad`, `Sync`, `Concurrent`,
-`Async`"; "`Reservation` has an instance of `Codec`." This is a usage distinction, not something
-the language enforces structurally — a typeclass instance is, under the hood, just an ordinary
-Scala value like any other.
-
-**Kind is orthogonal to typeclass vs. datatype.** Typeclasses can be parameterized over a
-higher-kinded parameter (`Monad[F[_]]`) or an ordinary one (`Codec[A]`, `TextMapGetter[A]`) — same
-mechanism either way.
 
 ## cats-effect specific
 
