@@ -1,4 +1,4 @@
-# Functional Design Patterns — Scala, Explained in Haskell & Category Theory
+# Functional Design Patterns   — Scala, Explained in Haskell & Category Theory
 
 The design patterns this codebase is built on (tagless final, Kleisli composition, `SemigroupK`,
 `Writer`, ...), explained through the differing terms Scala (cats/cats-effect), Haskell, and
@@ -19,6 +19,7 @@ going on in the code.
 - [cats-effect specific](#cats-effect-specific)
 - [Notes on the Sync / Concurrent / Async hierarchy](#notes-on-the-sync--concurrent--async-hierarchy-cats-effect-specific-no-haskellct-row)
 - [System design patterns: tagless final vs. the Cake pattern](#system-design-patterns-tagless-final-vs-the-cake-pattern)
+- [http4s' own core typeclasses](#http4s-own-core-typeclasses)
 
 ## Programming-language machinery (no direct CT counterpart)
 
@@ -684,3 +685,72 @@ real production fanout.
 
 **Illustrative only** — this section's code (`PaymentClient`, `ShippingClient`, `NotificationClient`,
 `Clients`) is not part of this codebase; `order-service` currently depends only on `InventoryClient`.
+
+## http4s' own core typeclasses
+
+Not new machinery — http4s' own API surface is built directly out of the vocabulary already covered
+above, applied to HTTP specifically.
+
+### `EntityDecoder[F[_], A]` / `EntityEncoder[F[_], A]`
+
+How a request/response body gets turned into (or out of) a Scala value, inside `F`. This codebase
+never hand-writes instances: `org.http4s.circe.CirceEntityCodec._` (imported in `OrderRoutes`,
+`InventoryClient`, `OrderServiceTraceContinuitySuite`) derives both automatically from a circe
+`Decoder[A]`/`Encoder[A]` — which is why `req.as[CreateOrderRequest]` and `.withEntity(order)` just
+work once `Codec[Reservation]` exists via `deriveCodec`. The body itself,
+`EntityBody[F] = Stream[F, Byte]`, is an fs2 stream — so decoding/encoding is inherently effectful
+and streaming, not "parse a string," consistent with this codebase staying `F`-polymorphic rather
+than assuming a concrete runtime anywhere.
+
+### `HttpApp`/`HttpRoutes` are literal `Kleisli` aliases — not new types
+
+This is the payoff of [Kleisli composition, in depth](#kleisli-composition-in-depth) above, not a
+new idea. http4s' two central type aliases are defined directly off `Kleisli`:
+
+```scala
+type HttpApp[F[_]]    = Kleisli[F, Request[F], Response[F]]                  // total: always answers
+type HttpRoutes[F[_]] = Kleisli[OptionT[F, *], Request[F], Response[F]]      // partial: may say "not mine"
+```
+
+`HttpApp` is total — every request gets *some* response. `HttpRoutes` is partial via `OptionT`:
+`None` means "not my route," letting the framework fall through to a 404 (or the next route set).
+`ServerTracing.middleware`'s signature, `HttpRoutes[F] => HttpRoutes[F]`, is exactly
+`Kleisli[OptionT[F, *], Request[F], Response[F]] => (same)` — a **middleware**, which http4s itself
+defines as nothing more than a function between two `Kleisli`s. No new machinery; it's Kleisli
+composition, applied.
+
+### Where `SemigroupK` actually shows up in http4s
+
+The [`SemigroupK`](#semigroupk--and-how-it-differs-from-semigroup) section above used a hypothetical
+example, since nothing in this project used it yet at the time. http4s itself does, centrally:
+`HttpRoutes[F]` has a `SemigroupK` instance (inherited from `OptionT[F, *]`'s), so
+`routes1 <+> routes2` means "try `routes1`; if it returns `None` (not my route), fall through to
+`routes2`." That's the real mechanism behind combining several route definitions into one `HttpApp`
+— `combineK`/`<+>`, same typeclass, same "first success wins" semantics described abstractly
+earlier, now with a canonical concrete user.
+
+### `Client[F[_]]` — http4s' own algebra, sitting *under* ours
+
+`Client[F[_]]` is itself shaped like a tagless-final algebra http4s ships you, not something you
+write — roughly:
+
+```scala
+trait Client[F[_]] {
+  def run(req: Request[F]): Resource[F, Response[F]]  // Resource: a connection needs releasing
+}
+```
+
+`InventoryClient[F]`, this project's own algebra, is built *on top of* `Client[F]`
+(`client.expect[ReservationView](...)`) rather than replacing it — a concrete instance of the
+"http4s fits inside our tagless-final code, it isn't itself an instance of our pattern" distinction
+from the [design patterns section](#system-design-patterns-tagless-final-vs-the-cake-pattern) above,
+though it's worth noting `Client[F]`'s own shape happens to look the same way.
+
+### Why `EmberServerBuilder`/`EmberClientBuilder` need `Async[F]`
+
+Real non-blocking socket I/O needs to register a callback with the OS/NIO layer and resume the
+fiber later — exactly the capability the
+[Sync/Concurrent/Async section](#notes-on-the-sync--concurrent--async-hierarchy-cats-effect-specific-no-haskellct-row)
+names as `Async`'s one differentiator (`.async_`, lifting a callback-based computation into `F`).
+`Sync` or `Concurrent` alone can't do it, which is why `HttpClient.resource[F[_]: Async: Network]`
+sits above the "narrowest typeclass" line the rest of this codebase otherwise stays under.
