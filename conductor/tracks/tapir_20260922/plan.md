@@ -15,13 +15,13 @@
 
 ## Phase 2: Convert inventory-service to tapir
 
-- [ ] Task: Write failing test asserting `POST /inventory/reserve` behaves identically (same
-      request/response shape, status codes) when served via the new tapir-based routes
-- [ ] Task: Define the `reserve` tapir `Endpoint` (path, JSON request/response schemas derived
-      from existing circe `Codec`s, error mapping)
-- [ ] Task: Reimplement `InventoryRoutes` using the endpoint + `purerest.docs` helper, replacing
-      the `HttpRoutes.of[F]` pattern match; existing tests pass unchanged
-- [ ] Task: Wire into `inventory-service`'s `Main`, exposing Swagger UI + OpenAPI route
+- [x] Task: Write failing test asserting `POST /inventory/reserve` behaves identically (same
+      request/response shape, status codes) when served via the new tapir-based routes 469b186
+- [x] Task: Define the `reserve` tapir `Endpoint` (path, JSON request/response schemas derived
+      from existing circe `Codec`s, error mapping) 469b186
+- [x] Task: Reimplement `InventoryRoutes` using the endpoint + `purerest.docs` helper, replacing
+      the `HttpRoutes.of[F]` pattern match; existing tests pass unchanged 469b186
+- [x] Task: Wire into `inventory-service`'s `Main`, exposing Swagger UI + OpenAPI route 2374c51
 - [ ] Task: Conductor - User Manual Verification 'Phase 2' (Protocol in workflow.md)
 
 ## Phase 3: Convert order-service to tapir
