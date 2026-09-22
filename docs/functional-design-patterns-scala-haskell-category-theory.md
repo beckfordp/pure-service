@@ -20,6 +20,7 @@ going on in the code.
 - [Notes on the Sync / Concurrent / Async hierarchy](#notes-on-the-sync--concurrent--async-hierarchy-cats-effect-specific-no-haskellct-row)
 - [System design patterns: tagless final vs. the Cake pattern](#system-design-patterns-tagless-final-vs-the-cake-pattern)
 - [http4s' own core typeclasses](#http4s-own-core-typeclasses)
+- [Haskell's http4s equivalent: WAI/Warp and Servant](#haskells-http4s-equivalent-waiwarp-and-servant)
 
 ## Programming-language machinery (no direct CT counterpart)
 
@@ -841,3 +842,56 @@ fiber later — exactly the capability the
 names as `Async`'s one differentiator (`.async_`, lifting a callback-based computation into `F`).
 `Sync` or `Concurrent` alone can't do it, which is why `HttpClient.resource[F[_]: Async: Network]`
 sits above the "narrowest typeclass" line the rest of this codebase otherwise stays under.
+
+## Haskell's http4s equivalent: WAI/Warp and Servant
+
+Not a clean 1:1 — the closest analogue splits across two layers, and the split itself is the
+interesting part.
+
+**WAI + Warp** is the low-level layer, roughly playing http4s's Ember/`HttpApp` role: WAI defines
+the interface, Warp is the server that runs it. **Servant**, built on top of WAI, is the framework
+most commonly reached for on typed, FP-style API services — the closest thing to "the preferred
+http4s-shaped framework" in current Haskell. (Scotty — Sinatra-style, minimal — and Yesod — heavier,
+batteries-included, Template-Haskell-driven — are the other two commonly-cited options, but neither
+leans as hard into "the types are the spec" as Servant does.)
+
+### Where the architecture actually diverges from http4s
+
+WAI's core type is:
+
+```haskell
+type Application = Request -> (Response -> IO ResponseReceived) -> IO ResponseReceived
+```
+
+a CPS-shaped function, **fixed in `IO`** — not polymorphic over an effect type. Compare to http4s's
+`HttpApp[F] = Kleisli[F, Request[F], Response[F]]`
+(see [http4s' own core typeclasses](#http4s-own-core-typeclasses) above), which stays `F`-polymorphic
+all the way down to Ember's socket layer, given `Async[F]`. That's a real structural difference, not
+just naming: http4s bakes effect-polymorphism into the server framework's own core types; WAI does
+not. WAI's own `Middleware = Application -> Application` is the same *shape* of idea as http4s
+middleware (`Kleisli[F, ...] => Kleisli[F, ...]`), just `IO`-fixed rather than `F`-polymorphic.
+
+Servant adds something http4s itself doesn't have: a **type-level DSL** describing the API shape as
+a type —
+
+```haskell
+type OrdersAPI = "orders" :> ReqBody '[JSON] CreateOrderRequest :> Post '[JSON] OrderResponse
+```
+
+— from which routing, client generation, and docs are all derived. http4s has no direct analogue to
+this layer; the closer Scala parallel is **tapir**, not http4s itself.
+
+Handlers in Servant run in `Handler` (`ExceptT ServerError IO`) by default, but idiomatic Servant
+apps write their *own* app monad instead — exactly the `ReaderT Env IO`/`AppM` from the
+[Haskell side-by-side above](#haskell-side-by-side--the-readert-env--handle-pattern) — and use
+`hoistServer` to lower it into `Handler` right before handing off to Warp. So the `ReaderT Env` +
+Handle-record pattern already covered in this doc *is* how Servant apps get the same
+dependency-wiring story this project has; it's just applied once, at the boundary, rather than
+threaded through the server framework's own types the way `HttpRoutes[F]` carries `F` throughout.
+
+**Net comparison**: same pure-FP *values* (immutability, `IO`-tracked effects, algebraic
+composition, typed request/response bodies) and the same *application-level* patterns (`ReaderT
+Env`, Handle records, monad-transformer stacks) — but the *framework* itself isn't polymorphic over
+the effect type the way http4s is. That polymorphism is something the Haskell application layer
+builds and then interprets down to `IO`, not something Servant/WAI/Warp carry natively in their own
+core types.
