@@ -1,7 +1,10 @@
-# Scala / Haskell / Category Theory Terminology
+# Functional Design Patterns — Scala, Explained in Haskell & Category Theory
 
-A cross-reference for the terms used interchangeably (or near-interchangeably) across Scala
-(cats/cats-effect), Haskell, and Category Theory, as used in this codebase.
+The design patterns this codebase is built on (tagless final, Kleisli composition, `SemigroupK`,
+`Writer`, ...), explained through the differing terms Scala (cats/cats-effect), Haskell, and
+Category Theory each use for the same underlying structure — a cross-reference for a reader fluent
+in more than one of the three, so the differing vocabulary doesn't get in the way of what's actually
+going on in the code.
 
 ## Contents
 
@@ -15,6 +18,7 @@ A cross-reference for the terms used interchangeably (or near-interchangeably) a
 - [Cats' `Writer` type](#cats-writer-type)
 - [cats-effect specific](#cats-effect-specific)
 - [Notes on the Sync / Concurrent / Async hierarchy](#notes-on-the-sync--concurrent--async-hierarchy-cats-effect-specific-no-haskellct-row)
+- [System design patterns: tagless final vs. the Cake pattern](#system-design-patterns-tagless-final-vs-the-cake-pattern)
 
 ## Programming-language machinery (no direct CT counterpart)
 
@@ -53,6 +57,11 @@ mechanism either way.
 | Reverse-direction functor | `Contravariant[F[_]]`, `.contramap` | `Contravariant f`, `contramap` | Functor from `Cᵒᵖ` to `D` |
 | Combining structure alone (no map) | `Semigroupal[F[_]]`, `.product` | *(no standalone name in base)* | Functor with tensorial strength (precursor to monoidal) |
 | "Combine" algebra on a plain type | `Monoid[A]`, `.combine`, `.empty` | `Monoid a`, `<>`/`mappend`, `mempty` | Monoid object (in a monoidal category) |
+
+*A precision note on "semigroupal functor" (the `Apply` row): it's a genuinely useful, commonly-used
+label for "lax monoidal functor minus the unit," but it isn't as canonically established a term as
+"lax monoidal functor" itself (the `Applicative` row) — treat it as a good working name rather than
+a fixed piece of standard terminology.*
 
 ## Structure / composition mechanisms
 
@@ -263,6 +272,29 @@ allowed to look at*:
   `String`, or `Reservation`. `SemigroupK[Option]`: `combineK(x, y) = x.orElse(y)` — first-`Some`
   wins, again with zero interest in what's inside.
 
+### Haskell side-by-side
+
+```haskell
+-- semigroupoids package — SemigroupK's direct counterpart
+class Alt f where
+  (<!>) :: f a -> f a -> f a
+
+-- base — MonoidK's direct counterpart (Alt/SemigroupK + an identity)
+class Applicative f => Alternative f where
+  empty :: f a
+  (<|>) :: f a -> f a -> f a
+```
+`Alt`/`<!>` is Haskell's `SemigroupK`/`combineK`, from the same `semigroupoids` package already
+named for `Apply` earlier in this doc. `Alternative`/`<|>` — a genuinely well-known, heavily-used
+Haskell typeclass (parsers, `Maybe`, list-based search, all lean on it) — is Haskell's `MonoidK`,
+just bundled together with `Applicative` rather than kept as a separate `Monoid`-shaped piece.
+
+Scala's own landing point for that same combination is `cats.Alternative[F[_]]`
+(`Applicative[F]` + `MonoidK[F]`) — same shape, same name, even. If `SemigroupK`/`MonoidK` on their
+own feel unfamiliar, `Alternative`/`<|>` is almost certainly the term already sitting in memory from
+Haskell — same typeclass family, cats just keeps the `Semigroup`-only and `Monoid`-only cuts
+available separately (`SemigroupK`, `MonoidK`) in addition to the bundled `Alternative`.
+
 ### Where it applies in this project
 
 Honestly: **not currently used** — every service so far has exactly one route match arm
@@ -407,3 +439,248 @@ Principle applied throughout this codebase: bind a function to the **narrowest**
 covers what it actually does (e.g. `InventoryStore` needs only `Sync`; `ServerTracing`/
 `ClientTracing` need only `Concurrent`; `HttpClient` needs `Async` because Ember's real async
 socket I/O requires it) — never reach for a broader constraint "just in case."
+
+## System design patterns: tagless final vs. the Cake pattern
+
+Everything above this section has been about the *mathematical* vocabulary — what `Functor`,
+`Kleisli`, `SemigroupK` etc. mean. This section is different in kind: it's about the *architectural*
+pattern this codebase uses to structure itself, named and compared against the other well-known
+named pattern for the same general problem in Scala.
+
+### Tagless final, as it's actually used in this codebase
+
+Every capability this codebase depends on is expressed as a **trait parameterised on an effect
+type `F[_]`**, with a companion object holding the constructor(s). For example:
+
+```scala
+// InventoryStore.scala
+trait InventoryStore[F[_]] {
+  def reserve(item: String, quantity: Int): F[Reservation]
+}
+object InventoryStore {
+  def inMemory[F[_]: Sync]: F[InventoryStore[F]] = ...
+}
+
+// InventoryClient.scala
+trait InventoryClient[F[_]] {
+  def reserve(item: String, quantity: Int): F[ReservationView]
+}
+object InventoryClient {
+  def apply[F[_]: Concurrent](client: Client[F], baseUri: Uri): InventoryClient[F] = ...
+}
+```
+
+The trait is the **algebra**: a signature of operations, with no commitment to how `F` executes
+them. The companion's `inMemory`/`apply` is an **interpreter**: one concrete choice of `F` and one
+concrete implementation, built with just enough constraint (`Sync`, `Concurrent`, ...) to do the
+job — the same "narrowest typeclass that covers what it actually does" discipline from the
+Sync/Concurrent/Async section above. Wiring is nothing more exotic than passing the interpreter as
+an ordinary function/constructor argument: `OrderRoutes.routes(orderStore, inventoryClient, logger)`.
+This whole trait+companion shape (algebra as trait, interpreter as companion-object constructor,
+composition by parameter-passing) *is* what "tagless final" means as a concrete Scala idiom — the
+CT-flavoured framing (an algebra `F[_]` interpreted directly into some concrete `Monad`, the "final"
+encoding, as contrasted with Free's "initial" encoding) is covered in
+[Structure / composition mechanisms](#structure--composition-mechanisms) above; this section is
+about what that buys you architecturally, and what it costs compared to the alternative.
+
+**Worth being precise about what is, and isn't, "tagless final" in this codebase.** `InventoryStore`,
+`InventoryClient`, `OrderStore`, and purerest's own `ServerTracing`/`ClientTracing`/`Logging` are
+tagless-final algebras *we* wrote. **http4s itself is not "an instance of" this pattern** — it's a
+library that happens to expose an `F[_]`-polymorphic API (`HttpRoutes[F]` is a `Kleisli`, as covered
+earlier; `Client[F]`, `EntityDecoder[F, A]`, etc.), which is precisely *why* it composes cleanly
+inside tagless-final code without forcing a concrete effect type on us. `ServerTracing.middleware`
+is a good example of the seam: it takes an `HttpRoutes[F]` (http4s' machinery) and a `Tracer[F]`
+(our tagless-final capability) and returns a new `HttpRoutes[F]` — our pattern *wrapping* library
+code, not the library being reimplemented in our pattern.
+
+### Tagless final vs. Free — the same initial/final distinction, applied to "why not Free here"
+
+This project could, in principle, have modelled a capability like `InventoryClient` as a **Free
+monad** instead — build an algebra of instructions as a data type, then interpret it later:
+
+```scala
+sealed trait InventoryClientOp[A]
+final case class Reserve(item: String, quantity: Int) extends InventoryClientOp[ReservationView]
+
+type InventoryClientProgram[A] = Free[InventoryClientOp, A]
+
+def reserve(item: String, quantity: Int): InventoryClientProgram[ReservationView] =
+  Free.liftF(Reserve(item, quantity))
+
+// later, separately:
+val interpreter: InventoryClientOp ~> IO = new (InventoryClientOp ~> IO) {
+  def apply[A](op: InventoryClientOp[A]): IO[A] = op match {
+    case Reserve(item, quantity) => client.expect[ReservationView](...)
+  }
+}
+program.foldMap(interpreter)
+```
+
+That's the **initial encoding**: `Reserve` is inert *data* describing a call, reified as an AST node,
+which some separate natural transformation (`InventoryClientOp ~> IO`) later folds into a real
+effect via `foldMap`. What this codebase does instead — `InventoryClient[F]` as a trait, `apply`
+as a direct interpreter into `F` — is the **final encoding**: no AST, no `foldMap` step; calling
+`inventoryClient.reserve(...)` *is already* the effect, immediately, in whatever `F` the caller
+picked. Same algebra, same intent (describe a capability abstractly, defer choosing its concrete
+implementation); the difference is only *when* interpretation happens and whether there's a
+reified data structure standing in for it in between. This is exactly the initial-vs-final framing
+from the [Structure / composition mechanisms](#structure--composition-mechanisms) table, now made
+concrete with this project's own `InventoryClient`.
+
+Practically: Free buys you the ability to *inspect or rewrite the program as data* before running it
+(optimise a sequence of calls, log/replay it, test against the AST without running anything) at the
+cost of an extra indirection layer (the ADT, the natural transformation, `foldMap`) and typically
+worse performance (each step boxes into a `Free` node). Nothing in this codebase currently needs
+program-as-data — every capability is interpreted once, directly, against a single real or in-memory
+`F` — so the tagless-final/final-encoding route is the simpler tool for the job actually at hand.
+
+### The Cake pattern — the other named Scala answer to "how do I wire dependencies"
+
+The **Cake pattern** (Jonas Bonér's original formulation, popular in Scala before tagless-final
+became the community default) solves a related but distinct problem: wiring a *graph* of concrete
+components together using the type system, with no runtime DI framework. Its mechanism is
+**self-types** plus **trait mixin composition**, not constructor parameters:
+
+```scala
+// Illustrative only — NOT how this codebase is structured.
+trait InventoryStoreComponent {
+  def inventoryStore: InventoryStore
+}
+
+trait InventoryRoutesComponent { self: InventoryStoreComponent =>
+  // `self:` lets this trait call `inventoryStore` without declaring it as a
+  // parameter anywhere — it's a promise that whatever concrete object mixes
+  // this trait in will *also* mix in something providing `inventoryStore`.
+  val inventoryRoutes = new InventoryRoutes(inventoryStore)
+}
+
+// The "cake" is baked at exactly one place: an object that mixes in every
+// component trait the graph needs, providing the concrete implementations.
+object Application extends InventoryRoutesComponent with InventoryStoreComponent {
+  val inventoryStore = new InMemoryInventoryStore()
+}
+```
+
+Compare to how this project wires the equivalent dependency — just passing a value:
+
+```scala
+val store  = InventoryStore.inMemory[IO]
+val routes = InventoryRoutes.routes[IO](store, logger)
+```
+
+Cake earns its keep on *large, deeply-layered graphs of concrete components* — dozens of
+interdependent pieces where writing out every constructor parameter by hand becomes unwieldy, and
+where you want the compiler to catch "you forgot to wire X" at the mixin site. Its costs are real,
+though, and are why the wider Scala community has largely moved away from it: self-type resolution
+errors are notoriously hard to read, `val` initialization order across mixed-in traits is a classic
+footgun (a `val` in one trait can observe an as-yet-uninitialized `val` from another), and — the
+point most relevant here — **Cake has nothing to say about effect polymorphism**. It wires concrete
+*objects* together; it doesn't abstract over "which `F[_]` is this running in," the way `trait
+InventoryStore[F[_]]` does natively. You'd need to bolt something else on top of Cake to get that.
+Tagless final gets you both effect polymorphism *and* swappable implementations from the same single
+mechanism (a type parameter and a trait), at the cost of writing dependencies out explicitly as
+parameters — which is exactly why, for a codebase this size, this project reaches for tagless final
+and has no use for Cake at all.
+
+*Haskell side note:* Haskell has no self-type/mixin-composition feature, so there's no direct Cake
+analogue to translate. The idiomatic Haskell answer to "wire a big graph of app dependencies" is
+usually what the production-Haskell community calls the **`ReaderT` pattern** — bundle everything the
+app needs into one `Env` record and thread it via `ReaderT Env IO` (optionally with `mtl`-style
+`Has*` typeclasses for individual fields). That's much closer in spirit to this project's
+constructor-parameter tagless-final style — and to the `Kleisli`/`ReaderT` material already covered
+in [Kleisli, ReaderT, and Reader — literally the same type](#kleisli-readert-and-reader--literally-the-same-type)
+— than it is to Cake's self-type mixin machinery.
+
+### Scaling tagless final without Cake: bundling dependencies into `Resource`-built modules
+
+Large fanout (a service calling many other services, each needing its own client) is exactly the
+scenario Cake is pitched at. In practice, production http4s/cats-effect codebases mostly solve it
+without Cake at all — a well-known real example is Gabriel Volpe's
+[*Practical FP in Scala* shopping-cart app](https://github.com/gvolpe/pfps-shopping-cart), which
+groups related dependencies into small case classes built via `Resource[F, _]`, composed the same
+way, layer by layer. Still plain tagless final, still ordinary constructor parameters — just
+*grouped*, so the parameter count per layer stays small instead of growing with the whole graph.
+
+Illustrative for this project: if `order-service` grew to depend on inventory, payment, shipping,
+and notification clients, the fanout would otherwise show up as
+`OrderRoutes.routes(store, inventoryClient, paymentClient, shippingClient, notificationClient, logger)`.
+Bundling the sibling clients into one case class keeps every step a plain value:
+
+```scala
+// Each client is a normal tagless-final algebra — same shape as this
+// project's real InventoryClient, nothing new.
+trait InventoryClient[F[_]]    { def reserve(item: String, qty: Int): F[ReservationView] }
+trait PaymentClient[F[_]]      { def charge(orderId: String, amountCents: Long): F[PaymentReceipt] }
+trait ShippingClient[F[_]]     { def schedule(orderId: String, address: Address): F[ShipmentId] }
+trait NotificationClient[F[_]] { def orderConfirmed(orderId: String): F[Unit] }
+
+final case class Clients[F[_]](
+  inventory: InventoryClient[F],
+  payment: PaymentClient[F],
+  shipping: ShippingClient[F],
+  notification: NotificationClient[F]
+)
+
+object Clients {
+  final case class Config(
+    inventoryBaseUri: Uri,
+    paymentBaseUri: Uri,
+    shippingBaseUri: Uri,
+    notificationBaseUri: Uri
+  )
+
+  // One shared http4s Client[F] (one connection pool), fanned out into
+  // four algebra instances that each close over their own base Uri.
+  def resource[F[_]: Async: Network](config: Config): Resource[F, Clients[F]] =
+    HttpClient.resource[F].map { httpClient =>
+      Clients(
+        inventory    = InventoryClient[F](httpClient, config.inventoryBaseUri),
+        payment      = PaymentClient[F](httpClient, config.paymentBaseUri),
+        shipping     = ShippingClient[F](httpClient, config.shippingBaseUri),
+        notification = NotificationClient[F](httpClient, config.notificationBaseUri)
+      )
+    }
+}
+```
+
+`OrderRoutes` now takes one `Clients[F]` parameter instead of four, and `Main` composes exactly one
+`Resource[F, Clients[F]]`:
+
+```scala
+object OrderRoutes {
+  def routes[F[_]: Concurrent](
+    store: OrderStore[F],
+    clients: Clients[F],
+    logger: StructuredLogger[F]
+  ): HttpRoutes[F] = HttpRoutes.of[F] {
+    case req @ POST -> Root / "orders" =>
+      for {
+        create      <- req.as[CreateOrderRequest]
+        reservation <- clients.inventory.reserve(create.item, create.quantity)
+        receipt     <- clients.payment.charge(create.item, create.quantity * 100L)
+        _           <- clients.shipping.schedule(reservation.id, create.address)
+        _           <- clients.notification.orderConfirmed(reservation.id)
+        order       <- store.create(create.item, create.quantity, reservation.id)
+      } yield Response[F](Status.Created).withEntity(order)
+  }
+}
+
+object Main extends IOApp.Simple {
+  def run: IO[Unit] =
+    (for {
+      clients <- Clients.resource[IO](Clients.Config.fromEnv)
+      store   <- Resource.eval(OrderStore.inMemory[IO])
+      routes  = OrderRoutes.routes[IO](store, clients, Slf4jLogger.getLogger[IO])
+      _       <- EmberServerBuilder.default[IO].withHttpApp(routes.orNotFound).build
+    } yield ()).useForever
+}
+```
+
+The trick generalises by nesting: if `Clients` itself grew large, split it into e.g.
+`ExternalClients`/`InternalClients` and bundle those two the same way, one level up. Every step
+stays a plain value and a plain `Resource` — no self-types, no mixin composition, no compile-time
+cake — which is why this is the pattern the wider ecosystem reaches for instead of Cake, even at
+real production fanout.
+
+**Illustrative only** — this section's code (`PaymentClient`, `ShippingClient`, `NotificationClient`,
+`Clients`) is not part of this codebase; `order-service` currently depends only on `InventoryClient`.
