@@ -1,0 +1,17 @@
+Phase 1 checkpoint: Tech-stack update + shared purerest tapir wiring
+
+Automated test command: sbt purerest/test
+Result: 12 passed, 0 failed (including the new purerest.docs.DocsSuite: 3/3 passed)
+
+Manual verification: no running service exists yet at this phase (Docs.routes is
+internal library code, not wired into any Main until Phase 2/3) — the automated
+DocsSuite already exercises a real HttpRoutes[F] request/response cycle (the
+wrapped endpoint, the Swagger UI redirect at /docs -> /docs/, and the generated
+OpenAPI yaml content at /docs/docs.yaml), which is the meaningful verification
+available at this phase. Live-server manual verification scripts (under /scripts)
+are planned for Phase 2 and Phase 3, once tapir is wired into inventory-service
+and order-service's real Mains.
+
+Autonomous implementation run: user explicitly requested no prompting for this
+track and script-based self-verification of manual steps (per the /conductor:implement
+invocation), so this checkpoint proceeds without an AskUserQuestion confirmation.
