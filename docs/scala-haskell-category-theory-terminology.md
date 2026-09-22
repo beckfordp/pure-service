@@ -23,6 +23,7 @@ A cross-reference for the terms used interchangeably (or near-interchangeably) a
 |---|---|---|---|
 | Map between functors | `FunctionK[F, G]` / `F ~> G` | `forall a. f a -> g a` (no std name; RankNTypes) | Natural transformation |
 | Effectful function composition | `Kleisli[F, A, B]`, `.andThen` | `a -> m b`, composed via `>=>` (fish) | Kleisli category (for monad `T`: morphisms `A → T(B)`) |
+| Accumulate a monoidal log alongside a value | `Writer[L, A]` / `WriterT[F, L, A]`, `.tell`, `.run` | `Writer w a` / `WriterT w m a`, `tell`, `runWriter` | Monad on the product functor `(L × -)`, induced by `L`'s monoid structure |
 | Program-as-data over an algebra | `cats.free.Free[S[_], A]` | `Control.Monad.Free`, `Free f a` | The **free monad** — left adjoint to the forgetful functor `Monad → Endofunctor` |
 | Effect-polymorphic encoding (no AST) | "Tagless final" | "**Finally tagless**" (Kiselyov et al. — origin of the Scala term) | "Final" encoding — dual to the free/initial encoding |
 
@@ -187,6 +188,8 @@ operation (`combine`). This is the *exact same shape* of relationship as `Applic
 |---|---|
 | `Semigroup[A]` — `combine` | `Apply[F[_]]` — `ap`/`mapN` |
 | `Monoid[A]` — `Semigroup` + `empty` | `Applicative[F[_]]` — `Apply` + `pure` |
+| `SemigroupK[F[_]]` — `combineK` | *(the "K" version — see next section)* |
+| `MonoidK[F[_]]` — `SemigroupK` + `empty[A]` | |
 
 Where an honest monoid *does* show up directly with Kleisli: fix `A = B` (an **endomorphism**,
 `Kleisli[F, A, A]`, "environment and result are the same type"). Composition (`andThen`) is
@@ -194,6 +197,153 @@ associative, and `Kleisli(a => F.pure(a))` is a genuine identity element for tha
 together, effectful endomorphisms under Kleisli composition form a textbook monoid, generalizing
 the classic teaching example that plain endofunctions `A => A` form a monoid under ordinary
 function composition (identity = `identity`, combine = `andThen`).
+
+## `SemigroupK` — and how it differs from `Semigroup`
+
+The "K" suffix is cats' consistent naming convention for "the higher-kinded version of this
+typeclass" — same idea for `MonoidK[F[_]]`, and it shows up elsewhere in cats too. So the guess is
+right: `SemigroupK[F[_]]` is `Semigroup` lifted to operate on `F[_]` itself, for *any* `A`, rather
+than on one fixed concrete type.
+
+```scala
+trait Semigroup[A] {
+  def combine(x: A, y: A): A
+}
+
+trait SemigroupK[F[_]] {
+  def combineK[A](x: F[A], y: F[A]): F[A]
+}
+```
+
+The difference is more than just "`A` vs `F[_]`," though — it's *what the combining logic is
+allowed to look at*:
+- `Semigroup[A].combine` is specific to one concrete `A`, and its combining rule is whatever makes
+  sense for that particular type — `Semigroup[Int]` via addition, `Semigroup[String]` via
+  concatenation. Completely different logic per `A`, chosen ad hoc.
+- `SemigroupK[F[_]].combineK` is defined **once**, generically over every possible `A` — it only
+  ever touches `F`'s own structure, never the values inside. `SemigroupK[List]`:
+  `combineK(xs, ys) = xs ++ ys` — concatenation, regardless of whether the list holds `Int`,
+  `String`, or `Reservation`. `SemigroupK[Option]`: `combineK(x, y) = x.orElse(y)` — first-`Some`
+  wins, again with zero interest in what's inside.
+
+### Where it applies in this project
+
+Honestly: **not currently used** — every service so far has exactly one route match arm
+(`HttpRoutes.of[F] { case POST -> Root / "orders" => ... }`), so there's never been two independent
+`HttpRoutes[F]` values needing combining. But it's the natural next tool the moment `order-service`
+gets a **lookup-by-id endpoint** — not written yet, but a natural near-term addition once Postgres
+persistence lands (`OrderStore` currently only supports `create`, no way to fetch an order back).
+When that happens, keeping the lookup route as its own, separately-defined, separately-testable
+`HttpRoutes[F]` value — rather than folding another `case` arm into `OrderRoutes` itself — and
+combining it only at `Main`'s wiring point is exactly where `<+>` earns its keep. Illustrative, not
+yet in the codebase:
+
+```scala
+// New: a second, independent routes value — not merged into OrderRoutes itself.
+object OrderLookupRoutes {
+  def routes[F[_]: Concurrent](store: OrderStore[F]): HttpRoutes[F] = {
+    val dsl = new Http4sDsl[F] {}
+    import dsl._
+    HttpRoutes.of[F] { case GET -> Root / "orders" / orderId =>
+      store.find(orderId).flatMap {          // OrderStore would need a `find`, too
+        case Some(order) => Ok(order)
+        case None        => NotFound()
+      }
+    }
+  }
+}
+
+// Main.scala
+val routes = ServerTracing.middleware(tracer)(
+  OrderRoutes.routes[IO](store, inventory, logger) <+> OrderLookupRoutes.routes[IO](store)
+)
+```
+`<+>` is `SemigroupK`'s infix `combineK` — "run `OrderRoutes`'s routes first; if nothing matches
+(an `OptionT.none`), fall through and try `OrderLookupRoutes`'s." Exactly the same
+`SemigroupK[OptionT[F, *]]`-inherited-through-`Kleisli` mechanism already covered above.
+`OrderRoutes` and `OrderLookupRoutes` never need to know about each other — same "compose
+independently-built pieces from outside" spirit as the tracing middleware itself, and it means
+`OrderLookupRoutes` gets its own focused test suite rather than growing `OrderRoutesSuite`.
+
+## Cats' `Writer` type
+
+`Writer[L, A]` is the mirror image of `Reader`/`Kleisli`: `Reader` reads an environment *in*,
+`Writer` accumulates a log *out*, alongside the actual result — as pure data, with no effect system
+involved at all.
+
+```scala
+type Writer[L, A]           = WriterT[Id, L, A]
+final case class WriterT[F[_], L, A](run: F[(L, A)])
+```
+Same layering pattern as `Reader`/`ReaderT`/`Kleisli`: `WriterT` is the general effectful version
+(wrapping `F[(L, A)]`), `Writer` is the `Id`-specialized, effect-free case (just `(L, A)`).
+
+### Why the log type needs a `Monoid`, not just a `Semigroup`
+
+`WriterT`'s `Monad` instance requires `Monoid[L]`, not merely `Semigroup[L]` — and this is a direct,
+concrete instance of the Semigroup → Monoid pattern from the section above:
+- `flatMap` runs the first `Writer`, then the second, and **combines** their two logs —
+  `Semigroup[L].combine` is all that operation needs.
+- `pure`/`Writer.value(a)` has to produce a `Writer` with **no** log entries yet — it needs an
+  identity element to start from, which is exactly `Monoid[L].empty`. `Semigroup` alone has no such
+  element.
+
+So `Writer` is a clean worked example of why `Applicative`/`Monad` always need the *identity* half
+of whatever structure they're built on (`pure` needs something to return "for free"), while `Apply`
+alone can get by on combination without it.
+
+### A worked example
+
+```scala
+import cats.data.Writer
+import cats.syntax.all._
+
+type Logged[A] = Writer[List[String], A]
+
+def reserveStock(item: String, quantity: Int): Logged[Int] =
+  for {
+    _  <- Writer.tell(List(s"validating $quantity x $item"))
+    id <- Writer.value[List[String], Int](42)
+    _  <- Writer.tell(List(s"reserved as #$id"))
+  } yield id
+
+val (log, reservationId) = reserveStock("widget", 2).run
+// log           == List("validating 2 x widget", "reserved as #42")
+// reservationId == 42
+```
+`.tell(entry)` appends to the log and produces `Unit`; `List`'s `Monoid` (`combine = ++`,
+`empty = Nil`) is what makes the accumulation work. Nothing here touches `IO`, a `Ref`, or any
+effect — `.run` is a pure function, and the log is fully inspectable as ordinary data without
+running anything effectful. That's the whole appeal: an audit trail that's part of the return value
+itself, not a side effect.
+
+### Haskell side-by-side — and one real gotcha
+
+```haskell
+import Control.Monad.Writer
+
+reserveStock :: String -> Int -> Writer [String] Int
+reserveStock item quantity = do
+  tell [item ++ " x" ++ show quantity ++ " validating"]
+  let rid = 42
+  tell ["reserved as #" ++ show rid]
+  return rid
+
+main = print (runWriter (reserveStock "widget" 2))
+-- (42,["widget x2 validating","reserved as #42"])
+```
+Note the tuple order: Haskell's `runWriter` returns `(a, w)` — value first, log second. Cats'
+`.run` returns `(L, A)` — log first, value second. Same structure, reversed tuple order between
+the two libraries — easy to trip over if porting intuition directly.
+
+### Not the same thing as `purerest.logging.Logging`
+
+Worth being explicit about this, since "logging" is the shared word but the mechanism is entirely
+different: `purerest.logging.Logging.traceCorrelated` performs a **real side effect** — an
+`F[Unit]` that actually writes to SLF4J/Logback, sequenced into the surrounding computation via
+ordinary `flatMap`. `Writer` performs **no side effect at all** — the "log" is pure, in-memory data
+riding along inside the return value, inspected by calling `.run`. Same word, unrelated mechanism;
+this codebase's tracing/logging is built entirely on the `F[Unit]`-side-effect style, not `Writer`.
 
 ## Programming-language machinery (no direct CT counterpart)
 
