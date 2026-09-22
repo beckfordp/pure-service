@@ -1,0 +1,10 @@
+Task: Wire OrderRoutes' tapir endpoint into Main via purerest.docs (Phase 3, task 4)
+
+Summary: Main now builds Docs.routes("Order Service", "1.0", List(OrderRoutes.serverEndpoint(...)))
+instead of calling OrderRoutes.routes directly, wrapped with ServerTracing.middleware as before.
+Exposes a Swagger UI at /docs/ and OpenAPI yaml at /docs/docs.yaml alongside POST /orders.
+
+Why: Completes Phase 3 and the track — both services now serve browsable, always-in-sync API docs.
+
+Files:
+- modules/order-service/src/main/scala/orderservice/Main.scala (modified)
