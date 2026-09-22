@@ -26,10 +26,10 @@
 
 ## Phase 3: Convert order-service to tapir
 
-- [ ] Task: Write failing test asserting `POST /orders` behaves identically via the new
-      tapir-based routes (including the order→inventory HTTP call and trace continuity)
-- [ ] Task: Define the `createOrder` tapir `Endpoint` (request/response schemas from existing
-      circe `Codec`s)
-- [ ] Task: Reimplement `OrderRoutes` using the endpoint + `purerest.docs` helper
-- [ ] Task: Wire into `order-service`'s `Main`, exposing Swagger UI + OpenAPI route
+- [x] Task: Write failing test asserting `POST /orders` behaves identically via the new
+      tapir-based routes (including the order→inventory HTTP call and trace continuity) 1fb72b4
+- [x] Task: Define the `createOrder` tapir `Endpoint` (request/response schemas from existing
+      circe `Codec`s) 1fb72b4
+- [x] Task: Reimplement `OrderRoutes` using the endpoint + `purerest.docs` helper 1fb72b4
+- [x] Task: Wire into `order-service`'s `Main`, exposing Swagger UI + OpenAPI route 911d088
 - [ ] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md)
