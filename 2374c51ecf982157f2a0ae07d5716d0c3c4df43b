@@ -1,0 +1,11 @@
+Task: Wire InventoryRoutes' tapir endpoint into Main via purerest.docs (Phase 2, task 4)
+
+Summary: Main now builds Docs.routes("Inventory Service", "1.0", List(InventoryRoutes.serverEndpoint(...)))
+instead of calling InventoryRoutes.routes directly, then wraps that with ServerTracing.middleware
+as before. Exposes a Swagger UI at /docs/ and the generated OpenAPI yaml at /docs/docs.yaml,
+alongside the existing POST /inventory/reserve endpoint, on the same running service.
+
+Why: Completes Phase 2 — inventory-service now serves browsable, always-in-sync API docs.
+
+Files:
+- modules/inventory-service/src/main/scala/inventoryservice/Main.scala (modified)
