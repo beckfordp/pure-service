@@ -11,6 +11,7 @@ val munitCatsEffectVersion = "2.2.1"
 val otel4sVersion = "1.1.0"
 val openTelemetryVersion = "1.66.0"
 val log4catsVersion = "2.8.0"
+val tapirVersion = "1.11.25"
 
 // Settings shared by every module in this build.
 lazy val commonSettings = Seq(
@@ -65,7 +66,15 @@ lazy val purerest = project
       // directly in code; configured via logback.xml.
       "ch.qos.logback" % "logback-classic" % "1.6.3" % Runtime,
       // In-memory capturing logger, for asserting on log output in tests.
-      "org.typelevel" %% "log4cats-testing" % log4catsVersion % Test
+      "org.typelevel" %% "log4cats-testing" % log4catsVersion % Test,
+      // tapir: endpoints described once as Endpoint/ServerEndpoint values,
+      // interpreted into both real http4s routes and generated OpenAPI/Swagger
+      // docs from the same source of truth (purerest.docs).
+      "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion
     )
   )
 
