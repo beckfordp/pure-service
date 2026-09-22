@@ -21,6 +21,7 @@ going on in the code.
 - [System design patterns: tagless final vs. the Cake pattern](#system-design-patterns-tagless-final-vs-the-cake-pattern)
 - [http4s' own core typeclasses](#http4s-own-core-typeclasses)
 - [Haskell's http4s equivalent: WAI/Warp and Servant](#haskells-http4s-equivalent-waiwarp-and-servant)
+- [Generating OpenAPI/Swagger docs: http4s vs. tapir](#generating-openapiswagger-docs-http4s-vs-tapir)
 
 ## Programming-language machinery (no direct CT counterpart)
 
@@ -895,3 +896,29 @@ Env`, Handle records, monad-transformer stacks) — but the *framework* itself i
 the effect type the way http4s is. That polymorphism is something the Haskell application layer
 builds and then interprets down to `IO`, not something Servant/WAI/Warp carry natively in their own
 core types.
+
+## Generating OpenAPI/Swagger docs: http4s vs. tapir
+
+**http4s' own DSL: no.** `HttpRoutes.of[F] { case GET -> Root / "orders" / id => ... }` pattern-matches
+on `Request[F]` — there's no structured, queryable "endpoint description" object behind that, just a
+function. Nothing exists to introspect and turn into a spec. Staying on pure http4s, the options are
+either hand-maintain a separate OpenAPI YAML (drifts from the code over time) or use a codegen tool
+like **guardrail**, which runs the *other* direction — generates http4s server/client code *from* a
+spec you already wrote, not the reverse.
+
+**tapir: yes — this is its headline feature.** Each endpoint is defined once as a typed
+`Endpoint[...]` value (path, query params, request/response bodies, error cases), and that one value
+is interpreted three ways:
+- `tapir-http4s-server` → an actual `HttpRoutes[F]`, running on the same Ember server as today.
+- `tapir-openapi-docs` → an OpenAPI yaml/json spec, generated from that same value.
+- `tapir-swagger-ui-bundle` → serves that spec as a live Swagger UI, one step further.
+
+Since both the routes and the docs are interpreted from the *same* endpoint value, they can't drift
+out of sync — the same "types are the spec" idea as Haskell's Servant
+(see [Haskell's http4s equivalent](#haskells-http4s-equivalent-waiwarp-and-servant) above), just
+realized as an interpreted value rather than a type-level DSL.
+
+Nothing about http4s needs removing to adopt this: tapir sits on top. `InventoryRoutes`/`OrderRoutes`
+would move from `HttpRoutes.of[F] { case ... }` pattern matches to `Endpoint[...]` values, interpreted
+to `HttpRoutes[F]` for Ember to serve (unchanged runtime) and separately to OpenAPI + Swagger UI —
+not yet done in this codebase, a candidate for its own track if pursued.
