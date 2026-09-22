@@ -33,3 +33,6 @@
 - [x] Task: Reimplement `OrderRoutes` using the endpoint + `purerest.docs` helper 1fb72b4
 - [x] Task: Wire into `order-service`'s `Main`, exposing Swagger UI + OpenAPI route 911d088
 - [x] Task: Conductor - User Manual Verification 'Phase 3' (Protocol in workflow.md) dba72ed
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions 56441ef
