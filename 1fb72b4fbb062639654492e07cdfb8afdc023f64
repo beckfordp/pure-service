@@ -1,0 +1,20 @@
+Task: Write failing test + define/reimplement OrderRoutes as a tapir endpoint (Phase 3, tasks 1-3)
+
+Summary: Added createOrderEndpoint (PublicEndpoint) describing POST /orders (JSON body
+CreateOrderRequest -> 201 Created + JSON OrderResponse). OrderRoutes.serverEndpoint attaches
+the business logic (inventory.reserve, store.create, logging); OrderRoutes.routes is now a
+thin wrapper around Http4sServerInterpreter[F]().toRoutes. Signature changed from Concurrent
+to Async, required by tapir's http4s interpreter (consistent with the same change made to
+InventoryRoutes in Phase 2).
+
+Why: Same rationale as inventory-service's Phase 2 conversion — routes and generated
+OpenAPI/Swagger docs now come from one source of truth.
+
+Files:
+- modules/order-service/src/main/scala/orderservice/OrderRoutes.scala (modified)
+- modules/order-service/src/test/scala/orderservice/OrderDocsSuite.scala (new)
+
+Verification: existing OrderRoutesSuite, OrderServiceIntegrationSuite, and
+OrderServiceTraceContinuitySuite all pass unchanged — proving the order-service ->
+inventory-service HTTP call and trace propagation still work correctly through the
+tapir-interpreted routes. New OrderDocsSuite proves the endpoint is documented.
