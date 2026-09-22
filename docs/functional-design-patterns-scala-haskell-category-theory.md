@@ -686,6 +686,93 @@ real production fanout.
 **Illustrative only** — this section's code (`PaymentClient`, `ShippingClient`, `NotificationClient`,
 `Clients`) is not part of this codebase; `order-service` currently depends only on `InventoryClient`.
 
+### Haskell side-by-side — the `ReaderT Env` + "Handle" pattern
+
+Same underlying idea, different name: bundle sibling capabilities into one environment, build the
+fanned-out clients once at startup, thread the whole environment through. Haskell's version is
+usually called the **`ReaderT Env` pattern**, combined with the **"Handle" pattern** — a record of
+functions standing in for what Scala expresses as a trait:
+
+```haskell
+-- Each client: a record of functions ("Handle" pattern) — Haskell's usual
+-- stand-in for a tagless-final algebra when everything's wired via ReaderT.
+data InventoryClient = InventoryClient
+  { reserveInventory :: Text -> Int -> IO ReservationView }
+
+data PaymentClient = PaymentClient
+  { chargePayment :: OrderId -> Cents -> IO PaymentReceipt }
+
+data ShippingClient = ShippingClient
+  { scheduleShipment :: OrderId -> Address -> IO ShipmentId }
+
+data NotificationClient = NotificationClient
+  { notifyOrderConfirmed :: OrderId -> IO () }
+
+-- Bundle sibling clients — same trick as Scala's `Clients[F]` case class.
+data Clients = Clients
+  { inventoryClient    :: InventoryClient
+  , paymentClient      :: PaymentClient
+  , shippingClient     :: ShippingClient
+  , notificationClient :: NotificationClient
+  }
+
+-- One shared http-client Manager (connection pool), fanned out into four
+-- handles each closing over their own base URL — direct analogue of
+-- Clients.resource sharing one http4s Client[F].
+mkClients :: Manager -> Config -> Clients
+mkClients mgr cfg = Clients
+  { inventoryClient    = InventoryClient (reserveVia mgr (inventoryBaseUrl cfg))
+  , paymentClient      = PaymentClient (chargeVia mgr (paymentBaseUrl cfg))
+  , shippingClient     = ShippingClient (scheduleVia mgr (shippingBaseUrl cfg))
+  , notificationClient = NotificationClient (notifyVia mgr (notificationBaseUrl cfg))
+  }
+
+-- The whole app environment — Clients is just one field, alongside
+-- whatever else the app needs (db pool, logger, ...).
+data Env = Env { envClients :: Clients, envStore :: OrderStore }
+
+newtype AppM a = AppM (ReaderT Env IO a)
+  deriving (Functor, Applicative, Monad, MonadIO, MonadReader Env)
+
+createOrder :: CreateOrderRequest -> AppM OrderResponse
+createOrder req = do
+  Clients{..} <- asks envClients
+  store       <- asks envStore
+  reservation <- liftIO $ reserveInventory inventoryClient (item req) (quantity req)
+  _           <- liftIO $ chargePayment paymentClient (reservationId reservation) (amountCents req)
+  _           <- liftIO $ scheduleShipment shippingClient (reservationId reservation) (address req)
+  _           <- liftIO $ notifyOrderConfirmed notificationClient (reservationId reservation)
+  liftIO $ createOrderRecord store (item req) (quantity req) (reservationId reservation)
+
+main :: IO ()
+main = do
+  mgr   <- newManager tlsManagerSettings
+  cfg   <- loadConfig
+  store <- newInMemoryOrderStore
+  let env = Env (mkClients mgr cfg) store
+  run 8080 $ \req respond ->
+    runReaderT (unAppM (handleRequest req)) env >>= respond
+```
+
+Lined up directly:
+
+| Scala | Haskell |
+|---|---|
+| `Clients[F]` case class | `Clients` record |
+| `Resource[F, Clients[F]]` built once in `Main` | `mkClients` called once in `main` |
+| `OrderRoutes.routes[F](store, clients, logger)` | `createOrder :: CreateOrderRequest -> AppM OrderResponse`, reading `Clients` via `asks` |
+| dependency access = explicit parameter | dependency access = `asks`/`MonadReader` |
+
+The one real difference: this project's clients are **effect-polymorphic**
+(`trait InventoryClient[F[_]]` — any `F` with `Concurrent`), while the Handle-pattern version above
+bakes `IO` directly into each field (`Text -> Int -> IO ReservationView`). Genuine effect
+polymorphism in Haskell is the *other* idiom — mtl-style typeclasses
+(`class Monad m => MonadInventory m where reserveInventory :: ... -> m ReservationView`, with
+`instance MonadInventory AppM where ...`), which is structurally closer to Scala's typeclass-flavored
+tagless final — but isn't what most production Haskell codebases reach for on this specific
+"bundle a pile of HTTP clients" problem; `ReaderT Env` + Handle records is the more common real-world
+answer, and the one that lines up cleanly with what's already in this project.
+
 ## http4s' own core typeclasses
 
 Not new machinery — http4s' own API surface is built directly out of the vocabulary already covered
