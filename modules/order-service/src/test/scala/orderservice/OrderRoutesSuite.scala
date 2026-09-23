@@ -36,10 +36,14 @@ class OrderRoutesSuite extends CatsEffectSuite {
       store <- OrderStore.inMemory[IO]
       routes = OrderRoutes.routes[IO](store, stubInventory, NoOpLogger[IO])
       postResponse <- routes.orNotFound.run(
-        Request[IO](Method.POST, uri"/orders").withEntity(CreateOrderRequest("widget", 4))
+        Request[IO](Method.POST, uri"/orders").withEntity(
+          CreateOrderRequest("widget", 4)
+        )
       )
       created <- postResponse.as[OrderResponse]
-      getResponse <- routes.orNotFound.run(Request[IO](Method.GET, uri"/orders" / created.id))
+      getResponse <- routes.orNotFound.run(
+        Request[IO](Method.GET, uri"/orders" / created.id)
+      )
       fetched <- getResponse.as[OrderResponse]
     } yield {
       assertEquals(getResponse.status, Status.Ok)
@@ -47,19 +51,28 @@ class OrderRoutesSuite extends CatsEffectSuite {
     }
   }
 
-  test("GET /orders/{id} returns 404 with a JSON error body for an unknown id") {
+  test(
+    "GET /orders/{id} returns 404 with a JSON error body for an unknown id"
+  ) {
     for {
       store <- OrderStore.inMemory[IO]
       routes = OrderRoutes.routes[IO](store, stubInventory, NoOpLogger[IO])
-      response <- routes.orNotFound.run(Request[IO](Method.GET, uri"/orders" / "unknown-id"))
+      response <- routes.orNotFound.run(
+        Request[IO](Method.GET, uri"/orders" / "unknown-id")
+      )
       body <- response.as[io.circe.Json]
     } yield {
       assertEquals(response.status, Status.NotFound)
-      assert(body.asObject.exists(_.contains("error")), s"expected a JSON error body, got: $body")
+      assert(
+        body.asObject.exists(_.contains("error")),
+        s"expected a JSON error body, got: $body"
+      )
     }
   }
 
-  test("wrapped routes (with tracing middleware) record a span for a handled request") {
+  test(
+    "wrapped routes (with tracing middleware) record a span for a handled request"
+  ) {
     Tracing.test[IO]("order-service-test").use { testTracer =>
       for {
         store <- OrderStore.inMemory[IO]

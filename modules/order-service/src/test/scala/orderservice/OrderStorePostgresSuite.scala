@@ -27,15 +27,16 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
     withContainers { postgres =>
       val config = configFor(postgres)
       val reservationId = java.util.UUID.randomUUID().toString
-      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use { store =>
-        store.create("widget", 2, reservationId, 2).map { order =>
-          assertEquals(order.item, "widget")
-          assertEquals(order.quantity, 2)
-          assertEquals(order.status, "reserved")
-          assertEquals(order.reservationId, reservationId)
-          assertEquals(order.reservedQuantity, 2)
-          assert(order.id.nonEmpty)
-        }
+      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use {
+        store =>
+          store.create("widget", 2, reservationId, 2).map { order =>
+            assertEquals(order.item, "widget")
+            assertEquals(order.quantity, 2)
+            assertEquals(order.status, "reserved")
+            assertEquals(order.reservationId, reservationId)
+            assertEquals(order.reservedQuantity, 2)
+            assert(order.id.nonEmpty)
+          }
       }
     }
   }
@@ -43,12 +44,18 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
   test("create produces distinct ids across calls") {
     withContainers { postgres =>
       val config = configFor(postgres)
-      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use {
-        store =>
-          for {
-            first <- store.create("widget", 1, java.util.UUID.randomUUID().toString, 1)
-            second <- store.create("widget", 1, java.util.UUID.randomUUID().toString, 1)
-          } yield assertNotEquals(first.id, second.id)
+      Migrations
+        .run[IO](config) *> OrderStore.postgres[IO](config).use { store =>
+        for {
+          first <- store
+            .create("widget", 1, java.util.UUID.randomUUID().toString, 1)
+          second <- store.create(
+            "widget",
+            1,
+            java.util.UUID.randomUUID().toString,
+            1
+          )
+        } yield assertNotEquals(first.id, second.id)
       }
     }
   }
@@ -57,11 +64,12 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
     withContainers { postgres =>
       val config = configFor(postgres)
       val reservationId = java.util.UUID.randomUUID().toString
-      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use { store =>
-        for {
-          created <- store.create("widget", 3, reservationId, 3)
-          found <- store.get(created.id)
-        } yield assertEquals(found, Some(created))
+      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use {
+        store =>
+          for {
+            created <- store.create("widget", 3, reservationId, 3)
+            found <- store.get(created.id)
+          } yield assertEquals(found, Some(created))
       }
     }
   }
@@ -69,8 +77,11 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
   test("get returns None for an unknown id") {
     withContainers { postgres =>
       val config = configFor(postgres)
-      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use { store =>
-        store.get(java.util.UUID.randomUUID().toString).map(assertEquals(_, None))
+      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use {
+        store =>
+          store
+            .get(java.util.UUID.randomUUID().toString)
+            .map(assertEquals(_, None))
       }
     }
   }

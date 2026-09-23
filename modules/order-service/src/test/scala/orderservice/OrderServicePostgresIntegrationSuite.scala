@@ -67,7 +67,12 @@ class OrderServicePostgresIntegrationSuite
         for {
           postResponse <- routes.orNotFound.run(request)
           created <- postResponse.as[OrderResponse]
-          getResponse <- routes.orNotFound.run(Request[IO](Method.GET, Uri.unsafeFromString(s"/orders/${created.id}")))
+          getResponse <- routes.orNotFound.run(
+            Request[IO](
+              Method.GET,
+              Uri.unsafeFromString(s"/orders/${created.id}")
+            )
+          )
           fetched <- getResponse.as[OrderResponse]
         } yield {
           assertEquals(postResponse.status, Status.Created)

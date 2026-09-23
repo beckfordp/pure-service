@@ -5,7 +5,9 @@ import munit.CatsEffectSuite
 
 class OrderStoreSuite extends CatsEffectSuite {
 
-  test("create returns an order for the requested item, quantity, and reservation") {
+  test(
+    "create returns an order for the requested item, quantity, and reservation"
+  ) {
     for {
       store <- OrderStore.inMemory[IO]
       order <- store.create("widget", 2, "reservation-1", 2)
