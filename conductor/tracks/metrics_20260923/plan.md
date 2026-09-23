@@ -12,8 +12,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Server & Client RED Metrics' (Protocol in workflow.md) — no wiring into a running service yet (Phase 4); verification is the automated test suite: full purerest/test green (28/28), including ServerMetricsSuite/ClientMetricsSuite's histogram-with-attributes scenarios. [5c2dc8f]
 
 ## Phase 3: Resilience Metrics
-- [ ] Task: Write failing tests: a retried call records `purerest.retry.attempts` with the right `outcome` attribute across retried/succeeded/exhausted scenarios; a circuit breaker open/close/reject records `purerest.circuit_breaker.state_transitions` / `purerest.circuit_breaker.calls_rejected` (Red).
-- [ ] Task: Extend `Retry.middleware` and `CircuitBreaker.middleware` to accept a `Meter[F]` and emit these counters; update `Resilience.middleware`'s signature accordingly (Green).
+- [x] Task: Write failing tests: a retried call records `purerest.retry.attempts` with the right `outcome` attribute across retried/succeeded/exhausted scenarios; a circuit breaker open/close/reject records `purerest.circuit_breaker.state_transitions` / `purerest.circuit_breaker.calls_rejected` (Red). [46214fe]
+- [x] Task: Extend `Retry.middleware` and `CircuitBreaker.middleware` to accept a `Meter[F]` and emit these counters; update `Resilience.middleware`'s signature accordingly (Green). [46214fe]
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Resilience Metrics' (Protocol in workflow.md)
 
 ## Phase 4: Wire into Services
