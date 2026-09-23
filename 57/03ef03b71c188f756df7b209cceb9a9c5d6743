@@ -1,0 +1,14 @@
+Task: Document the Gatling load-test module in tech-stack.md
+
+Summary: Added a new "Load Testing" section covering modules/load-test's
+purpose, its pinned versions (gatling-sbt 4.13.3, gatling-charts-highcharts/
+gatling-test-framework 3.15.1), why it's kept out of root's .aggregate(...)
+(so the normal sbt compile/test loop is untouched), and how
+scripts/loadtest-purerest.sh's two passes work (healthy pass reporting RED
+metrics, degraded pass reporting resilience metrics including the circuit
+breaker actually tripping).
+
+Files changed: conductor/tech-stack.md
+
+Why: Keep tech-stack.md's documented decision log in sync with the actual
+repo state, per workflow.md's "Tech Stack is Deliberate" principle.
