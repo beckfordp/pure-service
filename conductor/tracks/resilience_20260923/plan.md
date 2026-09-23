@@ -1,7 +1,7 @@
 # Plan: Resilience (Retry + Circuit Breaker) for purerest's HttpClient
 
 ## Phase 1: Retry Combinator (cats-retry)
-- [ ] Task: Add `cats-retry` dependency to `purerest`.
+- [x] Task: Add `cats-retry` dependency to `purerest`. [e0542b6]
 - [ ] Task: Write failing tests against a stub `Client[F]`: a 5xx/connection-error/timeout response is retried up to max attempts then gives up; a 4xx response is never retried (Red).
 - [ ] Task: Implement `Retry.middleware[F[_]: Async](config: RetryConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, using cats-retry's exponential-backoff-with-jitter policy (Green).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Retry Combinator (cats-retry)' (Protocol in workflow.md)
