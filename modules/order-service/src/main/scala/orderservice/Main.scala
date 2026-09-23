@@ -8,6 +8,7 @@ import org.http4s.implicits._
 import purerest.client.HttpClient
 import purerest.docs.Docs
 import purerest.logging.Logging
+import purerest.metrics.{ClientMetrics, Metrics, ServerMetrics}
 import purerest.resilience.{
   CircuitBreakerConfig,
   Resilience,
@@ -15,7 +16,6 @@ import purerest.resilience.{
   RetryConfig
 }
 import purerest.tracing.{ClientTracing, ServerTracing, Tracing}
-import org.typelevel.otel4s.metrics.Meter
 
 import scala.concurrent.duration._
 
@@ -40,35 +40,39 @@ object Main extends IOApp.Simple {
       )
       _ <- Migrations.run[IO](config.postgres)
       _ <- Tracing.console[IO]("order-service").use { tracer =>
-        for {
-          logger <- Logging.create[IO](tracer, "order-service")
-          _ <- OrderStore.postgres[IO](config.postgres).use { store =>
-            HttpClient.resource[IO].use { httpClient =>
-              val tracedClient = ClientTracing.middleware(tracer)(httpClient)
-              val resilientClient = Resilience.middleware[IO](resilienceConfig)(
-                logger
-              )(Meter.noop[IO])(tracedClient)
-              val inventory =
-                InventoryClient[IO](resilientClient, inventoryServiceBaseUri)
-              val docsRoutes = Docs.routes[IO](
-                "Order Service",
-                "1.0",
-                List(
-                  OrderRoutes.serverEndpoint[IO](store, inventory, logger),
-                  OrderRoutes.getOrderServerEndpoint[IO](store)
+        Metrics.oteljava[IO]("order-service", config.metricsPort).use { meter =>
+          for {
+            logger <- Logging.create[IO](tracer, "order-service")
+            _ <- OrderStore.postgres[IO](config.postgres).use { store =>
+              HttpClient.resource[IO].use { httpClient =>
+                val tracedClient = ClientTracing.middleware(tracer)(httpClient)
+                val metricClient = ClientMetrics.middleware[IO](meter)(tracedClient)
+                val resilientClient = Resilience.middleware[IO](resilienceConfig)(
+                  logger
+                )(meter)(metricClient)
+                val inventory =
+                  InventoryClient[IO](resilientClient, inventoryServiceBaseUri)
+                val docsRoutes = Docs.routes[IO](
+                  "Order Service",
+                  "1.0",
+                  List(
+                    OrderRoutes.serverEndpoint[IO](store, inventory, logger),
+                    OrderRoutes.getOrderServerEndpoint[IO](store)
+                  )
                 )
-              )
-              val routes = ServerTracing.middleware(tracer)(docsRoutes)
-              EmberServerBuilder
-                .default[IO]
-                .withHost(host"0.0.0.0")
-                .withPort(port)
-                .withHttpApp(routes.orNotFound)
-                .build
-                .useForever
+                val tracedRoutes = ServerTracing.middleware(tracer)(docsRoutes)
+                val routes = ServerMetrics.middleware[IO](meter)(tracedRoutes)
+                EmberServerBuilder
+                  .default[IO]
+                  .withHost(host"0.0.0.0")
+                  .withPort(port)
+                  .withHttpApp(routes.orNotFound)
+                  .build
+                  .useForever
+              }
             }
-          }
-        } yield ()
+          } yield ()
+        }
       }
     } yield ()
 }

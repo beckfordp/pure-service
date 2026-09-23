@@ -13,6 +13,7 @@ final case class PostgresConfig(
 
 final case class OrderServiceConfig(
     port: Int,
+    metricsPort: Int,
     inventoryServiceBaseUrl: String,
     postgres: PostgresConfig
 ) derives ConfigReader

@@ -9,6 +9,7 @@ class OrderServiceConfigSuite extends CatsEffectSuite {
   private val validHocon =
     """
       |port = 8080
+      |metrics-port = 9090
       |inventory-service-base-url = "http://localhost:8081"
       |postgres {
       |  host = "localhost"
@@ -26,6 +27,7 @@ class OrderServiceConfigSuite extends CatsEffectSuite {
       Right(
         OrderServiceConfig(
           port = 8080,
+          metricsPort = 9090,
           inventoryServiceBaseUrl = "http://localhost:8081",
           postgres = PostgresConfig(
             host = "localhost",
@@ -43,6 +45,7 @@ class OrderServiceConfigSuite extends CatsEffectSuite {
     val missingPassword =
       """
         |port = 8080
+        |metrics-port = 9090
         |inventory-service-base-url = "http://localhost:8081"
         |postgres {
         |  host = "localhost"
@@ -58,6 +61,7 @@ class OrderServiceConfigSuite extends CatsEffectSuite {
   test("load[F] reads the shipped application.conf defaults") {
     OrderServiceConfig.load[IO].map { config =>
       assertEquals(config.port, 8080)
+      assertEquals(config.metricsPort, 9090)
       assertEquals(config.inventoryServiceBaseUrl, "http://localhost:8081")
       assertEquals(
         config.postgres,
