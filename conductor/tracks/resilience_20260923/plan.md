@@ -2,8 +2,8 @@
 
 ## Phase 1: Retry Combinator (cats-retry)
 - [x] Task: Add `cats-retry` dependency to `purerest`. [e0542b6]
-- [ ] Task: Write failing tests against a stub `Client[F]`: a 5xx/connection-error/timeout response is retried up to max attempts then gives up; a 4xx response is never retried (Red).
-- [ ] Task: Implement `Retry.middleware[F[_]: Async](config: RetryConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, using cats-retry's exponential-backoff-with-jitter policy (Green).
+- [x] Task: Write failing tests against a stub `Client[F]`: a 5xx/connection-error/timeout response is retried up to max attempts then gives up; a 4xx response is never retried (Red). [72bee71]
+- [x] Task: Implement `Retry.middleware[F[_]: Async](config: RetryConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, using cats-retry's exponential-backoff-with-jitter policy (Green). Signature relaxed to `Temporal[F]` (sufficient, more general than `Async`). No jitter — see tech-stack.md's dated note: delegates execution to http4s's own `Retry` middleware (Resource-safe), cats-retry supplies backoff only; `fullJitter` incompatible with http4s's pure backoff signature. [52fcd28] [8d2a40d]
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Retry Combinator (cats-retry)' (Protocol in workflow.md)
 
 ## Phase 2: Circuit Breaker (resilience4j-wrapped)
