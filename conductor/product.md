@@ -62,5 +62,3 @@ bigger picture, not as a commitment to build all of it.
 - Multi-service deployment/orchestration (Kubernetes, etc.) — local/dev focus first
 - UI/frontend
 
-## Assumptions to confirm
-- Resilience (retry + circuit breaker) will be built on Cats Effect primitives, optionally leaning on an existing library (e.g. cats-retry) rather than reinventing everything from scratch — open to reconsidering during implementation.
