@@ -1,0 +1,8 @@
+Task: Write failing test for OrderServiceConfig (Red)
+
+Summary: Added OrderServiceConfigSuite testing PureConfig-based loading of a new
+OrderServiceConfig/PostgresConfig case class pair from HOCON. Confirmed Red: failed to
+compile (types didn't exist yet) before implementation.
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/OrderServiceConfigSuite.scala
