@@ -1,0 +1,9 @@
+Task: Add opentelemetry-exporter-prometheus dependency to purerest.
+
+What: Added io.opentelemetry:opentelemetry-exporter-prometheus:1.66.0-alpha to purerest's libraryDependencies; documented the metrics-library choice (otel4s Meter[F] directly, no wrapping layer, mirroring the tracing precedent) in tech-stack.md.
+
+Why: Phase 1 of metrics_20260923 — this is the exporter that will back Metrics.oteljava's Prometheus scrape endpoint.
+
+Verification: `sbt purerest/update` resolved cleanly on the first try, no version adjustment needed.
+
+Files: build.sbt, conductor/tech-stack.md
