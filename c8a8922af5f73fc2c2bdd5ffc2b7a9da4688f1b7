@@ -1,0 +1,27 @@
+Task: Verify coverage (>80% for new code) and scalafmt compliance
+
+Summary: sbt coverage orderService/test orderService/coverageReport found
+OrderServiceConfig at 0% statement coverage — OrderServiceConfigSuite only exercised
+PureConfig's ConfigSource directly, never the actual OrderServiceConfig.load[F] method
+used by Main.scala. Added a test calling load[F] against the shipped application.conf.
+Also applied scalafmt (scalafmtOnly, scoped to just this track's files — see prior
+commit's note on why the rest of the codebase was left alone) to Main.scala,
+OrderStore.scala, Migrations.scala, and four test files.
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/OrderServiceConfigSuite.scala (+test)
+- modules/order-service/src/main/scala/orderservice/Main.scala (reformat only)
+- modules/order-service/src/main/scala/orderservice/OrderStore.scala (reformat only)
+- modules/order-service/src/test/scala/orderservice/MigrationsSuite.scala (reformat only)
+- modules/order-service/src/test/scala/orderservice/OrderStorePostgresSuite.scala (reformat only)
+- modules/order-service/src/test/scala/orderservice/OrderServicePostgresIntegrationSuite.scala (reformat only)
+
+Verified: full orderService/test suite green (15/15). Final per-class coverage for every
+file this track added or changed: OrderServiceConfig 100%, Migrations 100%, OrderStore
+100% (both statement and branch). Main.scala's IOApp entrypoint (val run: IO[Unit])
+remains at 0% — a pre-existing condition (no track has ever invoked Main.run from a
+test; entrypoints are exercised via the verify-*.sh scripts against the real running
+process instead), not something introduced by or fixable within this track's scope.
+Overall order-service module aggregate: 70.33% statement / 50.00% branch, held down
+entirely by that pre-existing Main.scala gap plus other pre-existing files from prior
+tracks — every line this track is responsible for is fully covered.
