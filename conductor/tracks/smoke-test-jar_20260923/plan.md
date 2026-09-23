@@ -7,4 +7,4 @@
 - [x] Task: Add `scripts/verify-purerest-consumption.sh` (publishes purerest, resolves its version, runs `smoke-test/`'s suite against it) and run it. [385dbc6]
 - [x] Task: Document `smoke-test/`'s purpose and how to run it in `tech-stack.md`'s Publishing section. [36aa939]
 - [x] Task: Run `sbt compile`/`sbt test` at the repo root (main build) to confirm `smoke-test/` isn't swept in and nothing regressed. Verified: purerest 44/44, inventoryService 10/10, orderService 21/21, all green. [385dbc6]
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Standalone Consumer Smoke Test' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Standalone Consumer Smoke Test' (Protocol in workflow.md) — ran `scripts/verify-purerest-consumption.sh` (smoke-test isolation confirmed, publishLocal + version resolution succeed, smoke-test's own suite passes against the published jar); all checks passed.
