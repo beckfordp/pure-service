@@ -20,13 +20,21 @@ val testcontainersScalaVersion = "0.43.6"
 val catsRetryVersion = "4.0.0"
 val resilience4jVersion = "2.3.0"
 
-// Skunk 1.0.0 depends on otel4s-core 0.16.0 (its own optional tracing integration),
-// which sbt's binary-compatibility check flags as a suspect eviction against our
-// pinned otel4s 1.1.0 (early-semver 0.x -> 1.x jump). "Highest version wins" is the
+ThisBuild / evictionErrorLevel := Level.Error
+
+// Skunk 1.0.0 depends on otel4s-core/-core-common/-core-metrics 0.16.0 (its own
+// optional tracing integration), which conflicts with this build's pinned otel4s
+// 1.1.0 (an early-semver 0.x -> 1.x jump, which evictionErrorLevel := Level.Error
+// now fails the build on rather than only warning). "Highest version wins" is the
 // correct resolution here — nothing in this project invokes Skunk's otel4s
-// integration — so the eviction is downgraded from a build-failing error to a
-// warning. See conductor/tech-stack.md's "Transitive version drift" deferred concern.
-ThisBuild / evictionErrorLevel := Level.Warn
+// integration — so these three coordinates are pinned explicitly rather than left
+// to eviction. See conductor/tech-stack.md's "Transitive version drift" deferred
+// concern.
+ThisBuild / dependencyOverrides ++= Seq(
+  "org.typelevel" %% "otel4s-core" % otel4sVersion,
+  "org.typelevel" %% "otel4s-core-common" % otel4sVersion,
+  "org.typelevel" %% "otel4s-core-metrics" % otel4sVersion
+)
 
 // Settings shared by every module in this build.
 lazy val commonSettings = Seq(
@@ -48,6 +56,12 @@ lazy val purerest = project
   .settings(commonSettings)
   .settings(
     name := "purerest",
+    // early-semver: purerest's own published version communicates binary
+    // compatibility the way its 0.x/1.x/etc. Typelevel-ecosystem dependencies
+    // already do, so a future consumer's eviction checks (once purerest is
+    // published as a real jar) have real semver metadata to reason about instead
+    // of guessing. See conductor/tech-stack.md's "Transitive version drift" note.
+    versionScheme := Some("early-semver"),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
       "org.http4s" %% "http4s-ember-client" % http4sVersion,
