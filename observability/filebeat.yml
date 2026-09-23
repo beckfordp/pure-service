@@ -1,0 +1,55 @@
+# Tails order-service/inventory-service's container logs (both JSON, via
+# logback-docker.xml — see conductor/tech-stack.md), parses the app's JSON
+# payload as real fields, and ships to Elasticsearch for Kibana to search on
+# (trace_id, order_id, item, etc. all become independently filterable, not
+# buried in a free-text blob).
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: false
+      templates:
+        - condition:
+            contains:
+              docker.container.name: order-service
+          config:
+            - type: container
+              paths:
+                - "/var/lib/docker/containers/${data.docker.container.id}/*.log"
+              processors:
+                - decode_json_fields:
+                    fields: ["message"]
+                    target: ""
+                    overwrite_keys: true
+                - add_fields:
+                    target: ""
+                    fields:
+                      service.name: order-service
+        - condition:
+            contains:
+              docker.container.name: inventory-service
+          config:
+            - type: container
+              paths:
+                - "/var/lib/docker/containers/${data.docker.container.id}/*.log"
+              processors:
+                - decode_json_fields:
+                    fields: ["message"]
+                    target: ""
+                    overwrite_keys: true
+                - add_fields:
+                    target: ""
+                    fields:
+                      service.name: inventory-service
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
+  index: "purerest-logs-%{+yyyy.MM.dd}"
+
+setup.template.name: "purerest-logs"
+setup.template.pattern: "purerest-logs-*"
+setup.ilm.enabled: false
+
+# Filebeat 8.x still refuses to run as root without this if the internal
+# queue/registry files end up root-owned inside the container — matches the
+# "user: root" + "--strict.perms=false" combo already set in docker-compose.yml.

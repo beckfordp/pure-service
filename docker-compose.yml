@@ -15,5 +15,101 @@ services:
       timeout: 5s
       retries: 30
 
+  # --- Everything below only starts via `docker compose --profile observability up`.
+  # Plain `docker compose up` (used by scripts/verify-*.sh and everyday `sbt bgRun`
+  # dev) still starts only postgres, unchanged. See conductor/tech-stack.md.
+
+  order-service:
+    image: order-service:latest
+    profiles: ["observability"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      INVENTORY_SERVICE_BASE_URL: "http://inventory-service:8081"
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+
+  inventory-service:
+    image: inventory-service:latest
+    profiles: ["observability"]
+    environment:
+      INVENTORY_INDUCED_FAILURE_RATE: "${INVENTORY_INDUCED_FAILURE_RATE:-0}"
+    ports:
+      - "8081:8081"
+      - "9091:9091"
+
+  prometheus:
+    image: prom/prometheus:v3.13.3
+    profiles: ["observability"]
+    depends_on:
+      - order-service
+      - inventory-service
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9092:9090"
+
+  grafana:
+    image: grafana/grafana-oss:13.0.2
+    profiles: ["observability"]
+    depends_on:
+      - prometheus
+    environment:
+      # Local dev only — no auth hardening (see conductor/tech-stack.md's
+      # observability-stack out-of-scope note).
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: "Admin"
+    volumes:
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.19
+    profiles: ["observability"]
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      xpack.security.http.ssl.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.19.19
+    profiles: ["observability"]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    ports:
+      - "5601:5601"
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.19.19
+    profiles: ["observability"]
+    user: root
+    command: ["--strict.perms=false", "-e"]
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      order-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+    volumes:
+      - ./observability/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+
 volumes:
   postgres-data:
