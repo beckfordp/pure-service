@@ -1,0 +1,11 @@
+Phase 3 checkpoint: Skunk-backed OrderStore
+
+Automated tests: sbt orderService/test (14/14 passed).
+
+Manual verification (autonomous run, per user request — script instead of interactive
+walkthrough): scripts/verify-order-service-postgres-persistence.sh runs the full stack
+(real Postgres + inventory-service + order-service), POSTs an order, confirms the row
+via direct SQL, restarts order-service alone, confirms Flyway's migration is idempotent
+on restart, and confirms the original order still exists — validating both this phase
+and the track's overall 'restart does not lose data' acceptance criterion. All checks
+passed.
