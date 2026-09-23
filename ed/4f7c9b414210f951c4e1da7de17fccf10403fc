@@ -1,0 +1,3 @@
+Phase 4 (Wire into Services) checkpoint.
+
+Manual verification: scripts/verify-metrics-wiring.sh — docker-compose Postgres + both services started via sbt bgRun, POST /orders succeeds (201 with reservationId), GET :9090/metrics (order-service) exposes both http_server_request_duration_seconds and http_client_request_duration_seconds series, GET :9091/metrics (inventory-service) exposes http_server_request_duration_seconds. All checks passed on first run.
