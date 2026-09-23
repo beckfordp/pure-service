@@ -8,3 +8,7 @@ addSbtPlugin("com.github.sbt" % "sbt-dynver" % "5.1.1")
 // plugin's dedicated `Gatling` sbt configuration (`sbt loadTest/Gatling/test`),
 // deliberately separate from the normal `test` task.
 addSbtPlugin("io.gatling" % "gatling-sbt" % "4.13.3")
+// Packages order-service/inventory-service as Docker images (JavaAppPackaging +
+// DockerPlugin) for the local observability stack — see docker-compose.yml's
+// "observability" profile.
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.11.1")

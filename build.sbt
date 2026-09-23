@@ -19,6 +19,7 @@ val pureconfigVersion = "0.17.10"
 val testcontainersScalaVersion = "0.43.6"
 val catsRetryVersion = "4.0.0"
 val resilience4jVersion = "2.3.0"
+val logstashLogbackEncoderVersion = "9.0"
 
 ThisBuild / evictionErrorLevel := Level.Error
 
@@ -97,6 +98,12 @@ lazy val purerest = project
       // fixed layout has no way to display it. Runtime-only: never referenced
       // directly in code; configured via logback.xml.
       "ch.qos.logback" % "logback-classic" % "1.6.3" % Runtime,
+      // logstash-logback-encoder: JSON encoder for logback-docker.xml, used only
+      // inside the observability-stack Docker images (see logback-docker.xml) —
+      // trace_id/span_id/structured context become real Kibana-searchable
+      // fields, unlike logback.xml's plain-text pattern layout used for local
+      // sbt bgRun. Runtime-only: never referenced directly in code.
+      "net.logstash.logback" % "logstash-logback-encoder" % logstashLogbackEncoderVersion % Runtime,
       // In-memory capturing logger, for asserting on log output in tests.
       "org.typelevel" %% "log4cats-testing" % log4catsVersion % Test,
       // tapir: endpoints described once as Endpoint/ServerEndpoint values,
@@ -128,9 +135,23 @@ lazy val purerest = project
 lazy val orderService = project
   .in(file("modules/order-service"))
   .dependsOn(purerest, inventoryService % Test)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(commonSettings)
   .settings(
     name := "order-service",
+    // Local-only image for the observability stack (docker-compose's
+    // "observability" profile) — see conductor/tech-stack.md.
+    Docker / packageName := "order-service",
+    dockerBaseImage := "eclipse-temurin:21-jre",
+    dockerUpdateLatest := true,
+    // Docker tags can't contain '+', but sbt-dynver's untagged-history format
+    // does (e.g. "0.0.0+300-2be9b9c0+...") — sanitize before it becomes an
+    // (invalid) image tag.
+    Docker / version := version.value.replace("+", "-"),
+    dockerExposedPorts := Seq(8080, 9090),
+    // JSON logging (see logback-docker.xml) inside the container only — local
+    // `sbt bgRun` is unaffected, since this is Docker-format-scoped.
+    Universal / javaOptions += "-Dlogback.configurationFile=logback-docker.xml",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
       "org.http4s" %% "http4s-ember-server" % http4sVersion,
@@ -170,9 +191,23 @@ lazy val orderService = project
 lazy val inventoryService = project
   .in(file("modules/inventory-service"))
   .dependsOn(purerest)
+  .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(commonSettings)
   .settings(
     name := "inventory-service",
+    // Local-only image for the observability stack (docker-compose's
+    // "observability" profile) — see conductor/tech-stack.md.
+    Docker / packageName := "inventory-service",
+    dockerBaseImage := "eclipse-temurin:21-jre",
+    dockerUpdateLatest := true,
+    // Docker tags can't contain '+', but sbt-dynver's untagged-history format
+    // does (e.g. "0.0.0+300-2be9b9c0+...") — sanitize before it becomes an
+    // (invalid) image tag.
+    Docker / version := version.value.replace("+", "-"),
+    dockerExposedPorts := Seq(8081, 9091),
+    // JSON logging (see logback-docker.xml) inside the container only — local
+    // `sbt bgRun` is unaffected, since this is Docker-format-scoped.
+    Universal / javaOptions += "-Dlogback.configurationFile=logback-docker.xml",
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
       "org.http4s" %% "http4s-ember-server" % http4sVersion,

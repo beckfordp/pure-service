@@ -1,0 +1,19 @@
+<configuration>
+  <!-- Used only inside the observability-stack Docker images, selected via
+       -Dlogback.configurationFile=logback-docker.xml (see build.sbt's
+       Docker / javaOptions). Local `sbt bgRun` still uses logback.xml's
+       human-readable console pattern, unchanged.
+
+       JSON output (via logstash-logback-encoder) so trace_id/span_id and this
+       project's structured log context (order_id, item, reservation_id, etc. —
+       see purerest.logging.Logging / StructuredLogger's ctx-map overloads)
+       become real, independently-filterable fields once Filebeat ships this
+       to Elasticsearch, instead of being buried in a free-text line. -->
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
