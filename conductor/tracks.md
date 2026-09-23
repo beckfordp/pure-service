@@ -4,11 +4,6 @@ This file tracks all major tracks for the project.
 
 ---
 
-- [x] **Track: Add a Gatling-based load-test module**
-  *Link: [./tracks/load-test_20260923/](./tracks/load-test_20260923/)*
-
----
-
 ## Backlog
 
 Title-only placeholders for future tracks — not yet detailed (no spec/plan, no linked
