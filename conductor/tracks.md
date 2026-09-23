@@ -4,6 +4,11 @@ This file tracks all major tracks for the project.
 
 ---
 
+- [ ] **Track: Harden purerest version-drift guardrails (prep)**
+  *Link: [./tracks/version-drift-guardrails_20260923/](./tracks/version-drift-guardrails_20260923/)*
+
+---
+
 ## Backlog
 
 Title-only placeholders for future tracks — not yet detailed (no spec/plan, no linked
