@@ -30,6 +30,6 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 4: Local Dev Environment (Docker Compose)' (Protocol in workflow.md) — autonomous run: added `scripts/verify-docker-compose-setup.sh` (docker compose up + both services + POST /orders end-to-end) and ran it directly; all checks passed. [9d166f3]
 
 ## Phase 5: Coverage & Cleanup
-- [ ] Task: Run `sbt coverage test coverageReport`; confirm >80% coverage for new code, add tests to close gaps.
-- [ ] Task: Run `sbt scalafmtCheck test` and resolve any issues.
+- [x] Task: Run `sbt coverage test coverageReport`; confirm >80% coverage for new code, add tests to close gaps. Neither sbt-scoverage nor sbt-scalafmt were actually configured in this project (pre-existing gap) — added both plugins. Found and fixed a real gap: `OrderServiceConfig.load[F]` was untested (0%). Every file this track added/changed is now at 100% statement/branch coverage; only the pre-existing, untestable `Main.scala` IOApp entrypoint (0%, unrelated to this track) holds the module aggregate below 80%. [48ea607] [c8a8922]
+- [x] Task: Run `sbt scalafmtCheck test` and resolve any issues. First run flagged nearly the entire pre-existing codebase as unformatted (scalafmt was never actually run in this project before) — reformatting all of it is out of scope for this track, so only the files this track touched were formatted. [c8a8922]
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: Coverage & Cleanup' (Protocol in workflow.md)

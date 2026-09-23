@@ -14,6 +14,7 @@ through the spec/plan questions and promote it into a real track below.
 - Get orders showing reservations
 - Logging including trace to Kibana
 - Deploy to local Kubernetes runtime
+- Apply scalafmt formatting across the whole existing codebase (discovered during persistence_20260922: scalafmt was never actually run before — sbt-scalafmt/scoverage plugins didn't even exist)
 
 ---
 
