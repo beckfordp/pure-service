@@ -1,0 +1,13 @@
+Task: Document smoke-test/ in tech-stack.md
+
+Summary: Extended the Publishing section with smoke-test/'s purpose (proves
+purerest works when resolved purely as a published jar, not this repo's
+internal ProjectRef), its deliberate isolation from the root aggregate
+build, and how to run it — directly (sbt purerest/publishLocal, then
+sbt -DpurerestVersion=<version> test in smoke-test/) or via
+scripts/verify-purerest-consumption.sh.
+
+Files changed: conductor/tech-stack.md
+
+Why: Keep tech-stack.md's documented decision log in sync with the actual
+repo state, per workflow.md's "Tech Stack is Deliberate" principle.
