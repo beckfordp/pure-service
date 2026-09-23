@@ -7,7 +7,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Retry Combinator (cats-retry)' (Protocol in workflow.md) — no wiring into a running service yet (that's Phase 3), so verification is the automated test suite itself: full purerest/test green (18/18), including RetrySuite's 6 scenarios against a stub Client[F]. [cad8a5c]
 
 ## Phase 2: Circuit Breaker (resilience4j-wrapped)
-- [ ] Task: Add `resilience4j-circuitbreaker` dependency to `purerest`.
+- [x] Task: Add `resilience4j-circuitbreaker` dependency to `purerest`. [0cd1548]
 - [ ] Task: Write failing tests against a stub `Client[F]`: breaker stays closed under successes; opens after the configured failure threshold; open-state calls fail fast with a typed error and never reach the stub client; transitions to half-open after the reset timeout and closes again on a successful trial call (Red).
 - [ ] Task: Implement `CircuitBreaker.middleware[F[_]: Async](config: CircuitBreakerConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, driving resilience4j-circuitbreaker's core `CircuitBreaker` via `guaranteeCase`; define a typed `CircuitBreakerOpen` error (not a leaked resilience4j exception) for rejected calls (Green).
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Circuit Breaker (resilience4j-wrapped)' (Protocol in workflow.md)
