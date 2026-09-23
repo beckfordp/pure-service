@@ -10,7 +10,7 @@
 - [x] Task: Implement error-path logging to pass (Green). Note: dropped the equivalent wrap around `InventoryStore.reserve` — it's an unconditional in-memory write that can't fail, so there's nothing to catch (would be uncoverable dead code); `InventoryClient.reserve` (order-service side) and `OrderStore.create` are the real, catchable failure modes and both are covered. [4418886]
 - [x] Task: Add startup config-summary logging (port, metrics port, induced-failure rate) to both `Main.scala`s — verified manually via console output, not unit-tested (side-effecting entrypoint). [4418886]
 - [x] Task: Run `sbt coverage purerest/test orderService/test inventoryService/test coverageReport`; confirm 100% coverage on changed files, full suite green. Verified: OrderRoutes.scala/InventoryRoutes.scala both 100%/100%; purerest 44/44, inventoryService 12/12, orderService 26/26. [4418886]
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Enrich Logging' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Enrich Logging' (Protocol in workflow.md) — no running observability stack to demo against yet (that's Phases 3-4), so verification is the automated test suite (purerest 44/44, inventoryService 12/12, orderService 26/26, 100% coverage on the changed route files) plus a manual `sbt bgRun` + curl check confirming the startup log line ("inventory-service starting") actually appears in console output.
 
 ## Phase 2: Enrich Metrics
 - [ ] Task: Write a failing test (Red) asserting a live `purerest.circuit_breaker.state` gauge reflects CLOSED/OPEN correctly via `Metrics.test`'s testkit.
