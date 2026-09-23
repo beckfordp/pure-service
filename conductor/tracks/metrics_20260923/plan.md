@@ -23,6 +23,6 @@
 
 ## Phase 5: End-to-End Verification & Cleanup
 - [x] Task: Add `scripts/verify-metrics-end-to-end.sh`: reuse the resilience track's induced-failure mechanism to trigger retries and a circuit-breaker trip, then assert the expected `purerest_retry_attempts_total` / `purerest_circuit_breaker_state_transitions_total` / `purerest_circuit_breaker_calls_rejected_total` series and values appear in `/metrics` output. [d3b5ba3]
-- [ ] Task: Run `sbt coverage purerest/test inventoryService/test orderService/test coverageReport`; confirm 100% statement/branch coverage on every file this track adds or changes; close any gaps found.
+- [x] Task: Run `sbt coverage purerest/test inventoryService/test orderService/test coverageReport`; confirm 100% statement/branch coverage on every file this track adds or changes; close any gaps found. Found and closed one real gap (Metrics.oteljava's real Prometheus-exporter path was only exercised manually, not by `sbt test`). [a8c32b9]
 - [ ] Task: Run `scalafmtOnly` scoped to this track's own files.
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: End-to-End Verification & Cleanup' (Protocol in workflow.md)
