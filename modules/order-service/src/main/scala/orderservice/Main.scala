@@ -19,6 +19,7 @@ object Main extends IOApp.Simple {
         new IllegalArgumentException(s"Invalid order-service port: ${config.port}")
       )
       inventoryServiceBaseUri <- IO.fromEither(Uri.fromString(config.inventoryServiceBaseUrl))
+      _ <- Migrations.run[IO](config.postgres)
       _ <- Tracing.console[IO]("order-service").use { tracer =>
         for {
           logger <- Logging.create[IO](tracer, "order-service")
