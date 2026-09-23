@@ -1,0 +1,18 @@
+Task: Version-drift guardrail prep (evictionErrorLevel + dependencyOverrides + versionScheme)
+
+Summary: Flipped ThisBuild/evictionErrorLevel from Warn to Error (Red: confirmed
+via `sbt update` that it now fails on the known Skunk/otel4s-core eviction —
+otel4s-core/-core-common/-core-metrics 0.16.0 vs pinned 1.1.0). Replaced the old
+blanket Warn-level suppression with three explicit, commented
+ThisBuild/dependencyOverrides entries pinning those coordinates to otel4sVersion
+(Green: `sbt update` now succeeds cleanly). Added
+`purerest / versionScheme := Some("early-semver")` on purerest's own project
+settings so a future published jar carries real semver metadata.
+
+Files changed: build.sbt
+
+Why: Prep for conductor/tech-stack.md's "Transitive version drift once purerest
+becomes a published artifact" deferred concern — makes the safety net real
+(intentional override, not blanket suppression; real versionScheme metadata) while
+purerest is still a subproject, so it's already exercised once the eventual
+extraction/publish happens rather than bolted on afterward.
