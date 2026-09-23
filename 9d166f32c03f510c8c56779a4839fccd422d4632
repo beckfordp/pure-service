@@ -1,0 +1,6 @@
+Phase 4 checkpoint: Local Dev Environment (Docker Compose)
+
+Manual verification (autonomous run, per user request — script instead of interactive
+walkthrough): scripts/verify-docker-compose-setup.sh runs docker compose up -d, boots
+inventory-service + order-service, and confirms POST /orders succeeds end-to-end with
+zero manual DB setup beyond docker compose up. All checks passed.
