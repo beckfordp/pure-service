@@ -1,0 +1,16 @@
+Task: Fix Skunk varchar/text codec mismatch (Green)
+
+Summary: orders.item and orders.status are Postgres 'text' columns (per the V1/V2
+migrations' TEXT column type), but OrderStore's selectOrder query and insertOrder
+command declared them with Skunk's varchar codec. Skunk's ParseDescribe step compares
+the query's asserted output-column types against Postgres's actual described row and
+throws ColumnAlignmentException on any mismatch — this only surfaced now because
+get()'s SELECT is the first query in this codebase whose decoder Skunk actually
+validates this strictly for (the original INSERT's varchar parameter apparently wasn't
+checked the same way, or was checked loosely enough not to fail — either way, text is
+the objectively correct codec for a text column, so both were fixed).
+
+Files changed:
+- modules/order-service/src/main/scala/orderservice/OrderStore.scala
+
+Verified: full orderService/test suite green (19/19).
