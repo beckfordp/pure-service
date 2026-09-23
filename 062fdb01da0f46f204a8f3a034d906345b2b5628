@@ -1,0 +1,12 @@
+Task: Refactor / review error handling for DB failures (Optional)
+
+Summary: Added a targeted test constructing OrderStore.postgres against an unreachable
+Postgres port, confirming POST /orders returns a clean 5xx status with a plain
+'Internal Server Error' body — no Skunk exception class names, stack traces, or
+connection details leak into the HTTP response. http4s/Ember's default exception
+handling already satisfies this NFR; no production code change was needed.
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/OrderServicePostgresIntegrationSuite.scala
+
+Verified: full orderService/test suite green (14/14).
