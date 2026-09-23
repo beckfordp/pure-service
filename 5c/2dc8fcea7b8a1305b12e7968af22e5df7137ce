@@ -1,0 +1,5 @@
+Phase 2 (Server & Client RED Metrics) checkpoint.
+
+Automated tests: sbt purerest/test (28/28 passed, includes ServerMetricsSuite (2) and ClientMetricsSuite (1) — histogram measurements with OTel semantic-convention attributes verified via MetricExpectation/PointExpectation DSL against Metrics.test's in-memory testkit).
+
+Manual verification: no wiring into a running service yet (Phase 4's job) — same precedent as Phase 1 and as the resilience track's Phase 1/2.
