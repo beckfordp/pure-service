@@ -19,6 +19,3 @@ through the spec/plan questions and promote it into a real track below.
 - purerest metrics (RED metrics — request rate/errors/duration — for inbound and outbound calls, per product.md's Core Use Case; build on otel4s's `Meter` API rather than a separate library like Micrometer/Prometheus-client-java, since tracing already uses otel4s — export via OTel's Prometheus exporter. Add retry-attempt/circuit-breaker-state metrics once the resilience track exists.)
 
 ---
-
-- [x] **Track: Resilience: retry policies and circuit breaker for purerest's HttpClient**
-  *Link: [./tracks/resilience_20260923/](./tracks/resilience_20260923/)*
