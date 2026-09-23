@@ -1,0 +1,10 @@
+Task: Add resilience4j-circuitbreaker dependency to purerest
+
+Summary: Added resilience4jVersion (2.3.0) and io.github.resilience4j:resilience4j-circuitbreaker
+to purerest's libraryDependencies (Java library, core module only — no Spring/reactive
+integration modules).
+
+Files changed:
+- build.sbt
+
+Verified: sbt purerest/update resolves cleanly.
