@@ -1,0 +1,11 @@
+Task: Write failing tests for Retry.middleware (Red)
+
+Summary: Added RetrySuite with 6 tests against a stub Client[F] built from a Ref-based
+counter: (1) 5xx retried until success, (2) 5xx exhausts retries and returns the last
+bad response, (3) 4xx never retried, (4) connection errors retried then raised after
+exhaustion, (5) timeouts retried then raised after exhaustion, (6) a non-retriable
+exception (plain RuntimeException) never retried. Confirmed Red: compile failure
+(Retry/RetryConfig didn't exist).
+
+Files changed:
+- modules/purerest/src/test/scala/purerest/resilience/RetrySuite.scala (new)
