@@ -1,0 +1,5 @@
+Phase 4 checkpoint: Coverage & Cleanup
+
+100% coverage on all new/changed files; scalafmt applied; full orderService/test suite
+green (21/21). This closes out the order-reservations_20260923 track's plan. All 4
+phases complete.
