@@ -1,0 +1,9 @@
+Task: Add failing GET /orders/{id} route tests (Red)
+
+Summary: Added two tests to OrderRoutesSuite — 200 with the persisted order for a
+known id, 404 with a JSON error body for an unknown id. Confirmed Red: the route
+didn't exist, so both requests fell through to http4s's default plain-text
+'Not found', causing a JSON-decode failure when the test tried response.as[OrderResponse]/Json.
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/OrderRoutesSuite.scala
