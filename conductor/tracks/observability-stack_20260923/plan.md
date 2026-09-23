@@ -1,6 +1,6 @@
 # Plan: Stand up a local production-like observability stack
 
-## Phase 1: Enrich Logging
+## Phase 1: Enrich Logging [checkpoint: 1048bf0]
 - [x] Task: Add `log4cats-testing % Test` to order-service's and inventory-service's own `build.sbt` entries (purerest keeps it Test-scoped, which doesn't propagate via `.dependsOn`). [4418886]
 - [x] Task: Write failing tests (Red) asserting request-received/completed log lines (with structured context) for order-service's `POST /orders` and `GET /orders/{id}` (success + `OrderNotFound` 404), using `StructuredTestingLogger.impl[IO]()`. [4418886]
 - [x] Task: Implement the logging in `OrderRoutes.scala` to pass (Green). [4418886]
