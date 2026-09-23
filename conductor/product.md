@@ -24,7 +24,7 @@
    - Resilient HTTP client: retry policies + circuit breaker, composed via combinators — no annotations
    - Self-documenting API endpoints (tapir): each endpoint is described once and interpreted into
      both real http4s routes and a generated, always-in-sync OpenAPI spec + browsable Swagger UI
-2. **order-service** — REST API (http4s) backed by PostgreSQL (Skunk or Doobie); orchestrates order placement, calling inventory-service via purerest's client.
+2. **order-service** — REST API (http4s) backed by PostgreSQL via Skunk; orchestrates order placement, calling inventory-service via purerest's client.
 3. **inventory-service** — REST API (http4s) exposing stock reservation endpoints; second reference consumer of purerest, used to validate resilience behavior under induced failure/latency.
 
 ## Key Features (initial track scope)
