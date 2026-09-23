@@ -1,0 +1,11 @@
+Task: Wire Migrations.run into Main.scala startup (completes Phase 2 Green task)
+
+Summary: Main.scala now calls Migrations.run[IO](config.postgres) after loading config
+and before starting the tracer/server, so schema migrations apply on every
+order-service startup. order-service now requires a reachable Postgres to boot
+(addressed by Phase 4's docker-compose.yml).
+
+Files changed:
+- modules/order-service/src/main/scala/orderservice/Main.scala
+
+Verified: full orderService/test suite green (10/10).
