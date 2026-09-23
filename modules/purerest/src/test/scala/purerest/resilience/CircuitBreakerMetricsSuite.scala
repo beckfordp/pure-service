@@ -5,7 +5,11 @@ import munit.CatsEffectSuite
 import org.http4s.client.Client
 import org.http4s.{Request, Response, Status}
 import org.typelevel.otel4s.Attribute
-import org.typelevel.otel4s.oteljava.testkit.metrics.{MetricExpectation, MetricExpectations, PointExpectation}
+import org.typelevel.otel4s.oteljava.testkit.metrics.{
+  MetricExpectation,
+  MetricExpectations,
+  PointExpectation
+}
 import purerest.metrics.Metrics
 
 import scala.concurrent.duration._
@@ -47,10 +51,13 @@ class CircuitBreakerMetricsSuite extends CatsEffectSuite {
           .containsPoints(
             PointExpectation
               .numeric(1L)
-              .attributesExact(Attribute("from_state", "CLOSED"), Attribute("to_state", "OPEN"))
+              .attributesExact(
+                Attribute("from_state", "CLOSED"),
+                Attribute("to_state", "OPEN")
+              )
           )
       ) match {
-        case Right(_)          => ()
+        case Right(_)         => ()
         case Left(mismatches) => fail(MetricExpectations.format(mismatches))
       }
     }
@@ -64,7 +71,10 @@ class CircuitBreakerMetricsSuite extends CatsEffectSuite {
         protectedClient = CircuitBreaker.middleware[IO](
           CircuitBreakerConfig(failureThreshold = 1, resetTimeout = 1.hour)
         )(testMeter.meter)(client)
-        _ <- protectedClient.run(Request[IO]()).use(IO.pure).attempt // trips the breaker open
+        _ <- protectedClient
+          .run(Request[IO]())
+          .use(IO.pure)
+          .attempt // trips the breaker open
         _ <- protectedClient.run(Request[IO]()).use(IO.pure).attempt // rejected
         metrics <- testMeter.collectMetrics
       } yield MetricExpectations.checkAll(
@@ -73,13 +83,15 @@ class CircuitBreakerMetricsSuite extends CatsEffectSuite {
           .sum[Long]("purerest.circuit_breaker.calls_rejected")
           .containsPoints(PointExpectation.numeric(1L))
       ) match {
-        case Right(_)          => ()
+        case Right(_)         => ()
         case Left(mismatches) => fail(MetricExpectations.format(mismatches))
       }
     }
   }
 
-  test("recovering via a half-open trial call records an OPEN -> CLOSED state transition") {
+  test(
+    "recovering via a half-open trial call records an OPEN -> CLOSED state transition"
+  ) {
     Metrics.test[IO]("purerest-circuit-breaker-metrics-test").use { testMeter =>
       for {
         counter <- Ref.of[IO, Int](0)
@@ -88,7 +100,10 @@ class CircuitBreakerMetricsSuite extends CatsEffectSuite {
         protectedClient = CircuitBreaker.middleware[IO](
           CircuitBreakerConfig(failureThreshold = 1, resetTimeout = 50.millis)
         )(testMeter.meter)(client)
-        _ <- protectedClient.run(Request[IO]()).use(IO.pure).attempt // trips the breaker open
+        _ <- protectedClient
+          .run(Request[IO]())
+          .use(IO.pure)
+          .attempt // trips the breaker open
         _ <- IO.sleep(100.millis) // past the reset timeout
         _ <- shouldFail.set(false) // the half-open trial call will now succeed
         _ <- protectedClient.run(Request[IO]()).use(IO.pure).attempt
@@ -100,10 +115,13 @@ class CircuitBreakerMetricsSuite extends CatsEffectSuite {
           .containsPoints(
             PointExpectation
               .numeric(1L)
-              .attributesExact(Attribute("from_state", "OPEN"), Attribute("to_state", "CLOSED"))
+              .attributesExact(
+                Attribute("from_state", "OPEN"),
+                Attribute("to_state", "CLOSED")
+              )
           )
       ) match {
-        case Right(_)          => ()
+        case Right(_)         => ()
         case Left(mismatches) => fail(MetricExpectations.format(mismatches))
       }
     }

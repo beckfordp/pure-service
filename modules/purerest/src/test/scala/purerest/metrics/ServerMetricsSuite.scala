@@ -6,15 +6,22 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.{HttpRoutes, Request, Status}
 import org.typelevel.otel4s.Attribute
-import org.typelevel.otel4s.oteljava.testkit.metrics.{MetricExpectation, MetricExpectations, PointExpectation}
+import org.typelevel.otel4s.oteljava.testkit.metrics.{
+  MetricExpectation,
+  MetricExpectations,
+  PointExpectation
+}
 
 class ServerMetricsSuite extends CatsEffectSuite {
 
-  private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "ping" =>
-    Ok("pong")
+  private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "ping" =>
+      Ok("pong")
   }
 
-  test("wrapped routes record a request duration measurement for a handled request") {
+  test(
+    "wrapped routes record a request duration measurement for a handled request"
+  ) {
     Metrics.test[IO]("purerest-server-metrics-test").use { testMeter =>
       for {
         wrapped <- IO.pure(ServerMetrics.middleware(testMeter.meter)(routes))
@@ -35,7 +42,7 @@ class ServerMetricsSuite extends CatsEffectSuite {
                 )
             )
         ) match {
-          case Right(_)          => ()
+          case Right(_)         => ()
           case Left(mismatches) => fail(MetricExpectations.format(mismatches))
         }
       }

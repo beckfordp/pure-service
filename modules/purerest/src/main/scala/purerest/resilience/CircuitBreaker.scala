@@ -71,8 +71,8 @@ object CircuitBreaker {
     * the breaker's state differs before and after a call — net of any
     * intermediate hop (e.g. an OPEN -> HALF_OPEN -> CLOSED recovery is recorded
     * as a single OPEN -> CLOSED transition), since this middleware only
-    * observes state synchronously before and after its own
-    * acquire/run/report sequence, not via a separate event listener.
+    * observes state synchronously before and after its own acquire/run/report
+    * sequence, not via a separate event listener.
     */
   private def recordTransition[F[_]: Async](
       meter: Meter[F]
@@ -90,7 +90,10 @@ object CircuitBreaker {
         )
 
   private def recordRejection[F[_]: Async](meter: Meter[F]): F[Unit] =
-    meter.counter[Long]("purerest.circuit_breaker.calls_rejected").create.flatMap(_.inc())
+    meter
+      .counter[Long]("purerest.circuit_breaker.calls_rejected")
+      .create
+      .flatMap(_.inc())
 
   def middleware[F[_]: Async](
       config: CircuitBreakerConfig
@@ -112,7 +115,8 @@ object CircuitBreaker {
         Resource.eval(Async[F].delay(breaker.tryAcquirePermission())).flatMap {
           case false =>
             Resource.eval(
-              recordRejection(meter) *> Async[F].raiseError[Response[F]](CircuitBreakerOpen)
+              recordRejection(meter) *> Async[F]
+                .raiseError[Response[F]](CircuitBreakerOpen)
             )
           case true =>
             Resource.eval(Async[F].monotonic).flatMap { start =>
@@ -128,7 +132,9 @@ object CircuitBreaker {
                         )
                       ) *> Async[F].delay(breaker.getState)
                     )
-                    .flatMap(stateAfter => recordTransition(meter)(stateBefore, stateAfter))
+                    .flatMap(stateAfter =>
+                      recordTransition(meter)(stateBefore, stateAfter)
+                    )
                     .as(response)
                 case Left(error) =>
                   Async[F].monotonic
@@ -141,7 +147,9 @@ object CircuitBreaker {
                         )
                       ) *> Async[F].delay(breaker.getState)
                     )
-                    .flatMap(stateAfter => recordTransition(meter)(stateBefore, stateAfter)) *>
+                    .flatMap(stateAfter =>
+                      recordTransition(meter)(stateBefore, stateAfter)
+                    ) *>
                     Async[F].raiseError[Response[F]](error)
               }
             }

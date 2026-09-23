@@ -7,13 +7,19 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.{HttpApp, Request}
 import org.typelevel.otel4s.Attribute
-import org.typelevel.otel4s.oteljava.testkit.metrics.{MetricExpectation, MetricExpectations, PointExpectation}
+import org.typelevel.otel4s.oteljava.testkit.metrics.{
+  MetricExpectation,
+  MetricExpectations,
+  PointExpectation
+}
 
 class ClientMetricsSuite extends CatsEffectSuite {
 
   private val stubApp: HttpApp[IO] = HttpApp { _ => Ok("pong") }
 
-  test("wrapped client records a request duration measurement for a completed call") {
+  test(
+    "wrapped client records a request duration measurement for a completed call"
+  ) {
     Metrics.test[IO]("purerest-client-metrics-test").use { testMeter =>
       val client = Client.fromHttpApp(stubApp)
       val wrapped = ClientMetrics.middleware(testMeter.meter)(client)
@@ -32,7 +38,7 @@ class ClientMetricsSuite extends CatsEffectSuite {
               )
           )
       ) match {
-        case Right(_)          => ()
+        case Right(_)         => ()
         case Left(mismatches) => fail(MetricExpectations.format(mismatches))
       }
     }

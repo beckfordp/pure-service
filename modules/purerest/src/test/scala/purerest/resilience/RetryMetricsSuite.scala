@@ -6,7 +6,11 @@ import org.http4s.client.Client
 import org.http4s.{Request, Response, Status}
 import org.typelevel.log4cats.noop.NoOpLogger
 import org.typelevel.otel4s.Attribute
-import org.typelevel.otel4s.oteljava.testkit.metrics.{MetricExpectation, MetricExpectations, PointExpectation}
+import org.typelevel.otel4s.oteljava.testkit.metrics.{
+  MetricExpectation,
+  MetricExpectations,
+  PointExpectation
+}
 import purerest.metrics.Metrics
 
 import scala.concurrent.duration._
@@ -41,17 +45,25 @@ class RetryMetricsSuite extends CatsEffectSuite {
     val expectations = List(
       MetricExpectation
         .sum[Long]("purerest.retry.attempts")
-        .containsPoints(PointExpectation.numeric(outcomeCount).attributesExact(Attribute("outcome", outcome)))
+        .containsPoints(
+          PointExpectation
+            .numeric(outcomeCount)
+            .attributesExact(Attribute("outcome", outcome))
+        )
     ) ++ (if (retried > 0)
             List(
               MetricExpectation
                 .sum[Long]("purerest.retry.attempts")
-                .containsPoints(PointExpectation.numeric(retried).attributesExact(Attribute("outcome", "retried")))
+                .containsPoints(
+                  PointExpectation
+                    .numeric(retried)
+                    .attributesExact(Attribute("outcome", "retried"))
+                )
             )
           else Nil)
 
     MetricExpectations.checkAll(metrics, expectations) match {
-      case Right(_)          => ()
+      case Right(_)         => ()
       case Left(mismatches) => fail(MetricExpectations.format(mismatches))
     }
   }
@@ -61,10 +73,17 @@ class RetryMetricsSuite extends CatsEffectSuite {
       for {
         counter <- Ref.of[IO, Int](0)
         client = respondingClient(counter)(_ => Status.Ok)
-        resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(testMeter.meter)(client)
+        resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(
+          testMeter.meter
+        )(client)
         _ <- resilientClient.run(Request[IO]()).use(IO.pure)
         metrics <- testMeter.collectMetrics
-      } yield assertOutcomeCounts(metrics, retried = 0, outcome = "succeeded", outcomeCount = 1)
+      } yield assertOutcomeCounts(
+        metrics,
+        retried = 0,
+        outcome = "succeeded",
+        outcomeCount = 1
+      )
     }
   }
 
@@ -72,35 +91,62 @@ class RetryMetricsSuite extends CatsEffectSuite {
     Metrics.test[IO]("purerest-retry-metrics-test").use { testMeter =>
       for {
         counter <- Ref.of[IO, Int](0)
-        client = respondingClient(counter)(n => if (n < 3) Status.InternalServerError else Status.Ok)
-        resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(testMeter.meter)(client)
+        client = respondingClient(counter)(n =>
+          if (n < 3) Status.InternalServerError else Status.Ok
+        )
+        resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(
+          testMeter.meter
+        )(client)
         _ <- resilientClient.run(Request[IO]()).use(IO.pure)
         metrics <- testMeter.collectMetrics
-      } yield assertOutcomeCounts(metrics, retried = 2, outcome = "succeeded", outcomeCount = 1)
+      } yield assertOutcomeCounts(
+        metrics,
+        retried = 2,
+        outcome = "succeeded",
+        outcomeCount = 1
+      )
     }
   }
 
-  test("a call that exhausts retries on 5xx responses records 'retried' and 'exhausted'") {
+  test(
+    "a call that exhausts retries on 5xx responses records 'retried' and 'exhausted'"
+  ) {
     Metrics.test[IO]("purerest-retry-metrics-test").use { testMeter =>
       for {
         counter <- Ref.of[IO, Int](0)
         client = respondingClient(counter)(_ => Status.InternalServerError)
-        resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(testMeter.meter)(client)
+        resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(
+          testMeter.meter
+        )(client)
         _ <- resilientClient.run(Request[IO]()).use(IO.pure)
         metrics <- testMeter.collectMetrics
-      } yield assertOutcomeCounts(metrics, retried = 2, outcome = "exhausted", outcomeCount = 1)
+      } yield assertOutcomeCounts(
+        metrics,
+        retried = 2,
+        outcome = "exhausted",
+        outcomeCount = 1
+      )
     }
   }
 
-  test("a call that exhausts retries on connection errors records 'retried' and 'exhausted'") {
+  test(
+    "a call that exhausts retries on connection errors records 'retried' and 'exhausted'"
+  ) {
     Metrics.test[IO]("purerest-retry-metrics-test").use { testMeter =>
       for {
         counter <- Ref.of[IO, Int](0)
         client = failingClient(counter)(new java.net.ConnectException("boom"))
-        resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(testMeter.meter)(client)
+        resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(
+          testMeter.meter
+        )(client)
         _ <- resilientClient.run(Request[IO]()).use(IO.pure).attempt
         metrics <- testMeter.collectMetrics
-      } yield assertOutcomeCounts(metrics, retried = 2, outcome = "exhausted", outcomeCount = 1)
+      } yield assertOutcomeCounts(
+        metrics,
+        retried = 2,
+        outcome = "exhausted",
+        outcomeCount = 1
+      )
     }
   }
 }

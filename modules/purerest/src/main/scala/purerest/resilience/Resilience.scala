@@ -21,7 +21,9 @@ final case class ResilienceConfig(
 object Resilience {
   def middleware[F[_]: Async](
       config: ResilienceConfig
-  )(logger: StructuredLogger[F])(meter: Meter[F])(client: Client[F]): Client[F] =
+  )(
+      logger: StructuredLogger[F]
+  )(meter: Meter[F])(client: Client[F]): Client[F] =
     Retry.middleware[F](config.retry)(logger)(meter)(
       CircuitBreaker.middleware[F](config.circuitBreaker)(meter)(client)
     )

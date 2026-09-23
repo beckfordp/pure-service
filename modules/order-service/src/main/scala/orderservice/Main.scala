@@ -46,10 +46,12 @@ object Main extends IOApp.Simple {
             _ <- OrderStore.postgres[IO](config.postgres).use { store =>
               HttpClient.resource[IO].use { httpClient =>
                 val tracedClient = ClientTracing.middleware(tracer)(httpClient)
-                val metricClient = ClientMetrics.middleware[IO](meter)(tracedClient)
-                val resilientClient = Resilience.middleware[IO](resilienceConfig)(
-                  logger
-                )(meter)(metricClient)
+                val metricClient =
+                  ClientMetrics.middleware[IO](meter)(tracedClient)
+                val resilientClient =
+                  Resilience.middleware[IO](resilienceConfig)(
+                    logger
+                  )(meter)(metricClient)
                 val inventory =
                   InventoryClient[IO](resilientClient, inventoryServiceBaseUri)
                 val docsRoutes = Docs.routes[IO](

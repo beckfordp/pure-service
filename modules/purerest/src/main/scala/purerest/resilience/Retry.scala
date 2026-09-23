@@ -80,7 +80,9 @@ object Retry {
 
   def middleware[F[_]: Temporal](
       config: RetryConfig
-  )(logger: StructuredLogger[F])(meter: Meter[F])(client: Client[F]): Client[F] = {
+  )(
+      logger: StructuredLogger[F]
+  )(meter: Meter[F])(client: Client[F]): Client[F] = {
     implicit val loggerFactory: org.typelevel.log4cats.LoggerFactory[F] =
       NoOpFactory[F]
     val policy = Http4sRetryPolicy[F](
@@ -101,7 +103,8 @@ object Retry {
         val countingClient = Client[F] { r =>
           Resource.eval(attemptCounter.update(_ + 1)) *> client.run(r)
         }
-        val retried = Http4sRetry.create(policy, logRetries = false)(countingClient)
+        val retried =
+          Http4sRetry.create(policy, logRetries = false)(countingClient)
         retried
           .run(req)
           .evalMap { response =>
@@ -114,14 +117,17 @@ object Retry {
                     s"Request to ${req.uri} succeeded after $attempts attempt(s)"
                   )
                 else Temporal[F].unit
-              recordAttempts(meter)(attempts, finalOutcome) *> logIfRetried.as(response)
+              recordAttempts(meter)(attempts, finalOutcome) *> logIfRetried.as(
+                response
+              )
             }
           }
           .onError { case error =>
             Resource.eval(
               attemptCounter.get.flatMap { attempts =>
                 recordAttempts(meter)(attempts, "exhausted") *>
-                  logger.warn(error)(s"Request to ${req.uri} failed after retries")
+                  logger
+                    .warn(error)(s"Request to ${req.uri} failed after retries")
               }
             )
           }

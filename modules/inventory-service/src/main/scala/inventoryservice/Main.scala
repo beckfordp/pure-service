@@ -40,27 +40,29 @@ object Main extends IOApp.Simple {
 
   val run: IO[Unit] =
     Tracing.console[IO]("inventory-service").use { tracer =>
-      Metrics.oteljava[IO]("inventory-service", metricsPort.value).use { meter =>
-        for {
-          logger <- Logging.create[IO](tracer, "inventory-service")
-          store <- InventoryStore.inMemory[IO]
-          docsRoutes = Docs.routes[IO](
-            "Inventory Service",
-            "1.0",
-            List(
-              InventoryRoutes.serverEndpoint[IO](store, logger, inducedFailure)
+      Metrics.oteljava[IO]("inventory-service", metricsPort.value).use {
+        meter =>
+          for {
+            logger <- Logging.create[IO](tracer, "inventory-service")
+            store <- InventoryStore.inMemory[IO]
+            docsRoutes = Docs.routes[IO](
+              "Inventory Service",
+              "1.0",
+              List(
+                InventoryRoutes
+                  .serverEndpoint[IO](store, logger, inducedFailure)
+              )
             )
-          )
-          tracedRoutes = ServerTracing.middleware(tracer)(docsRoutes)
-          routes = ServerMetrics.middleware[IO](meter)(tracedRoutes)
-          _ <- EmberServerBuilder
-            .default[IO]
-            .withHost(host"0.0.0.0")
-            .withPort(port)
-            .withHttpApp(routes.orNotFound)
-            .build
-            .useForever
-        } yield ()
+            tracedRoutes = ServerTracing.middleware(tracer)(docsRoutes)
+            routes = ServerMetrics.middleware[IO](meter)(tracedRoutes)
+            _ <- EmberServerBuilder
+              .default[IO]
+              .withHost(host"0.0.0.0")
+              .withPort(port)
+              .withHttpApp(routes.orNotFound)
+              .build
+              .useForever
+          } yield ()
       }
     }
 }

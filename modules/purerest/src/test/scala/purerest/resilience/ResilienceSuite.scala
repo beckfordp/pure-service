@@ -31,7 +31,9 @@ class ResilienceSuite extends CatsEffectSuite {
         circuitBreaker =
           CircuitBreakerConfig(failureThreshold = 10, resetTimeout = 1.hour)
       )
-      resilientClient = Resilience.middleware[IO](config)(NoOpLogger[IO])(Meter.noop[IO])(
+      resilientClient = Resilience.middleware[IO](config)(NoOpLogger[IO])(
+        Meter.noop[IO]
+      )(
         client
       )
       response <- resilientClient.run(Request[IO]()).use(IO.pure)
@@ -51,7 +53,9 @@ class ResilienceSuite extends CatsEffectSuite {
         circuitBreaker =
           CircuitBreakerConfig(failureThreshold = 1, resetTimeout = 1.hour)
       )
-      resilientClient = Resilience.middleware[IO](config)(NoOpLogger[IO])(Meter.noop[IO])(
+      resilientClient = Resilience.middleware[IO](config)(NoOpLogger[IO])(
+        Meter.noop[IO]
+      )(
         client
       )
       result <- resilientClient.run(Request[IO]()).use(IO.pure).attempt
