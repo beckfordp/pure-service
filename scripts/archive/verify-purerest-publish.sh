@@ -6,9 +6,9 @@ set -euo pipefail
 # coordinate (io.github.beckfordp) and a real git-derived version (sbt-dynver),
 # not sbt's meaningless defaults ("default"/"0.1.0-SNAPSHOT").
 #
-# Usage: ./scripts/verify-purerest-publish.sh
+# Usage: ./scripts/archive/verify-purerest-publish.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 ORG="io.github.beckfordp"

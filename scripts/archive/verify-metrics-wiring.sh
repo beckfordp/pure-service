@@ -1,26 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Manual verification for Phase 3 of the resilience track: confirms wiring
-# Resilience.middleware into order-service's InventoryClient doesn't regress the
-# normal (healthy inventory-service) happy path. Genuine retry/circuit-breaker
-# behavior under induced failure is verified in Phase 4, once inventory-service can
-# be made deliberately flaky.
+# Manual verification for Phase 4 of the metrics track: confirms wiring
+# Metrics.oteljava + ServerMetrics/ClientMetrics into both services exposes a
+# working Prometheus scrape endpoint, and that at least one real request produces
+# http.server.request.duration / http.client.request.duration series.
 #
-# Usage: ./scripts/verify-resilience-wiring.sh
+# Usage: ./scripts/archive/verify-metrics-wiring.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 INVENTORY_PORT=8081
 ORDER_PORT=8080
+INVENTORY_METRICS_PORT=9091
+ORDER_METRICS_PORT=9090
 FAILED=0
 
 cleanup() {
   echo
   echo "Cleaning up..."
   [ -n "${SBT_PID:-}" ] && { kill "$SBT_PID" >/dev/null 2>&1 || true; wait "$SBT_PID" 2>/dev/null || true; }
-  for port in "$INVENTORY_PORT" "$ORDER_PORT"; do
+  for port in "$INVENTORY_PORT" "$ORDER_PORT" "$INVENTORY_METRICS_PORT" "$ORDER_METRICS_PORT"; do
     pids="$(lsof -ti "tcp:${port}" 2>/dev/null || true)"
     [ -n "$pids" ] && echo "$pids" | xargs kill >/dev/null 2>&1 || true
   done
@@ -52,8 +53,8 @@ done
 echo "   OK: Postgres is healthy"
 
 echo
-echo "2. Starting inventory-service and order-service (now with resilient client)..."
-LOG_FILE="$(mktemp -t resilience-wiring-verify)"
+echo "2. Starting inventory-service and order-service (now with metrics wired)..."
+LOG_FILE="$(mktemp -t metrics-wiring-verify)"
 INVENTORY_SERVICE_BASE_URL="http://localhost:${INVENTORY_PORT}" \
   sbt --no-server "inventoryService/bgRun" "orderService/bgRun" "shell" >"$LOG_FILE" 2>&1 </dev/null &
 SBT_PID=$!
@@ -64,14 +65,37 @@ fi
 echo "   OK: both services are up"
 
 echo
-echo "3. POST /orders (healthy inventory-service — no regression expected)..."
-RESPONSE="$(mktemp -t resilience-wiring-order-response)"
+echo "3. POST /orders (produces at least one server + client request)..."
+RESPONSE="$(mktemp -t metrics-wiring-order-response)"
 STATUS="$(curl -s -o "$RESPONSE" -w '%{http_code}' -X POST "http://localhost:${ORDER_PORT}/orders" \
   -H "Content-Type: application/json" -d '{"item":"widget","quantity":1}')"
 if [ "$STATUS" = "201" ] && grep -q '"reservationId"' "$RESPONSE"; then
   echo "   OK: 201 Created with reservationId: $(cat "$RESPONSE")"
 else
   echo "   FAIL: expected 201 with reservationId, got status ${STATUS}: $(cat "$RESPONSE")" >&2
+  FAILED=1
+fi
+
+echo
+echo "4. GET :${ORDER_METRICS_PORT}/metrics (order-service)..."
+ORDER_METRICS="$(curl -s "http://localhost:${ORDER_METRICS_PORT}/metrics")"
+if echo "$ORDER_METRICS" | grep -q '^http_server_request_duration_seconds' \
+  && echo "$ORDER_METRICS" | grep -q '^http_client_request_duration_seconds'; then
+  echo "   OK: order-service /metrics exposes both server and client duration series"
+else
+  echo "   FAIL: expected http_server_request_duration_seconds and http_client_request_duration_seconds in order-service /metrics" >&2
+  echo "$ORDER_METRICS" | head -30 >&2
+  FAILED=1
+fi
+
+echo
+echo "5. GET :${INVENTORY_METRICS_PORT}/metrics (inventory-service)..."
+INVENTORY_METRICS="$(curl -s "http://localhost:${INVENTORY_METRICS_PORT}/metrics")"
+if echo "$INVENTORY_METRICS" | grep -q '^http_server_request_duration_seconds'; then
+  echo "   OK: inventory-service /metrics exposes a server duration series"
+else
+  echo "   FAIL: expected http_server_request_duration_seconds in inventory-service /metrics" >&2
+  echo "$INVENTORY_METRICS" | head -30 >&2
   FAILED=1
 fi
 

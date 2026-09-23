@@ -12,9 +12,9 @@ set -euo pipefail
 # (~700ms, exhausting all 4 attempts), later requests fail almost instantly once the
 # breaker opens and starts rejecting calls before they ever reach the network.
 #
-# Usage: ./scripts/verify-resilience-end-to-end.sh
+# Usage: ./scripts/archive/verify-resilience-end-to-end.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 INVENTORY_PORT=8081

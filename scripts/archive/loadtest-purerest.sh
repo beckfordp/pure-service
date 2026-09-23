@@ -7,9 +7,9 @@ set -euo pipefail
 # (retry/circuit-breaker) under a moderate induced-failure rate — the kind of
 # traffic manual curl-based verify-*.sh scripts can't produce.
 #
-# Usage: ./scripts/loadtest-purerest.sh
+# Usage: ./scripts/archive/loadtest-purerest.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 INVENTORY_PORT=8081

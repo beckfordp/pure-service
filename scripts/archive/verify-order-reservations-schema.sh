@@ -5,9 +5,9 @@ set -euo pipefail
 # Postgres, boots order-service, confirms both Flyway migrations apply (V1 orders table
 # + V2 reservation columns), and confirms the orders table has the expected schema.
 #
-# Usage: ./scripts/verify-order-reservations-schema.sh
+# Usage: ./scripts/archive/verify-order-reservations-schema.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 PG_CONTAINER="verify-order-reservations-schema-pg"

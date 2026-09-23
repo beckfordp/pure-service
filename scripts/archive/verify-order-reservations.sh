@@ -7,9 +7,9 @@ set -euo pipefail
 # with its reservation and status, and that GET /orders/{unknown-id} returns a clean
 # 404 with a JSON error body.
 #
-# Usage: ./scripts/verify-order-reservations.sh
+# Usage: ./scripts/archive/verify-order-reservations.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 INVENTORY_PORT=8081

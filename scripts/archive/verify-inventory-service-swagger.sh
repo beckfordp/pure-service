@@ -7,9 +7,9 @@ set -euo pipefail
 # pattern match), and confirms the service now also serves a browsable Swagger
 # UI plus a generated OpenAPI yaml describing that same endpoint.
 #
-# Usage: ./scripts/verify-inventory-service-swagger.sh
+# Usage: ./scripts/archive/verify-inventory-service-swagger.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 PORT="${INVENTORY_SERVICE_PORT:-8081}"

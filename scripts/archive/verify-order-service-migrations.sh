@@ -5,9 +5,9 @@ set -euo pipefail
 # container matching application.conf's defaults, boots order-service against it, and
 # confirms Flyway applied the orders-table migration on startup.
 #
-# Usage: ./scripts/verify-order-service-migrations.sh
+# Usage: ./scripts/archive/verify-order-service-migrations.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 PG_CONTAINER="verify-order-service-migrations-pg"

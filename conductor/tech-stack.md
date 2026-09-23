@@ -17,7 +17,7 @@
   local Ivy2 cache, the way a real external microservice would consume it, not this repo's
   internal `ProjectRef`. It wraps a stub route with `ServerMetrics.middleware` and asserts a
   real `http.server.request.duration` measurement is recorded, using classes/resources that
-  only exist in the published jar. Run via `scripts/verify-purerest-consumption.sh` (publishes
+  only exist in the published jar. Run via `scripts/archive/verify-purerest-consumption.sh` (publishes
   purerest, resolves its current version, then runs `smoke-test/`'s own `sbt test` against
   it) whenever purerest changes — or manually: `sbt purerest/publishLocal` in the main repo,
   then `cd smoke-test && sbt -DpurerestVersion=<version> test` (the version from
@@ -162,7 +162,7 @@
 ## Load Testing
 - **Gatling** (`modules/load-test`) — generates sustained, realistic traffic against a running
   order-service/inventory-service pair, exercising purerest's RED and resilience metrics the
-  way manual curl-based `scripts/verify-*.sh` scripts can't: `gatling-sbt` `4.13.3` (the sbt
+  way manual curl-based `scripts/archive/verify-*.sh` scripts can't: `gatling-sbt` `4.13.3` (the sbt
   plugin) plus `gatling-charts-highcharts`/`gatling-test-framework` `3.15.1` (Gatling itself —
   versioned independently of the sbt plugin).
 - `OrderPlacementSimulation` repeatedly issues `POST /orders` against a configurable base URL
@@ -173,7 +173,7 @@
   left out of root's `.aggregate(...)` in `build.sbt` too, so neither a plain `sbt test` nor
   `sbt compile` at the repo root touches it (confirmed: `sbt projects` still lists `loadTest`,
   but the normal fast dev/test loop's timing is unaffected).
-- `scripts/loadtest-purerest.sh` orchestrates two passes against real services (docker-compose
+- `scripts/archive/loadtest-purerest.sh` orchestrates two passes against real services (docker-compose
   Postgres + both services): a healthy pass (`INVENTORY_INDUCED_FAILURE_RATE=0`) reporting
   order-service's RED series (`http_server_request_duration_seconds_count`/
   `http_client_request_duration_seconds_count`), then a degraded pass
@@ -198,7 +198,7 @@
 - **Orchestration**: `docker-compose.yml` gains `order-service`, `inventory-service`,
   `prometheus`, `grafana`, `elasticsearch`, `kibana`, `filebeat` — all under
   `profiles: ["observability"]`. Plain `docker compose up -d` (the existing `sbt bgRun` dev loop
-  and every `scripts/verify-*.sh`) is unaffected and still starts only Postgres; the full stack
+  and every `scripts/archive/verify-*.sh`) is unaffected and still starts only Postgres; the full stack
   needs `docker compose --profile observability up -d` explicitly.
 - **Metrics**: `prom/prometheus:v3.13.3` scrapes both services' existing Prometheus exporter
   endpoints (`observability/prometheus.yml`); `grafana/grafana-oss:13.0.2` is provisioned
@@ -218,7 +218,7 @@
   `purerest-logs-*` Data View and sets it as Kibana's default via its Saved Objects/settings
   HTTP APIs, idempotently, so Discover shows real log data immediately on `docker compose
   --profile observability up -d` instead of requiring a manual one-time setup step.
-- **Verification**: `scripts/verify-observability-stack.sh` brings up the profile, runs the
+- **Verification**: `scripts/archive/verify-observability-stack.sh` brings up the profile, runs the
   Gatling load-test module (a healthy pass, then a degraded pass at
   `INVENTORY_INDUCED_FAILURE_RATE=0.5` — not `0.3`; see the script's own comment on why that
   rate specifically makes a circuit-breaker trip reliable rather than a coin flip), and confirms

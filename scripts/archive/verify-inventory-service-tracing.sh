@@ -7,9 +7,9 @@ set -euo pipefail
 # confirm the request produced both a printed span (console exporter) and a
 # trace-correlated log line sharing the same trace/span id.
 #
-# Usage: ./scripts/verify-inventory-service-tracing.sh
+# Usage: ./scripts/archive/verify-inventory-service-tracing.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 PORT="${INVENTORY_SERVICE_PORT:-8081}"

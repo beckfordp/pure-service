@@ -1,13 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Manual verification for Phase 4 of the persistence track: confirms `docker compose up`
-# is sufficient to run order-service locally with zero manual DB setup steps, per the
-# track's acceptance criteria.
+# Manual verification for Phase 3 of the resilience track: confirms wiring
+# Resilience.middleware into order-service's InventoryClient doesn't regress the
+# normal (healthy inventory-service) happy path. Genuine retry/circuit-breaker
+# behavior under induced failure is verified in Phase 4, once inventory-service can
+# be made deliberately flaky.
 #
-# Usage: ./scripts/verify-docker-compose-setup.sh
+# Usage: ./scripts/archive/verify-resilience-wiring.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 INVENTORY_PORT=8081
@@ -22,7 +24,7 @@ cleanup() {
     pids="$(lsof -ti "tcp:${port}" 2>/dev/null || true)"
     [ -n "$pids" ] && echo "$pids" | xargs kill >/dev/null 2>&1 || true
   done
-  docker compose down >/dev/null 2>&1 || true
+  docker compose down -v >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
@@ -39,8 +41,8 @@ wait_ready() {
   return 1
 }
 
-echo "1. docker compose up -d (no manual DB setup beyond this)..."
-docker compose down >/dev/null 2>&1 || true
+echo "1. docker compose up -d (fresh volume)..."
+docker compose down -v >/dev/null 2>&1 || true
 docker compose up -d
 for _ in $(seq 1 60); do
   status="$(docker compose ps --format '{{.Health}}' postgres 2>/dev/null || true)"
@@ -50,8 +52,8 @@ done
 echo "   OK: Postgres is healthy"
 
 echo
-echo "2. Starting inventory-service and order-service..."
-LOG_FILE="$(mktemp -t docker-compose-setup-verify)"
+echo "2. Starting inventory-service and order-service (now with resilient client)..."
+LOG_FILE="$(mktemp -t resilience-wiring-verify)"
 INVENTORY_SERVICE_BASE_URL="http://localhost:${INVENTORY_PORT}" \
   sbt --no-server "inventoryService/bgRun" "orderService/bgRun" "shell" >"$LOG_FILE" 2>&1 </dev/null &
 SBT_PID=$!
@@ -62,8 +64,8 @@ fi
 echo "   OK: both services are up"
 
 echo
-echo "3. POST /orders end-to-end..."
-RESPONSE="$(mktemp -t docker-compose-setup-order-response)"
+echo "3. POST /orders (healthy inventory-service — no regression expected)..."
+RESPONSE="$(mktemp -t resilience-wiring-order-response)"
 STATUS="$(curl -s -o "$RESPONSE" -w '%{http_code}' -X POST "http://localhost:${ORDER_PORT}/orders" \
   -H "Content-Type: application/json" -d '{"item":"widget","quantity":1}')"
 if [ "$STATUS" = "201" ] && grep -q '"reservationId"' "$RESPONSE"; then

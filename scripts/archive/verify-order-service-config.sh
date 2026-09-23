@@ -7,9 +7,9 @@ set -euo pipefail
 # `port = ${?ORDER_SERVICE_PORT}` substitution), so run-services.sh keeps working
 # unchanged.
 #
-# Usage: ./scripts/verify-order-service-config.sh
+# Usage: ./scripts/archive/verify-order-service-config.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 FAILED=0

@@ -11,9 +11,9 @@ set -euo pipefail
 # Both services are started from a single sbt session via `bgRun` — sbt refuses to
 # run two independent launcher JVMs concurrently against the same build directory.
 #
-# Usage: ./scripts/verify-order-service-swagger.sh
+# Usage: ./scripts/archive/verify-order-service-swagger.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 INVENTORY_PORT="${INVENTORY_SERVICE_PORT:-8081}"

@@ -6,9 +6,9 @@ set -euo pipefail
 # Skunk-backed OrderStore, and that a restarted order-service does not lose previously
 # created orders (Flyway migration is idempotent, data survives the process restart).
 #
-# Usage: ./scripts/verify-order-service-postgres-persistence.sh
+# Usage: ./scripts/archive/verify-order-service-postgres-persistence.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 PG_CONTAINER="verify-order-service-persistence-pg"

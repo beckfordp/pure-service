@@ -9,9 +9,9 @@ set -euo pipefail
 # Elasticsearch are all populated with real data from that traffic — not just that
 # the containers started.
 #
-# Usage: ./scripts/verify-observability-stack.sh
+# Usage: ./scripts/archive/verify-observability-stack.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 ORDER_METRICS_PORT=9092  # Prometheus's own host port (see docker-compose.yml)

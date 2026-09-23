@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Manual verification for Phase 5 of the tracing-and-logging track: starts
-# both inventory-service and order-service, sends a real POST /orders
-# request, and prints both services' console output so you can confirm the
-# spans printed by each service share the same trace id — proving the trace
-# actually propagates across the real HTTP hop between them, not just in the
-# automated in-memory test (OrderServiceTraceContinuitySuite).
+# Starts both inventory-service and order-service and leaves them running for
+# manual/interactive use (curl, browser, Swagger UI, etc.) — unlike the
+# verify-*.sh scripts, this does not run any assertions or tear anything down
+# until you stop it yourself (Ctrl-C).
 #
 # Both services are started from a single sbt session via `bgRun` — sbt
 # refuses to run two independent launcher JVMs concurrently against the same
-# build directory (a boot-lock/server-socket collision), so bgRun (sbt's own
-# mechanism for running multiple apps from one build) is required here.
+# build directory.
 #
-# Usage: ./scripts/verify-order-service-trace-continuity.sh
+# Prerequisite: order-service persists to PostgreSQL — run `docker compose up -d`
+# first (see docker-compose.yml / README.md).
+#
+# Usage: ./scripts/archive/run-services.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 INVENTORY_PORT="${INVENTORY_SERVICE_PORT:-8081}"
 ORDER_PORT="${ORDER_SERVICE_PORT:-8080}"
-LOG_FILE="$(mktemp -t services-verify)"
+LOG_FILE="$(mktemp -t services-run)"
 
 echo "Starting inventory-service and order-service (single sbt session, bgRun)..."
 echo "Full output is being captured to: ${LOG_FILE}"
@@ -70,23 +70,11 @@ wait_ready "$INVENTORY_PORT" "inventory-service"
 wait_ready "$ORDER_PORT" "order-service"
 
 echo
-echo "Both services are up. Sending POST /orders..."
+echo "Both services are up:"
+echo "  inventory-service : http://localhost:${INVENTORY_PORT}  (Swagger UI: http://localhost:${INVENTORY_PORT}/docs/)"
+echo "  order-service     : http://localhost:${ORDER_PORT}  (Swagger UI: http://localhost:${ORDER_PORT}/docs/)"
+echo
+echo "Combined output is being tailed below. Press Ctrl-C to stop both services."
 echo
 
-curl -i -X POST "http://localhost:${ORDER_PORT}/orders" \
-  -H "Content-Type: application/json" \
-  -d '{"item":"widget","quantity":3}'
-
-echo
-echo
-
-# Give the async span/log output a moment to flush before we read it back.
-sleep 1
-
-echo "Check above for: HTTP/1.1 201 Created + order body including a reservationId."
-echo "Check below for: a 'POST /orders' span from order-service and a"
-echo "'POST /inventory/reserve' span from inventory-service, sharing the same"
-echo "trace id (the first hex id in each printed span line):"
-echo
-echo "--- recent combined output ---"
-tail -n 60 "$LOG_FILE"
+tail -n 0 -f "$LOG_FILE"

@@ -8,9 +8,9 @@ set -euo pipefail
 # explicit dependencyOverrides entry rather than a blanket suppression, and that
 # purerest declares real versionScheme metadata for a future published jar.
 #
-# Usage: ./scripts/verify-version-drift-guardrails.sh
+# Usage: ./scripts/archive/verify-version-drift-guardrails.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 FAILED=0

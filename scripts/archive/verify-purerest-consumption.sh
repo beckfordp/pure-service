@@ -7,9 +7,9 @@ set -euo pipefail
 # entry against the local Ivy2 cache, not this repo's internal
 # .dependsOn(purerest) project reference — and actually use it at runtime.
 #
-# Usage: ./scripts/verify-purerest-consumption.sh
+# Usage: ./scripts/archive/verify-purerest-consumption.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 FAILED=0

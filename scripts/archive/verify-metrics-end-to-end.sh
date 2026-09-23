@@ -10,9 +10,9 @@ set -euo pipefail
 # every call fails, tripping order-service's circuit breaker — failureThreshold=5 —
 # after the first order's 4 attempts plus the second order's first attempt).
 #
-# Usage: ./scripts/verify-metrics-end-to-end.sh
+# Usage: ./scripts/archive/verify-metrics-end-to-end.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT_DIR"
 
 INVENTORY_PORT=8081
