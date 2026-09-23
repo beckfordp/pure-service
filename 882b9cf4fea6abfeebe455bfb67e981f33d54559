@@ -1,0 +1,8 @@
+Task: Document docker compose prerequisite
+
+Summary: Added a 'Running order-service locally' section to README.md pointing at
+docker-compose.yml, and a prerequisite note in run-services.sh's header comment.
+
+Files changed:
+- README.md
+- scripts/run-services.sh
