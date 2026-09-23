@@ -1,0 +1,43 @@
+Task: Extend docker-compose.yml + add observability configs + Grafana provisioning (Phase 4)
+
+Summary: Added order-service/inventory-service/prometheus/grafana/
+elasticsearch/kibana/filebeat as new compose services, all under
+profiles: ["observability"]. Confirmed the critical non-functional
+requirement holds: `docker compose --profile observability down` (full
+teardown) followed by plain `docker compose up -d` starts ONLY postgres.
+Added observability/prometheus.yml (scrape config for both services'
+:9090/:9091 metrics ports) and observability/filebeat.yml (docker
+autodiscover, per-service decode_json_fields to flatten the app's JSON
+log payload into top-level ES fields). Added Grafana provisioning: a
+Prometheus datasource (isDefault, proxied at http://prometheus:9090) and
+a dashboard (purerest.json) with 9 panels covering request rate, error
+rate, duration percentiles (server + client), retry attempts by outcome,
+circuit breaker transitions/rejections/current-state, and order-service
+DB query duration/error rate.
+
+Verification (live, real data, not just config validation): placed real
+orders through order-service, confirmed via Prometheus /api/v1/targets
+both services "up"; confirmed via Grafana's own datasource-proxy endpoint
+(the same path the dashboard's panels use) that request-rate, DB
+query-count, and circuit-breaker-state queries all return real,
+non-empty results; confirmed via Elasticsearch _search that structured
+JSON log fields (trace_id, item, quantity, reservation_id, order_id,
+logger_name) are indexed and independently queryable, not just present
+as opaque text.
+
+Along the way, found and fixed (separate commit) a genuine Elasticsearch
+disk-watermark issue (Docker VM disk >90% used, causing all shards
+unassigned/red) via `docker builder prune -f` (the safest reclaim
+category) plus a manual `_cluster/reroute?retry_failed=true`; cluster is
+now yellow (expected steady-state for a single-node cluster, since
+replica shards can never be satisfied).
+
+Files changed: docker-compose.yml, observability/prometheus.yml,
+observability/filebeat.yml,
+observability/grafana/provisioning/datasources/prometheus.yml,
+observability/grafana/provisioning/dashboards/dashboards.yml,
+observability/grafana/provisioning/dashboards/purerest.json
+
+Why: This is the core of the track's spec — a locally runnable,
+production-shaped observability stack that doesn't interfere with any
+existing dev workflow.
