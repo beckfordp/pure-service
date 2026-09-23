@@ -1,0 +1,32 @@
+Task: Containerize order-service/inventory-service (Phase 3)
+
+Summary: Added sbt-native-packager (JavaAppPackaging + DockerPlugin) to
+both services. Hit and fixed three real issues discovered only by
+actually running the built images, not just compiling the build.sbt
+change: (1) alpine base image has no bash, the generated launch script
+needs it — switched to the Debian-based eclipse-temurin:21-jre;
+(2) sbt-dynver's version string contains '+', an invalid Docker tag
+character — publishLocal failed outright until Docker/version was
+sanitized; (3) dockerUpdateLatest needed to be unscoped, not
+Docker/-scoped, or :latest silently never gets tagged. Added
+logback-docker.xml (JSON via logstash-logback-encoder, new Runtime dep)
+and wired it in via Universal/javaOptions (not Docker/javaOptions, which
+turned out not to be consumed by the script-generation task at all) —
+confirmed via conf/application.ini and real container logs that
+structured fields (trace_id, induced_failure_rate, etc.) now appear as
+proper JSON. Verified both images build and run directly with `docker
+run`. Full suite green after; existing sbt bgRun workflow unaffected.
+
+Files changed: build.sbt, project/plugins.sbt,
+modules/purerest/src/main/resources/logback-docker.xml
+
+Why: Kibana needs container logs to ingest — Filebeat's docker-log
+input requires the services actually running as containers, which this
+track's earlier phases (logging/metrics enrichment) didn't need.
+
+Note: an earlier `docker rmi` cleanup command during this task was
+overly broad (a glob expansion matched every local image, not just the
+two intended) — Docker's own container-reference protection happened to
+prevent any actual loss, verified via docker ps -a/docker images, but the
+command itself was a mistake; flagged to the user and avoided for the
+rest of this session.
