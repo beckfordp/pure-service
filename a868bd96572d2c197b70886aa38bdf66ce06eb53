@@ -1,0 +1,11 @@
+Phase 1, Tasks 2+3: Metrics.test (Red) + Metrics.oteljava/Metrics.test implementation (Green).
+
+What: purerest.metrics.Metrics mirrors purerest.tracing.Tracing's shape:
+- Metrics.oteljava[F](instrumentationName, port): Resource[F, Meter[F]] — SdkMeterProvider registered with PrometheusHttpServer's MetricReader (scrape endpoint on `port`), wrapped via OtelJava.resource.
+- Metrics.test[F](instrumentationName): Resource[F, TestMeter[F]] — otel4s's in-memory MetricsTestkit, exposing meter + collectMetrics, mirroring Tracing.test's TestTracer/finishedSpans pattern.
+
+Test: MetricsSuite asserts a manually-created counter's add(1L) is visible via collectMetrics — passed immediately (Green on first attempt); otel4s-oteljava-metrics-testkit is already pulled in transitively by otel4s-oteljava-testkit (no new dependency needed beyond what Tracing.scala already required).
+
+Verification: full purerest/test suite green (25/25, up from 24 — one new MetricsSuite test).
+
+Files: modules/purerest/src/main/scala/purerest/metrics/Metrics.scala, modules/purerest/src/test/scala/purerest/metrics/MetricsSuite.scala
