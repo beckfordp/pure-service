@@ -191,5 +191,21 @@
   4. As a blunt fallback in consumers: `ThisBuild / dependencyOverrides` to pin shared transitive
      versions centrally, and/or `evictionErrorLevel := Level.Error` to fail the build on an
      incompatible eviction instead of only warning.
+- **If option 4 is used, pair it with option 3 — don't use `evictionErrorLevel := Error` alone**:
+  sbt's eviction report (same content whether it's a warning or, with `Level.Error`, a build-failing
+  error) names the conflicting artifact, the selected vs. evicted version(s), and which direct
+  dependency requested each. For the one-hop diamond a consumer/purerest pair produces, that's
+  exactly the two culprits (purerest's declared version vs. the consumer's own), so the message is
+  enough for a consumer to *locate* the conflict and know what to change (bump their pin, or add a
+  `dependencyOverride`). What it can't tell them is whether the fix is *safe*, or whether the
+  conflict is even real — "suspected binary incompatible" is just a `versionScheme` guess, and this
+  project already hit a false positive from it (see the `evictionErrorLevel := Level.Warn` entry
+  below: Skunk's `otel4s-core` 0.16.0 vs. this build's pinned 1.1.0 failed resolution even though
+  nothing here uses Skunk's otel4s integration). Without real `versionScheme` metadata on purerest's
+  published artifact, `Level.Error` risks blocking a consumer's build on a bump that's actually
+  harmless, with nothing in the error message to tell them so. Publishing purerest with
+  `versionScheme := "early-semver"` (option 3) gives the heuristic real semver information instead of
+  a guess, so the error's implicit "this is unsafe" claim is trustworthy and the remedy it points
+  to (bump or override) can be applied with confidence rather than guesswork.
 - **Trigger to revisit**: the track that extracts `purerest` into its own build/repository and starts
   publishing it as a jar consumed by `order-service`/`inventory-service` (and any future service).
