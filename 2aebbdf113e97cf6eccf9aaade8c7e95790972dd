@@ -1,0 +1,17 @@
+Task: End-to-end POST + GET Postgres integration test
+
+Summary: Extended the existing POST /orders Postgres integration test to also call
+GET /orders/{id} afterward and assert the fetched OrderResponse matches what POST
+returned (including status='reserved'). Replaced the raw-JDBC persistence check with
+this API-level check, since it now exercises the same thing more meaningfully through
+the actual feature this track adds. Removed the now-unused java.sql.DriverManager
+import.
+
+Deviation from plan wording: passed immediately (no Red) since the full path was
+already wired by the prior Green tasks — consistent with the persistence track's
+precedent for this exact plan-step shape.
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/OrderServicePostgresIntegrationSuite.scala
+
+Verified: full orderService/test suite green (21/21).
