@@ -22,7 +22,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 4: Wire into Services' (Protocol in workflow.md) — added `scripts/verify-metrics-wiring.sh` (docker-compose + both services, confirms `GET :<port>/metrics` returns Prometheus text with http_server_request_duration_seconds/http_client_request_duration_seconds series on both after a healthy `POST /orders`) and ran it directly; all checks passed. [ed4f7c9]
 
 ## Phase 5: End-to-End Verification & Cleanup
-- [ ] Task: Add `scripts/verify-metrics-end-to-end.sh`: reuse the resilience track's induced-failure mechanism to trigger retries and a circuit-breaker trip, then assert the expected `purerest_retry_attempts_total` / `purerest_circuit_breaker_state_transitions_total` / `purerest_circuit_breaker_calls_rejected_total` series and values appear in `/metrics` output.
+- [x] Task: Add `scripts/verify-metrics-end-to-end.sh`: reuse the resilience track's induced-failure mechanism to trigger retries and a circuit-breaker trip, then assert the expected `purerest_retry_attempts_total` / `purerest_circuit_breaker_state_transitions_total` / `purerest_circuit_breaker_calls_rejected_total` series and values appear in `/metrics` output. [d3b5ba3]
 - [ ] Task: Run `sbt coverage purerest/test inventoryService/test orderService/test coverageReport`; confirm 100% statement/branch coverage on every file this track adds or changes; close any gaps found.
 - [ ] Task: Run `scalafmtOnly` scoped to this track's own files.
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: End-to-End Verification & Cleanup' (Protocol in workflow.md)
