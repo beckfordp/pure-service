@@ -17,8 +17,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Resilience Metrics' (Protocol in workflow.md) — order-service/inventory-service wiring is still Meter.noop (Phase 4's job); verification is the automated test suite across all modules: purerest 35/35 (including RetryMetricsSuite/CircuitBreakerMetricsSuite), inventoryService and orderService both green (21/21), plus a separate compile check confirming order-service/inventory-service build cleanly after the signature change. [04c8a0d]
 
 ## Phase 4: Wire into Services
-- [ ] Task: Wire `Metrics.oteljava` + `ServerMetrics.middleware`/`ClientMetrics.middleware` into `order-service` and `inventory-service`'s `Main.scala`, alongside existing tracing; wire the `Meter[F]` into `Resilience.middleware`'s construction in `order-service`.
-- [ ] Task: Add a configurable scrape port (env var) per service, following the project's existing ad hoc/PureConfig config style per service.
+- [x] Task: Wire `Metrics.oteljava` + `ServerMetrics.middleware`/`ClientMetrics.middleware` into `order-service` and `inventory-service`'s `Main.scala`, alongside existing tracing; wire the `Meter[F]` into `Resilience.middleware`'s construction in `order-service`. [dbf9d6e]
+- [x] Task: Add a configurable scrape port (env var) per service, following the project's existing ad hoc/PureConfig config style per service. [dbf9d6e]
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Wire into Services' (Protocol in workflow.md) — `scripts/verify-metrics-wiring.sh`: docker-compose + both services, confirm `GET :<port>/metrics` returns Prometheus text on both after a healthy `POST /orders`.
 
 ## Phase 5: End-to-End Verification & Cleanup
