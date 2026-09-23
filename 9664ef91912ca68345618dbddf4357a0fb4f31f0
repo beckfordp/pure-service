@@ -1,0 +1,12 @@
+Task: Update tech-stack.md for order-service persistence tech choices
+
+Summary: Documented Skunk (over Doobie), Flyway, PureConfig, and Testcontainers as the
+persistence-related tech-stack decisions for track persistence_20260922, ahead of any
+code changes, per workflow.md's 'tech stack is deliberate' principle.
+
+Files changed:
+- conductor/tech-stack.md
+
+Why: Skunk chosen for pure-FP/no-JDBC fit with purerest; Flyway for migrations (needs
+pgjdbc as a build-only dep); PureConfig to replace ad hoc sys.env reads; Testcontainers
+for real-Postgres integration tests.
