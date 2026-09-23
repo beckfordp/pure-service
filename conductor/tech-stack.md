@@ -4,6 +4,28 @@
 - **Scala** 3.9.0
 - **sbt** — multi-module build: `purerest`, `order-service`, `inventory-service` (`modules/*`)
 
+## Publishing
+- **purerest** is locally publishable as a real, versioned jar — `sbt purerest/publishLocal`
+  writes to the local Ivy2 cache (`~/.ivy2/local/io.github.beckfordp/purerest_3/<version>/`).
+  `order-service`/`inventory-service` still consume it via the internal `ProjectRef`
+  (`.dependsOn(purerest)`), not the published jar — this is prep for the eventual real
+  extraction and for smoke-testing purerest as an external `libraryDependencies` consumer
+  (a separate track), not yet a live consumption path.
+- **Organization**: `io.github.beckfordp`, derived from this project's own GitHub remote
+  (`github.com/beckfordp/pure-service`).
+- **Versioning**: **sbt-dynver** derives `version` from git tags/commits automatically
+  (`ThisBuild`-scoped, so it applies to all three modules, not just purerest) — no manually
+  maintained `version :=` to forget to bump. Combined with the previous track's
+  `versionScheme := Some("early-semver")` on purerest, a real publish carries both a real
+  version and real compatibility metadata.
+  - **No git tags exist in this repo yet**, so dynver currently falls back to its
+    untagged-history format: `0.0.0+<commit-count>-<sha>+<timestamp>` (e.g.
+    `0.0.0+263-74f2a41b+20260923-1436`) rather than a clean semver string. Tag a commit
+    (e.g. `git tag v0.1.0`) to get clean `0.1.0`-style versions for an actual release —
+    out of scope for this local-publish-only track.
+- **No CI/release automation** — `publishLocal` is a manual, on-demand developer action.
+  No push to any remote repository (Sonatype, GitHub Packages, etc.) is configured.
+
 ## Effect System
 - **Cats Effect 3** — the effect system underpinning purerest and both services. All public APIs are tagless-final / typeclass-based (`F[_]: Async`, etc.).
 
