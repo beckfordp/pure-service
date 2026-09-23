@@ -1,7 +1,7 @@
 # Plan: purerest Metrics (RED + Resilience Signals)
 
 ## Phase 1: Metrics Foundation
-- [ ] Task: Add `opentelemetry-exporter-prometheus` dependency to `purerest`; verify it resolves via `sbt purerest/update` (adjust version/coordinates based on the real resolution, matching prior tracks' dependency-verification pattern). Document the choice in `tech-stack.md`.
+- [x] Task: Add `opentelemetry-exporter-prometheus` dependency to `purerest`; verify it resolves via `sbt purerest/update` (adjust version/coordinates based on the real resolution, matching prior tracks' dependency-verification pattern). Document the choice in `tech-stack.md`. [244c4b6]
 - [ ] Task: Write a failing test asserting `Metrics.test` (otel4s in-memory `MetricsTestkit`) records a manually-emitted counter value (Red).
 - [ ] Task: Implement `purerest.metrics.Metrics.oteljava` (Prometheus-exporter-backed `Meter[F]` `Resource`, port-configurable) and `Metrics.test` (in-memory testkit `Resource`), mirroring `purerest.tracing.Tracing`'s shape (Green).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Metrics Foundation' (Protocol in workflow.md)
