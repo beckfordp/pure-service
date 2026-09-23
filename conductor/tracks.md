@@ -11,7 +11,6 @@ folder), so `/conductor:implement` cannot pick these up by accident. Reorder fre
 priorities change. When ready to work on one, run `/conductor:newTrack <title>` to go
 through the spec/plan questions and promote it into a real track below.
 
-- Get orders showing reservations (include an order `status` field, e.g. "reserved", anticipating future payment/fulfillment states)
 - Logging including trace to Kibana
 - Deploy to local Kubernetes runtime
 - Apply scalafmt formatting across the whole existing codebase (discovered during persistence_20260922: scalafmt was never actually run before — sbt-scalafmt/scoverage plugins didn't even exist)
@@ -19,3 +18,6 @@ through the spec/plan questions and promote it into a real track below.
 - Payment integration (payment-service + payment status surfaced on GET /orders)
 
 ---
+
+- [ ] **Track: Get Orders Showing Reservations**
+  *Link: [./tracks/order-reservations_20260923/](./tracks/order-reservations_20260923/)*
