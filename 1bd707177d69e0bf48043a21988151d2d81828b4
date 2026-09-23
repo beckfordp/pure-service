@@ -1,0 +1,1 @@
+Phase 5 (Coverage & Cleanup) checkpoint — all tasks complete: 100% coverage on track-added/changed files, scalafmt applied scoped to track files, full test suites green. This closes out implementation for track resilience_20260923; next step is finalizing the track in conductor/tracks.md.
