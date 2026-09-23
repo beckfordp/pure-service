@@ -1,0 +1,14 @@
+Task: Implement Flyway migration + Migrations runner (Green)
+
+Summary: Added V1__create_orders_table.sql (id UUID PK, item TEXT, quantity INT,
+created_at TIMESTAMPTZ default now()) and Migrations.run[F] which configures Flyway
+against a JDBC URL built from PostgresConfig and calls migrate(), wrapped in
+Sync[F].blocking.
+
+Files changed:
+- modules/order-service/src/main/resources/db/migration/V1__create_orders_table.sql (new)
+- modules/order-service/src/main/scala/orderservice/Migrations.scala (new)
+
+Verified: MigrationsSuite green against a real Testcontainers Postgres — Flyway applies
+the migration and the orders table has the expected columns (id, item, quantity,
+created_at).
