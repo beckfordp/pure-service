@@ -40,7 +40,10 @@ object InventoryRoutes {
       .out(jsonBody[Reservation])
 
   private def maybeInduceFailure[F[_]: Async](
-      config: InducedFailureConfig
+      config: InducedFailureConfig,
+      logger: StructuredLogger[F],
+      item: String,
+      quantity: Int
   ): F[Unit] =
     Async[F].sleep(config.delay) *>
       (if (config.failureRate <= 0.0) Async[F].unit
@@ -49,7 +52,11 @@ object InventoryRoutes {
            .delay(scala.util.Random.nextDouble() < config.failureRate)
            .flatMap {
              case true =>
-               Async[F].raiseError(new RuntimeException("Induced failure"))
+               logger.warn(
+                 Map("item" -> item, "quantity" -> quantity.toString)
+               )(
+                 "Induced failure triggered"
+               ) *> Async[F].raiseError(new RuntimeException("Induced failure"))
              case false => Async[F].unit
            })
 
@@ -60,11 +67,27 @@ object InventoryRoutes {
   ): ServerEndpoint[Any, F] =
     reserveEndpoint.serverLogicSuccess[F] { req =>
       for {
-        _ <- maybeInduceFailure[F](induced)
+        _ <- logger.info(
+          Map(
+            "method" -> "POST",
+            "path" -> "/inventory/reserve",
+            "item" -> req.item,
+            "quantity" -> req.quantity.toString
+          )
+        )("Received request")
+        _ <- maybeInduceFailure[F](induced, logger, req.item, req.quantity)
+        // No error-path logging here: InventoryStore.reserve is an unconditional
+        // in-memory write that can't fail (see InventoryStore.inMemory) — nothing
+        // to catch. order-service's InventoryClient.reserve is the real,
+        // catchable failure mode for this call path (see OrderRoutes.scala).
         reservation <- store.reserve(req.item, req.quantity)
         _ <- logger.info(
-          s"reserved ${reservation.quantity} x ${reservation.item} (reservation ${reservation.id})"
-        )
+          Map(
+            "reservation_id" -> reservation.id,
+            "item" -> reservation.item,
+            "quantity" -> reservation.quantity.toString
+          )
+        )("Request completed")
       } yield reservation
     }
 

@@ -79,27 +79,72 @@ object OrderRoutes {
   ): ServerEndpoint[Any, F] =
     createOrderEndpoint.serverLogicSuccess[F] { req =>
       for {
-        reservation <- inventory.reserve(req.item, req.quantity)
-        order <- store.create(
-          req.item,
-          req.quantity,
-          reservation.id,
-          reservation.quantity
-        )
         _ <- logger.info(
-          s"created order ${order.id} for ${order.quantity} x ${order.item} (reservation ${reservation.id})"
-        )
+          Map(
+            "method" -> "POST",
+            "path" -> "/orders",
+            "item" -> req.item,
+            "quantity" -> req.quantity.toString
+          )
+        )("Received request")
+        reservation <- inventory
+          .reserve(req.item, req.quantity)
+          .onError { case error =>
+            logger.error(
+              Map("item" -> req.item, "quantity" -> req.quantity.toString),
+              error
+            )(
+              "Inventory reservation failed"
+            )
+          }
+        order <- store
+          .create(
+            req.item,
+            req.quantity,
+            reservation.id,
+            reservation.quantity
+          )
+          .onError { case error =>
+            logger.error(
+              Map("item" -> req.item, "quantity" -> req.quantity.toString),
+              error
+            )(
+              "Persisting the order failed"
+            )
+          }
+        _ <- logger.info(
+          Map(
+            "order_id" -> order.id,
+            "item" -> order.item,
+            "quantity" -> order.quantity.toString,
+            "reservation_id" -> reservation.id
+          )
+        )("Request completed")
       } yield OrderResponse(order)
     }
 
   def getOrderServerEndpoint[F[_]: Async](
-      store: OrderStore[F]
+      store: OrderStore[F],
+      logger: StructuredLogger[F]
   ): ServerEndpoint[Any, F] =
     getOrderEndpoint.serverLogic[F] { id =>
-      store.get(id).map {
-        case Some(order) => Right(OrderResponse(order))
-        case None        => Left(OrderNotFound)
-      }
+      for {
+        _ <- logger.info(
+          Map("method" -> "GET", "path" -> s"/orders/$id", "order_id" -> id)
+        )(
+          "Received request"
+        )
+        result <- store.get(id).flatMap {
+          case Some(order) =>
+            logger
+              .info(Map("order_id" -> id))("Request completed")
+              .as(Right(OrderResponse(order)))
+          case None =>
+            logger
+              .warn(Map("order_id" -> id))("Order not found")
+              .as(Left(OrderNotFound))
+        }
+      } yield result
     }
 
   def routes[F[_]: Async](
@@ -110,7 +155,7 @@ object OrderRoutes {
     Http4sServerInterpreter[F]().toRoutes(
       List(
         serverEndpoint(store, inventory, logger),
-        getOrderServerEndpoint(store)
+        getOrderServerEndpoint(store, logger)
       )
     )
 }

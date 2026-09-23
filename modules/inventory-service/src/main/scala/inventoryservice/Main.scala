@@ -44,6 +44,14 @@ object Main extends IOApp.Simple {
         meter =>
           for {
             logger <- Logging.create[IO](tracer, "inventory-service")
+            _ <- logger.info(
+              Map(
+                "port" -> port.value.toString,
+                "metrics_port" -> metricsPort.value.toString,
+                "induced_failure_rate" -> inducedFailure.failureRate.toString,
+                "induced_delay_ms" -> inducedFailure.delay.toMillis.toString
+              )
+            )("inventory-service starting")
             store <- InventoryStore.inMemory[IO]
             docsRoutes = Docs.routes[IO](
               "Inventory Service",

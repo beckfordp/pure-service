@@ -43,6 +43,13 @@ object Main extends IOApp.Simple {
         Metrics.oteljava[IO]("order-service", config.metricsPort).use { meter =>
           for {
             logger <- Logging.create[IO](tracer, "order-service")
+            _ <- logger.info(
+              Map(
+                "port" -> config.port.toString,
+                "metrics_port" -> config.metricsPort.toString,
+                "inventory_service_base_url" -> config.inventoryServiceBaseUrl
+              )
+            )("order-service starting")
             _ <- OrderStore.postgres[IO](config.postgres).use { store =>
               HttpClient.resource[IO].use { httpClient =>
                 val tracedClient = ClientTracing.middleware(tracer)(httpClient)
@@ -59,7 +66,7 @@ object Main extends IOApp.Simple {
                   "1.0",
                   List(
                     OrderRoutes.serverEndpoint[IO](store, inventory, logger),
-                    OrderRoutes.getOrderServerEndpoint[IO](store)
+                    OrderRoutes.getOrderServerEndpoint[IO](store, logger)
                   )
                 )
                 val tracedRoutes = ServerTracing.middleware(tracer)(docsRoutes)

@@ -157,7 +157,11 @@ lazy val orderService = project
       // testcontainers-scala: spins up a real, ephemeral Postgres container for
       // integration tests (not used by main code).
       "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaVersion % Test,
-      "com.dimafeng" %% "testcontainers-scala-munit" % testcontainersScalaVersion % Test
+      "com.dimafeng" %% "testcontainers-scala-munit" % testcontainersScalaVersion % Test,
+      // log4cats-testing: purerest keeps this Test-scoped (doesn't propagate via
+      // .dependsOn), so order-service declares its own copy to assert on log
+      // output (StructuredTestingLogger) in its own tests.
+      "org.typelevel" %% "log4cats-testing" % log4catsVersion % Test
     )
   )
 
@@ -178,7 +182,9 @@ lazy val inventoryService = project
       "io.circe" %% "circe-parser" % circeVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion
+      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
+      // log4cats-testing: see order-service's identical comment above.
+      "org.typelevel" %% "log4cats-testing" % log4catsVersion % Test
     )
   )
 
