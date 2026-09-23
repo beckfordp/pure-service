@@ -6,10 +6,10 @@
 - [x] Task: Implement `purerest.metrics.Metrics.oteljava` (Prometheus-exporter-backed `Meter[F]` `Resource`, port-configurable) and `Metrics.test` (in-memory testkit `Resource`), mirroring `purerest.tracing.Tracing`'s shape (Green). [a868bd9]
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Metrics Foundation' (Protocol in workflow.md) — no wiring into a running service yet (that's Phase 4), so verification is the automated test suite itself: full purerest/test green (25/25), including MetricsSuite's manually-emitted-counter scenario against the in-memory testkit. [ff0a951]
 
-## Phase 2: Server & Client RED Metrics
+## Phase 2: Server & Client RED Metrics [checkpoint: 5c2dc8f]
 - [x] Task: Write failing tests against a stub `HttpRoutes[F]`/`Client[F]` and `Metrics.test`'s testkit: a handled request records a `http.server.request.duration` / `http.client.request.duration` measurement with the expected method/route-or-address/status-code attributes (Red). [ba9d9a6]
 - [x] Task: Implement `ServerMetrics.middleware` and `ClientMetrics.middleware` in `purerest.metrics` (Green). [ba9d9a6]
-- [x] Task: Conductor - User Manual Verification 'Phase 2: Server & Client RED Metrics' (Protocol in workflow.md) — no wiring into a running service yet (Phase 4); verification is the automated test suite: full purerest/test green (28/28), including ServerMetricsSuite/ClientMetricsSuite's histogram-with-attributes scenarios.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Server & Client RED Metrics' (Protocol in workflow.md) — no wiring into a running service yet (Phase 4); verification is the automated test suite: full purerest/test green (28/28), including ServerMetricsSuite/ClientMetricsSuite's histogram-with-attributes scenarios. [5c2dc8f]
 
 ## Phase 3: Resilience Metrics
 - [ ] Task: Write failing tests: a retried call records `purerest.retry.attempts` with the right `outcome` attribute across retried/succeeded/exhausted scenarios; a circuit breaker open/close/reject records `purerest.circuit_breaker.state_transitions` / `purerest.circuit_breaker.calls_rejected` (Red).
