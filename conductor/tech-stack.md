@@ -69,6 +69,34 @@
   reinventing its subtleties, while keeping purerest's own API 100% idiomatic
   tagless-final Cats Effect — resilience4j types never leak into it.
 
+### 2026-09-23: `Retry.middleware` delegates its execution loop to http4s's own `Retry`
+- **Deviation observed**: retrying a `Client[F].run` call safely is non-trivial — each
+  failed attempt's `Resource[F, Response[F]]` (connection + body) must be released
+  before trying again, and the winning attempt's `Resource` must stay open for the
+  eventual caller. Hand-rolling this with cats-retry directly (via `.allocated` and
+  manual finalizer bookkeeping) would re-implement a problem **http4s's own
+  `org.http4s.client.middleware.Retry`** already solves correctly (it uses
+  `cats.effect.std.Hotswap` internally for exactly this).
+- **Resolution**: `purerest.resilience.Retry.middleware` uses http4s's `Retry` for the
+  actual execution loop, and uses cats-retry's `RetryPolicies` (`limitRetries` +
+  `exponentialBackoff`, composed via `.join`, evaluated under `cats.Id`) purely to
+  compute the backoff schedule fed into http4s's `RetryPolicy` — genuinely using
+  cats-retry for policy composition, without reinventing Resource-safe retry
+  execution.
+- **cats-retry's `fullJitter` not used**: http4s's backoff slot is a *pure* function
+  (`Int => Option[FiniteDuration]`), but cats-retry's `fullJitter` needs an effectful
+  `Random[F]` — incompatible. Retry delays are deterministic exponential backoff
+  (`limitRetries` + `exponentialBackoff`) rather than jittered. Revisit if the lack of
+  jitter causes noticeable thundering-herd retries in practice.
+- **Logging**: http4s's `Retry` requires a `LoggerFactory[F]` context bound
+  regardless of whether its own internal logging is used; supplied
+  `log4cats-core`'s `NoOpFactory[F]` and pass `logRetries = false`, since this
+  project's convention is an explicitly-passed `StructuredLogger[F]` value (see
+  `purerest.logging.Logging`), not implicit `LoggerFactory[F]` summoning. Retry
+  activity is instead logged by `Retry.middleware` itself, via the response's
+  `Retry.AttemptCountKey` attribute (successes) and `.onError` (final exhausted
+  failures) — using the passed-in `StructuredLogger[F]` directly.
+
 ## Testing
 - **munit** — test framework.
 - **munit-cats-effect** — lets test bodies return `IO[Unit]` directly, used across all effectful tests.
