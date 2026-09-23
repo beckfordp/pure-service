@@ -4,11 +4,6 @@ This file tracks all major tracks for the project.
 
 ---
 
-- [x] **Track: Smoke-test purerest consumption as an external published jar**
-  *Link: [./tracks/smoke-test-jar_20260923/](./tracks/smoke-test-jar_20260923/)*
-
----
-
 ## Backlog
 
 Title-only placeholders for future tracks — not yet detailed (no spec/plan, no linked
