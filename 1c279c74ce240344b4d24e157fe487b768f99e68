@@ -1,0 +1,24 @@
+Task: Run coverage; close two real gaps
+
+Summary: sbt coverage purerest/test inventoryService/test orderService/test
+coverageReport found two genuine gaps in this track's new/changed code:
+1. CircuitBreaker.isFailureResult's `case _ => false` fallback (required for
+   type-safety against resilience4j's Predicate[Any] signature) was unreachable
+   through middleware's public API, since onResult is only ever called with a real
+   Response[F]. Made the val package-private (private[resilience]) and added a
+   direct unit test exercising it with a 5xx Response, a 2xx Response, and a
+   non-Response string.
+2. InventoryRoutes.maybeInduceFailure's "random roll didn't trigger despite
+   failureRate > 0" branch was untested (only failureRate=1.0 and failureRate=0.0
+   were covered, missing the partial-probability case). Added a test with a tiny
+   positive failureRate (1e-7) asserting success — flake probability is
+   astronomically low.
+
+Files changed:
+- modules/purerest/src/main/scala/purerest/resilience/CircuitBreaker.scala
+- modules/purerest/src/test/scala/purerest/resilience/CircuitBreakerSuite.scala
+- modules/inventory-service/src/test/scala/inventoryservice/InventoryRoutesSuite.scala
+
+Verified: 100% statement/branch coverage on every file this track added or changed
+(CircuitBreaker, Retry, Resilience, InventoryRoutes, InducedFailureConfig). Full test
+suites green: purerest 24/24, inventory-service 10/10, order-service 21/21.
