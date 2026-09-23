@@ -212,13 +212,20 @@
   independently searchable fields rather than buried in a text blob — shipped to
   `docker.elastic.co/elasticsearch/elasticsearch:8.19.19` (single-node; `discovery.type:
   single-node`, security disabled for local dev) and browsable via
-  `docker.elastic.co/kibana/kibana:8.19.19`.
+  `docker.elastic.co/kibana/kibana:8.19.19`. Unlike Grafana, Kibana has no file-based
+  provisioning for Data Views (index patterns) — a one-shot `kibana-setup` compose service
+  (`curlimages/curl`, `depends_on: kibana: condition: service_healthy`) POSTs the
+  `purerest-logs-*` Data View and sets it as Kibana's default via its Saved Objects/settings
+  HTTP APIs, idempotently, so Discover shows real log data immediately on `docker compose
+  --profile observability up -d` instead of requiring a manual one-time setup step.
 - **Verification**: `scripts/verify-observability-stack.sh` brings up the profile, runs the
   Gatling load-test module (a healthy pass, then a degraded pass at
-  `INVENTORY_INDUCED_FAILURE_RATE=0.3`), and confirms — via each system's own HTTP API, not just
-  that containers started — that Prometheus has scraped real request/DB-query/resilience metrics,
-  Grafana's datasource and dashboard are provisioned and its dashboard's own queries resolve
-  non-empty, and Elasticsearch has indexed structured log documents including the degraded pass's
+  `INVENTORY_INDUCED_FAILURE_RATE=0.5` — not `0.3`; see the script's own comment on why that
+  rate specifically makes a circuit-breaker trip reliable rather than a coin flip), and confirms
+  — via each system's own HTTP API, not just that containers started — that Prometheus has
+  scraped real request/DB-query/resilience metrics, Grafana's datasource and dashboard are
+  provisioned and its dashboard's own queries resolve non-empty, and Elasticsearch has indexed
+  structured log documents including the degraded pass's
   induced-failure WARN log.
 
 ### 2026-09-23: Prometheus exporter's loopback-only default binding

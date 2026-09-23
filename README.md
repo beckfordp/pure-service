@@ -77,10 +77,12 @@ sbt "loadTest/Gatling/test"
 - **Grafana** (http://localhost:3000/d/purerest-red-resilience) — request rate, duration
   percentiles, error rate, retry attempts by outcome, circuit-breaker transitions/rejections/
   current state, and order-service DB query duration/error rate, all live.
-- **Kibana** (http://localhost:5601, index pattern `purerest-logs-*`) — structured JSON logs from
-  both services, searchable by field: `trace_id`, `order_id`, `item`, `quantity`,
-  `reservation_id`, `logger_name`, `level`, etc. An induced failure shows up as a WARN-level
-  "Induced failure triggered" log with the triggering item/quantity attached.
+- **Kibana** (http://localhost:5601 → Discover) — structured JSON logs from both services,
+  searchable by field: `trace_id`, `order_id`, `item`, `quantity`, `reservation_id`,
+  `logger_name`, `level`, etc. An induced failure shows up as a WARN-level "Induced failure
+  triggered" log with the triggering item/quantity attached. The `purerest-logs-*` Data View is
+  provisioned automatically (via the `kibana-setup` compose service) and set as default, so
+  Discover shows real data immediately — no manual index-pattern setup needed.
 - **Prometheus** (http://localhost:9092) — the raw metrics Grafana's dashboard queries, useful for
   ad-hoc PromQL.
 

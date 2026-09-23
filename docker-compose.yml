@@ -93,6 +93,35 @@ services:
       ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
     ports:
       - "5601:5601"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:5601/api/status || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  # One-shot: Kibana has no file-based provisioning like Grafana's, so its
+  # "purerest-logs-*" Data View (index pattern) has to be created via its
+  # Saved Objects API instead — without this, Discover shows nothing even
+  # though Filebeat is shipping real documents into Elasticsearch. Idempotent
+  # (tolerates the "already exists" 409 on a re-run) and exits after.
+  kibana-setup:
+    image: curlimages/curl:8.11.1
+    profiles: ["observability"]
+    depends_on:
+      kibana:
+        condition: service_healthy
+    entrypoint:
+      - sh
+      - -c
+      - |
+        curl -s -X POST http://kibana:5601/api/data_views/data_view \
+          -H "kbn-xsrf: true" -H "Content-Type: application/json" \
+          -d '{"data_view":{"id":"purerest-logs","title":"purerest-logs-*","name":"purerest-logs","timeFieldName":"@timestamp"}}' \
+          -o /dev/null -w 'data view: %{http_code}\n' || true
+        curl -s -X POST http://kibana:5601/api/kibana/settings \
+          -H "kbn-xsrf: true" -H "Content-Type: application/json" \
+          -d '{"changes":{"defaultIndex":"purerest-logs"}}' \
+          -o /dev/null -w 'default index: %{http_code}\n' || true
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:8.19.19

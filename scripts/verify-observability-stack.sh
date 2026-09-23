@@ -71,9 +71,10 @@ docker compose --profile observability down -v >/dev/null 2>&1 || true
 docker compose --profile observability up -d
 wait_healthy postgres
 wait_healthy elasticsearch
+wait_healthy kibana
 wait_ready 8080 "order-service"
 wait_ready 8081 "inventory-service"
-echo "   OK: postgres/elasticsearch healthy, order-service/inventory-service ready"
+echo "   OK: postgres/elasticsearch/kibana healthy, order-service/inventory-service ready"
 
 echo
 echo "2. Confirming Prometheus has scraped both services..."
@@ -109,6 +110,22 @@ if echo "$search" | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exi
   echo "   OK: purerest dashboard provisioned"
 else
   echo "   FAIL: purerest dashboard not found in Grafana" >&2
+  FAILED=1
+fi
+
+echo
+echo "3b. Confirming Kibana's purerest-logs-* Data View is provisioned..."
+# kibana-setup is a one-shot that runs once kibana is healthy; give it a moment
+# to complete before checking.
+for _ in $(seq 1 30); do
+  status="$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:5601/api/data_views/data_view/purerest-logs")"
+  [ "$status" = "200" ] && break
+  sleep 1
+done
+if [ "$status" = "200" ]; then
+  echo "   OK: purerest-logs Data View provisioned in Kibana"
+else
+  echo "   FAIL: expected Kibana's purerest-logs Data View to exist (got HTTP ${status})" >&2
   FAILED=1
 fi
 
