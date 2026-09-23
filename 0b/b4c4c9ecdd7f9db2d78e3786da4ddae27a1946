@@ -1,0 +1,13 @@
+Task: Document purerest publishing in tech-stack.md
+
+Summary: Added a new "Publishing" section to tech-stack.md covering
+purerest's organization (io.github.beckfordp), sbt-dynver-based versioning
+(including its current untagged-history fallback format, since no git tags
+exist in this repo yet), and that this is a local-publish-only prep step —
+no CI/release automation, and order-service/inventory-service still consume
+purerest via the internal ProjectRef, not the published jar.
+
+Files changed: conductor/tech-stack.md
+
+Why: Keep tech-stack.md's documented decision log in sync with the actual
+build.sbt state, per workflow.md's "Tech Stack is Deliberate" principle.
