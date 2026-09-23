@@ -1,0 +1,14 @@
+Phase 3, Tasks 1+2: failing tests for retry/circuit-breaker metrics (Red) + implementation (Green).
+
+What:
+- Retry.middleware now takes a Meter[F] and records purerest.retry.attempts (Long counter): for a request taking N total attempts, N-1 are recorded as outcome=retried and the final one as outcome=succeeded or outcome=exhausted. Real attempt count is tracked via a per-request Ref-based counting wrapper around the underlying client (not http4s Retry's AttemptCountKey response attribute, which doesn't exist on the error path) — this fixed an initial design gap where a non-retriable error's single attempt would have been miscounted as a full maxRetries+1 "exhausted" batch.
+- CircuitBreaker.middleware now takes a Meter[F] and records purerest.circuit_breaker.state_transitions (from_state/to_state attributes) when breaker.getState() differs before vs after a call, and purerest.circuit_breaker.calls_rejected on each fail-fast rejection. State is polled synchronously (not via resilience4j's event-listener API), matching the project's established "manual sequencing over hooks" precedent from CircuitBreaker's original implementation. A recovery that passes through HALF_OPEN is recorded as a single net OPEN -> CLOSED transition (the intermediate hop isn't separately observable with this approach) — documented as a scope decision in the code comment.
+- Resilience.middleware's signature updated to thread the Meter[F] through to both.
+- Pre-existing RetrySuite/CircuitBreakerSuite/ResilienceSuite tests updated to pass Meter.noop[IO] (metrics behavior not under test there).
+- order-service's Main.scala updated to pass Meter.noop[IO] as an interim placeholder, keeping the build green — Phase 4 wires the real Metrics.oteljava-backed meter.
+
+Tests: RetryMetricsSuite (4 scenarios: immediate success, success-after-retry, 5xx-exhausted, connection-error-exhausted), CircuitBreakerMetricsSuite (3 scenarios: trip open, rejection while open, half-open recovery) — via otel4s's MetricExpectation/PointExpectation DSL against Metrics.test's in-memory testkit. All Red (compile failures: Meter param didn't exist) then Green on first implementation attempt.
+
+Verification: full test suite green across all 3 modules (purerest 35/35, inventoryService, orderService 21/21); order-service and inventory-service compile confirmed separately before the full run.
+
+Files: modules/purerest/src/main/scala/purerest/resilience/{Retry,CircuitBreaker,Resilience}.scala, modules/purerest/src/test/scala/purerest/resilience/{RetryMetrics,CircuitBreakerMetrics}Suite.scala + updates to RetrySuite/CircuitBreakerSuite/ResilienceSuite, modules/order-service/src/main/scala/orderservice/Main.scala
