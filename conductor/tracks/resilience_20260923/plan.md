@@ -27,3 +27,6 @@
 - [x] Task: Run `sbt coverage purerest/test inventoryService/test orderService/test coverageReport`; confirm 100% statement/branch coverage on every file this track adds or changes. Found and closed two real gaps (CircuitBreaker's unreachable-in-practice `Predicate[Any]` fallback branch; InventoryRoutes' untested partial-probability branch). [1c279c7]
 - [x] Task: Run `scalafmtOnly` scoped to this track's own files (matching prior tracks' precedent of not reformatting the wider pre-existing codebase). [9fb9c20]
 - [x] Task: Conductor - User Manual Verification 'Phase 5: Coverage & Cleanup' (Protocol in workflow.md) — no new user-facing behavior in this phase (coverage + style only), so verification is the automated evidence already captured: 100% statement/branch coverage on all track-added/changed files (commit 1c279c7), and a full re-run of purerest/test, inventoryService/test, orderService/test all green after scalafmt reformatting. [ba80c37]
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions [e5a9f0f]
