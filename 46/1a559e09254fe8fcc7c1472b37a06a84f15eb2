@@ -1,0 +1,14 @@
+Task: Update tech-stack.md deferred-concern entry
+
+Summary: Marked options 3 (versionScheme) and 4 (evictionErrorLevel := Error)
+as done-prep in the "Transitive version drift" deferred concern, with a note
+that they're not yet exercised against a real external consumer. Narrowed
+"Trigger to revisit" to the extraction/publish step plus the two still-open
+options (API narrowing, MiMa). Updated the now-superseded 2026-09-23
+evictionErrorLevel deviation note to describe the current dependencyOverrides
+resolution instead of the old Warn-level suppression.
+
+Files changed: conductor/tech-stack.md
+
+Why: Keep tech-stack.md's own documented decision log in sync with the actual
+build.sbt state, per workflow.md's "Tech Stack is Deliberate" principle.
