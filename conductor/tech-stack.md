@@ -48,8 +48,9 @@
 - **Retry**: **cats-retry** (`com.github.cb372`) — composable retry policies (exponential
   backoff, jitter, max attempts) on Cats Effect.
 - **Circuit breaker**: **resilience4j-circuitbreaker**'s core, non-reactive
-  `CircuitBreaker` class, wrapped as an internal engine driven manually via
-  `guaranteeCase` — never exposed in purerest's public API.
+  `CircuitBreaker` class, wrapped as an internal engine driven manually via explicit
+  `tryAcquirePermission`/`onResult`/`onError` sequencing — never exposed in purerest's
+  public API.
 - Both exposed as composable purerest combinators (`purerest.resilience`), no
   annotations — matching purerest's existing `ClientTracing.middleware`/
   `ServerTracing.middleware` shape.
