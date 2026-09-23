@@ -4,7 +4,7 @@ This file tracks all major tracks for the project.
 
 ---
 
-- [ ] **Track: Add a Gatling-based load-test module**
+- [x] **Track: Add a Gatling-based load-test module**
   *Link: [./tracks/load-test_20260923/](./tracks/load-test_20260923/)*
 
 ---
