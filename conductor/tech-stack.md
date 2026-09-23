@@ -45,7 +45,29 @@
 - **Metrics**: Prometheus-compatible metrics for request/latency/error rates. (Still deferred to a later track.)
 
 ## Resilience
-- Retry policies and a circuit breaker, built on Cats Effect primitives — possibly leaning on an existing library (e.g. cats-retry) rather than fully from scratch. Exposed as composable purerest combinators, no annotations.
+- **Retry**: **cats-retry** (`com.github.cb372`) — composable retry policies (exponential
+  backoff, jitter, max attempts) on Cats Effect.
+- **Circuit breaker**: **resilience4j-circuitbreaker**'s core, non-reactive
+  `CircuitBreaker` class, wrapped as an internal engine driven manually via
+  `guaranteeCase` — never exposed in purerest's public API.
+- Both exposed as composable purerest combinators (`purerest.resilience`), no
+  annotations — matching purerest's existing `ClientTracing.middleware`/
+  `ServerTracing.middleware` shape.
+
+### 2026-09-23: cats-retry + resilience4j-circuitbreaker chosen
+- **cats-retry 4.0.0**: a new major version, published for **Scala 3 only** (matches
+  this project exactly) with a rewritten, more powerful "result handler" API replacing
+  v3.x's `wasSuccessful`/`isWorthRetrying` hooks. Chosen over the older v2.1.2/v3.1.3
+  line since this is a greenfield adoption — no reason to start on the superseded API.
+- **resilience4j-circuitbreaker**: no mature, idiomatic Cats-Effect-native circuit
+  breaker library exists (unlike Java's resilience4j). Rather than hand-rolling a
+  sliding-window/failure-rate state machine from scratch, resilience4j's core engine
+  (its plain in-memory state machine, not its Spring/reactive integration modules) is
+  wrapped behind a pure combinator — `acquirePermission`/`onSuccess`/`onError` are
+  synchronous, non-blocking, in-memory state updates, safe to drive from Cats Effect
+  this way. Gets mature failure-rate/slow-call-duration-based tripping logic without
+  reinventing its subtleties, while keeping purerest's own API 100% idiomatic
+  tagless-final Cats Effect — resilience4j types never leak into it.
 
 ## Testing
 - **munit** — test framework.

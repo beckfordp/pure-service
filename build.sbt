@@ -17,6 +17,7 @@ val flywayVersion = "11.8.2"
 val postgresqlJdbcVersion = "42.7.13"
 val pureconfigVersion = "0.17.10"
 val testcontainersScalaVersion = "0.43.6"
+val catsRetryVersion = "4.0.0"
 
 // Skunk 1.0.0 depends on otel4s-core 0.16.0 (its own optional tracing integration),
 // which sbt's binary-compatibility check flags as a suspect eviction against our
@@ -87,7 +88,10 @@ lazy val purerest = project
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-openapi-docs" % tapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion
+      "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
+      // cats-retry: composable retry policies (exponential backoff, jitter, max
+      // attempts) for purerest's resilient HTTP client.
+      "com.github.cb372" %% "cats-retry" % catsRetryVersion
     )
   )
 
