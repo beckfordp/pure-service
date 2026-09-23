@@ -1,6 +1,6 @@
 package purerest.metrics
 
-import cats.effect.IO
+import cats.effect.{IO, Resource}
 import munit.CatsEffectSuite
 import org.http4s.client.Client
 import org.http4s.dsl.io._
@@ -40,6 +40,38 @@ class ClientMetricsSuite extends CatsEffectSuite {
       ) match {
         case Right(_)         => ()
         case Left(mismatches) => fail(MetricExpectations.format(mismatches))
+      }
+    }
+  }
+
+  test(
+    "a call that raises still records a duration measurement, tagged with error.type"
+  ) {
+    Metrics.test[IO]("purerest-client-metrics-test").use { testMeter =>
+      val client = Client[IO] { _ =>
+        Resource.eval(IO.raiseError(new java.net.ConnectException("boom")))
+      }
+      val wrapped = ClientMetrics.middleware(testMeter.meter)(client)
+      for {
+        result <- wrapped.run(Request[IO](uri = uri"/ping")).use_.attempt
+        metrics <- testMeter.collectMetrics
+      } yield {
+        assert(result.isLeft, s"expected the raised error to propagate, got: $result")
+        MetricExpectations.checkAll(
+          metrics,
+          MetricExpectation
+            .histogram("http.client.request.duration")
+            .containsPoints(
+              PointExpectation.histogram
+                .attributesSubset(
+                  Attribute("http.request.method", "GET"),
+                  Attribute("error.type", "java.net.ConnectException")
+                )
+            )
+        ) match {
+          case Right(_)         => ()
+          case Left(mismatches) => fail(MetricExpectations.format(mismatches))
+        }
       }
     }
   }

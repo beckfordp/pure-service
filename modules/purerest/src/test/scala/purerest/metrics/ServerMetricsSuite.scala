@@ -57,4 +57,37 @@ class ServerMetricsSuite extends CatsEffectSuite {
       } yield assertEquals(response.status, Status.NotFound)
     }
   }
+
+  test(
+    "a route that raises still records a duration measurement, tagged with error.type"
+  ) {
+    val failingRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "boom" =>
+      IO.raiseError(new RuntimeException("boom"))
+    }
+    Metrics.test[IO]("purerest-server-metrics-test").use { testMeter =>
+      val wrapped = ServerMetrics.middleware(testMeter.meter)(failingRoutes)
+      for {
+        result <- wrapped.orNotFound.run(Request[IO](uri = uri"/boom")).attempt
+        metrics <- testMeter.collectMetrics
+      } yield {
+        assert(result.isLeft, s"expected the raised error to propagate, got: $result")
+        MetricExpectations.checkAll(
+          metrics,
+          MetricExpectation
+            .histogram("http.server.request.duration")
+            .containsPoints(
+              PointExpectation.histogram
+                .attributesSubset(
+                  Attribute("http.request.method", "GET"),
+                  Attribute("http.route", "/boom"),
+                  Attribute("error.type", "java.lang.RuntimeException")
+                )
+            )
+        ) match {
+          case Right(_)         => ()
+          case Left(mismatches) => fail(MetricExpectations.format(mismatches))
+        }
+      }
+    }
+  }
 }

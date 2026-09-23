@@ -13,8 +13,10 @@ object ServerMetrics {
 
   /** Wraps `HttpRoutes[F]` with a `http.server.request.duration` histogram
     * measurement (seconds) per handled request, tagged with the request method,
-    * route, and — when the route matched — the response status code (OTel
-    * semantic-convention attribute names).
+    * route, and — when the route matched — the response status code, or an
+    * `error.type` attribute if the route raised instead of returning a response
+    * (so the "Errors" dimension of RED metrics doesn't silently miss handler
+    * failures — OTel semantic-convention attribute names throughout).
     */
   def middleware[F[_]: Async](
       meter: Meter[F]
@@ -27,18 +29,23 @@ object ServerMetrics {
             .withUnit("s")
             .create
           start <- Clock[F].monotonic
-          maybeResponse <- routes.run(req).value
+          result <- routes.run(req).value.attempt
           end <- Clock[F].monotonic
+          outcomeAttributes = result match {
+            case Right(maybeResponse) =>
+              maybeResponse
+                .map(r => Attribute("http.response.status_code", r.status.code.toLong))
+                .toList
+            case Left(error) =>
+              List(Attribute("error.type", error.getClass.getName))
+          }
           attributes = List(
             Attribute("http.request.method", req.method.name),
             Attribute("http.route", req.uri.path.renderString)
-          ) ++ maybeResponse
-            .map(r =>
-              Attribute("http.response.status_code", r.status.code.toLong)
-            )
-            .toList
+          ) ++ outcomeAttributes
           _ <- histogram.record((end - start).toUnit(SECONDS), attributes)
-        } yield maybeResponse
+          response <- result.liftTo[F]
+        } yield response
       )
     }
 }
