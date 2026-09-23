@@ -15,7 +15,7 @@
 ## Phase 3: Compose + Wire into order-service
 - [x] Task: Write a failing test for the composed `Resilience.middleware` (retry wrapping circuit breaker) against a stub client, confirming retries pass through the breaker and a breaker-open rejection is not endlessly retried (Red). [731b4ec]
 - [x] Task: Implement `Resilience.middleware[F[_]: Async](config: ResilienceConfig)(client: Client[F]): Client[F]` composing `Retry.middleware(Retry.middleware's config)(CircuitBreaker.middleware(...)(client))`; log retries and breaker-open rejections via purerest's structured logging (Green). Making this test pass caught a real bug in CircuitBreaker.middleware (5xx responses were being recorded as breaker successes — see tech-stack.md); fixed via resilience4j's `recordResult` predicate. [93e64de] [28dcc06]
-- [ ] Task: Wire `Resilience.middleware(...)(ClientTracing.middleware(tracer)(httpClient))` into `order-service`'s `Main.scala` for its `InventoryClient`.
+- [x] Task: Wire `Resilience.middleware(...)(ClientTracing.middleware(tracer)(httpClient))` into `order-service`'s `Main.scala` for its `InventoryClient`. [e3c072c]
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Compose + Wire into order-service' (Protocol in workflow.md)
 
 ## Phase 4: Induced Failure in inventory-service
