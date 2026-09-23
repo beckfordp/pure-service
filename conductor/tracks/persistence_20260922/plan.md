@@ -16,13 +16,13 @@
 - [x] Task: Add Flyway migration `V1__create_orders_table.sql` (`id UUID PRIMARY KEY`, `item TEXT NOT NULL`, `quantity INT NOT NULL`, `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`); wire Flyway to run on `order-service` startup using config-driven connection settings (Green). [d0679d7]
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Schema & Migrations (Flyway)' (Protocol in workflow.md) — autonomous run: added `scripts/verify-order-service-migrations.sh` (throwaway Postgres container + real order-service boot + Flyway log check + orders-table column check) and ran it directly; all checks passed. [8ea30b1]
 
-## Phase 3: Skunk-backed OrderStore
+## Phase 3: Skunk-backed OrderStore [checkpoint: 10bf0c5]
 - [~] Task: Write failing test for a new `OrderStore.postgres`/Skunk-backed implementation, against a real Testcontainers Postgres rather than a mocked/stubbed Skunk `Session` — Skunk's `Session` is a concrete non-blocking protocol implementation, not designed as a mockable interface, so a hand-rolled mock would be more brittle/complex than the real thing (matches the pattern already established for `MigrationsSuite` in Phase 2) (Red). [91ed66c]
 - [x] Task: Implement `OrderStore.postgres[F]` using a pooled Skunk `Session.Builder.pooled` Resource, satisfying the existing `OrderStore[F]` trait (`create(item, quantity): F[Order]`) (Green). [b2aab90]
 - [x] Task: Write Testcontainers integration test: `POST /orders` end-to-end persists a row queryable back from Postgres. Note: passed immediately (no Red observed) — `OrderStore.postgres` was already implemented by the prior task, so this test confirms the HTTP-route-level behavior rather than driving new implementation. [9ed026f]
-- [ ] Task: Wire `OrderStore.postgres` into `Main.scala` in place of `OrderStore.inMemory`, using config-driven connection settings; make the integration test pass (Green).
-- [ ] Task: Refactor — review error handling (DB connection failure, constraint violations) maps to typed errors, not leaked exceptions (Optional).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Skunk-backed OrderStore' (Protocol in workflow.md)
+- [x] Task: Wire `OrderStore.postgres` into `Main.scala` in place of `OrderStore.inMemory`, using config-driven connection settings; make the integration test pass (Green). [2229b38]
+- [x] Task: Refactor — review error handling (DB connection failure, constraint violations) maps to typed errors, not leaked exceptions (Optional). Verified via a test against an unreachable Postgres: http4s/Ember's default exception handling already returns a clean 5xx with no leaked internals — no production code change needed. [062fdb0]
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Skunk-backed OrderStore' (Protocol in workflow.md) — autonomous run: added `scripts/verify-order-service-postgres-persistence.sh` (real Postgres + inventory-service + order-service, POST /orders, direct DB row check, service restart, idempotent-migration check, post-restart row check) and ran it directly; all checks passed, including the track's overall 'survives restart' acceptance criterion. [10bf0c5]
 
 ## Phase 4: Local Dev Environment (Docker Compose)
 - [ ] Task: Add `docker-compose.yml` provisioning a Postgres container matching `application.conf` defaults, for `sbt "order-service/run"` and manual testing.
