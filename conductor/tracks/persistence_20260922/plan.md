@@ -17,7 +17,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Schema & Migrations (Flyway)' (Protocol in workflow.md) — autonomous run: added `scripts/verify-order-service-migrations.sh` (throwaway Postgres container + real order-service boot + Flyway log check + orders-table column check) and ran it directly; all checks passed. [8ea30b1]
 
 ## Phase 3: Skunk-backed OrderStore
-- [ ] Task: Write failing unit tests for a new `OrderStore.postgres`/Skunk-backed implementation against a mocked/stubbed Skunk `Session` (Red).
+- [~] Task: Write failing test for a new `OrderStore.postgres`/Skunk-backed implementation, against a real Testcontainers Postgres rather than a mocked/stubbed Skunk `Session` — Skunk's `Session` is a concrete non-blocking protocol implementation, not designed as a mockable interface, so a hand-rolled mock would be more brittle/complex than the real thing (matches the pattern already established for `MigrationsSuite` in Phase 2) (Red).
 - [ ] Task: Implement `OrderStore.postgres[F]` using a pooled Skunk `Session.pooled` Resource, satisfying the existing `OrderStore[F]` trait (`create(item, quantity): F[Order]`) (Green).
 - [ ] Task: Write failing Testcontainers integration test: `POST /orders` end-to-end persists a row queryable back from Postgres (Red).
 - [ ] Task: Wire `OrderStore.postgres` into `Main.scala` in place of `OrderStore.inMemory`, using config-driven connection settings; make the integration test pass (Green).
