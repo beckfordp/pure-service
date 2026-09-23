@@ -1,6 +1,6 @@
 # Plan: Publish purerest as a versioned jar
 
-## Phase 1: Publish purerest Locally
+## Phase 1: Publish purerest Locally [checkpoint: fee1232]
 - [x] Task: Add the `sbt-dynver` plugin to `project/plugins.sbt`; run `sbt purerest/version` to confirm it now reports a git-derived version rather than sbt's meaningless default (`0.1.0-SNAPSHOT`). [66fd0f5]
 - [x] Task: Set `purerest / organization := "io.github.beckfordp"` in `build.sbt`. [66fd0f5]
 - [x] Task: Run `sbt purerest/publishLocal`; confirm a jar now exists under `~/.ivy2/local/io.github.beckfordp/purerest_3/<version>/jars/` with the expected coordinate and dynver-derived version. [66fd0f5]
