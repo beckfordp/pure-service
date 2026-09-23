@@ -1,0 +1,11 @@
+Task: Write failing tests for CircuitBreaker.middleware (Red)
+
+Summary: Added CircuitBreakerSuite with 3 tests against stub Client[F]s built from
+Ref-based counters/flags: (1) stays closed and passes calls through on success, (2)
+opens after the configured failure threshold and fails fast (CircuitBreakerOpen)
+without calling the underlying client again, (3) transitions open -> half-open (after
+resetTimeout) -> closed again once the half-open trial call succeeds. Confirmed Red:
+compile failure (CircuitBreaker/CircuitBreakerConfig/CircuitBreakerOpen didn't exist).
+
+Files changed:
+- modules/purerest/src/test/scala/purerest/resilience/CircuitBreakerSuite.scala (new)
