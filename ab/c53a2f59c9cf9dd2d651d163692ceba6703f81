@@ -1,0 +1,3 @@
+Phase 5 task: scalafmtOnly scoped to this track's files (all metrics/resilience sources purerest added or changed, plus order-service's Main.scala/OrderServiceConfig.scala and inventory-service's Main.scala), matching prior tracks' precedent of not reformatting the wider pre-existing codebase.
+
+Verification: full test suite re-run after reformatting (purerest 36/36, inventoryService 10/10, orderService 21/21) — all green, style-only diff.
