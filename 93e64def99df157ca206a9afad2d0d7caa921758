@@ -1,0 +1,20 @@
+Task: Implement Resilience.middleware (Green) — real circuit-breaker bug found and fixed
+
+Summary: Added Resilience.middleware composing Retry.middleware (outer) around
+CircuitBreaker.middleware (inner), per resilience4j's documented recommended ordering.
+
+Real bug found while making the composition test pass: CircuitBreaker.middleware
+called breaker.onSuccess(...) for ANY Right(response) from the underlying client,
+regardless of HTTP status — since a 5xx response is a normal returned VALUE (not a
+thrown exception), it was being recorded as a SUCCESS, so the breaker could never
+trip from 5xx responses at all, only from genuine exceptions. Fixed by configuring
+resilience4j's CircuitBreakerConfig.recordResult(Predicate<Object>) to classify a 5xx
+Response as a failure, and calling breaker.onResult(...) (which applies that
+predicate) instead of onSuccess(...) for the Right(response) branch.
+
+Files changed:
+- modules/purerest/src/main/scala/purerest/resilience/Resilience.scala (new)
+- modules/purerest/src/main/scala/purerest/resilience/CircuitBreaker.scala (bug fix)
+
+Verified: full purerest/test suite green (23/23), including both new ResilienceSuite
+scenarios — the second of which is exactly what caught this bug on first run.
