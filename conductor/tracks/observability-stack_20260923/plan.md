@@ -39,3 +39,6 @@
 - [x] Task: Document the stack's design in `tech-stack.md`. New "Local Observability Stack" section plus two dated entries for the bugs found along the way (Prometheus loopback binding, Elasticsearch disk watermark). [ea347bb]
 - [x] Task: Add the new "build, run, observe" section to `README.md`. New primary section at the top covering build/run/generate-traffic/observe/verify/tear-down; prior sbt/plain-Postgres instructions kept below as secondary reference. [ea347bb]
 - [x] Task: Conductor - User Manual Verification 'Phase 5: Verification, Docs, README' (Protocol in workflow.md) — ran `./scripts/verify-observability-stack.sh` end-to-end (clean run, fresh volumes): all checks passed — Prometheus targets up with real request/DB-query metrics, Grafana datasource+dashboard provisioned and resolving real data, degraded pass produced retry attempts and a confirmed circuit-breaker trip, Elasticsearch indexed structured logs including the induced-failure WARN log with a searchable trace_id. Script printed Grafana/Kibana/Prometheus URLs and tore the stack down cleanly on exit.
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions [439b7bd]
