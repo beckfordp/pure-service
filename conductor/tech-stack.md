@@ -147,16 +147,23 @@
   the API version with the daemon instead of hardcoding 1.32) — the properties file can
   likely be removed then.
 
-### 2026-09-23: `ThisBuild / evictionErrorLevel := Level.Warn`
+### 2026-09-23: Skunk's `otel4s-core` eviction — from a blanket `Level.Warn` to an explicit pin
 - **Deviation observed**: Adding Skunk 1.0.0 to `order-service` made `sbt update` fail
   outright — Skunk depends on `otel4s-core` 0.16.0 (its own optional tracing
   integration), which conflicts with this project's pinned `otel4s` 1.1.0. sbt's
   default eviction check treats the 0.x -> 1.x jump as a suspected binary
   incompatibility and fails the build rather than warning.
-- **Resolution**: `ThisBuild / evictionErrorLevel := Level.Warn` in `build.sbt`,
-  downgrading this class of check to a warning project-wide — "highest version wins"
-  (1.1.0) is correct here since nothing in this codebase invokes Skunk's otel4s
-  integration.
+- **Original resolution (superseded)**: `ThisBuild / evictionErrorLevel := Level.Warn`
+  in `build.sbt`, downgrading this class of check to a warning project-wide —
+  "highest version wins" (1.1.0) is correct here since nothing in this codebase
+  invokes Skunk's otel4s integration. This blanket downgrade also silenced any
+  *other* eviction that might arise, not just this one.
+- **Current resolution, 2026-09-23**: `evictionErrorLevel` is back to `Level.Error`
+  (see the transitive-version-drift concern below, option 4), and this specific
+  eviction is instead pinned via three explicit `ThisBuild / dependencyOverrides`
+  entries (`otel4s-core`/`-core-common`/`-core-metrics` at `otel4sVersion`), commented
+  with the same reasoning. Same outcome for this one case, but no longer a blanket
+  suppression — any *other* eviction now fails the build instead of passing silently.
 - **Relates to** the transitive-version-drift concern below: this is the same
   underlying sbt/Coursier eviction mechanism, triggered earlier than expected (by a
   third-party library's own dependency, not by the purerest-extraction split this
@@ -179,33 +186,42 @@
   binary-incompatible — but nothing *forces* purerest's and a consumer's independently-declared
   versions to stay in sync any more, and a binary-incompatible eviction only warns, it doesn't fail
   the build, by default.
-- **Options to address when this split happens** (not yet decided, revisit then):
+- **Options to address when this split happens**:
   1. Narrow purerest's own public API so consumers never import the underlying library's types
      directly (e.g. wrap tapir behind a purerest-owned endpoint-builder DSL) — removes the diamond
-     entirely for that dependency, since only purerest would declare it.
+     entirely for that dependency, since only purerest would declare it. **Not yet decided, revisit
+     when the extraction happens.**
   2. Adopt MiMa (Migration Manager) in purerest's own release CI to enforce binary compatibility
      within a major version line, making "highest version wins" resolution provably safe rather than
-     hopefully safe.
-  3. Publish purerest with `versionScheme := "early-semver"` (or similar) so sbt's existing
-     eviction-warning machinery has real semver metadata to reason about.
-  4. As a blunt fallback in consumers: `ThisBuild / dependencyOverrides` to pin shared transitive
-     versions centrally, and/or `evictionErrorLevel := Level.Error` to fail the build on an
-     incompatible eviction instead of only warning.
-- **If option 4 is used, pair it with option 3 — don't use `evictionErrorLevel := Error` alone**:
-  sbt's eviction report (same content whether it's a warning or, with `Level.Error`, a build-failing
-  error) names the conflicting artifact, the selected vs. evicted version(s), and which direct
-  dependency requested each. For the one-hop diamond a consumer/purerest pair produces, that's
-  exactly the two culprits (purerest's declared version vs. the consumer's own), so the message is
-  enough for a consumer to *locate* the conflict and know what to change (bump their pin, or add a
-  `dependencyOverride`). What it can't tell them is whether the fix is *safe*, or whether the
-  conflict is even real — "suspected binary incompatible" is just a `versionScheme` guess, and this
-  project already hit a false positive from it (see the `evictionErrorLevel := Level.Warn` entry
-  below: Skunk's `otel4s-core` 0.16.0 vs. this build's pinned 1.1.0 failed resolution even though
-  nothing here uses Skunk's otel4s integration). Without real `versionScheme` metadata on purerest's
-  published artifact, `Level.Error` risks blocking a consumer's build on a bump that's actually
-  harmless, with nothing in the error message to tell them so. Publishing purerest with
-  `versionScheme := "early-semver"` (option 3) gives the heuristic real semver information instead of
-  a guess, so the error's implicit "this is unsafe" claim is trustworthy and the remedy it points
-  to (bump or override) can be applied with confidence rather than guesswork.
+     hopefully safe. **Not yet decided, revisit when the extraction happens.**
+  3. **Done (prep), 2026-09-23**: `purerest / versionScheme := Some("early-semver")` is set in
+     `build.sbt`, so sbt's eviction-warning machinery has real semver metadata to reason about once
+     purerest is actually published. Not yet exercised against a real external consumer — purerest
+     is still consumed via `.dependsOn(purerest)`, not a published jar — so this is groundwork, not
+     a tested guarantee.
+  4. **Done (prep), 2026-09-23**: `ThisBuild / evictionErrorLevel := Level.Error` (was `Level.Warn`).
+     Flipping it immediately caught the eviction below, confirming the guardrail actually works
+     rather than passing by default.
+- **Skunk's `otel4s-core` eviction, now pinned explicitly**: Skunk 1.0.0 depends on
+  `otel4s-core`/`-core-common`/`-core-metrics` 0.16.0 (its own optional tracing integration), which
+  conflicts with this build's pinned otel4s 1.1.0 — an early-semver 0.x -> 1.x jump that
+  `evictionErrorLevel := Level.Error` now fails the build on by default. "Highest version wins" is
+  the correct resolution (nothing in this project invokes Skunk's otel4s integration), so these
+  three coordinates are pinned via `ThisBuild / dependencyOverrides` in `build.sbt`, with a comment
+  explaining why — an explicit, intentional override instead of a blanket `Level.Warn` suppression
+  hiding it (and every other eviction) by default.
+- **If/when option 4 (`evictionErrorLevel := Error`) is relied on against a real external
+  consumer, don't treat it as self-sufficient**: sbt's eviction report (same content whether it's a
+  warning or a build-failing error) names the conflicting artifact, the selected vs. evicted
+  version(s), and which direct dependency requested each — enough for a consumer to *locate* a
+  conflict and know what to change (bump their pin, or add a `dependencyOverride`). What it can't
+  tell them is whether the fix is *safe*, or whether the conflict is even real — "suspected binary
+  incompatible" is just a `versionScheme` guess, and this project already hit a false positive from
+  it (the Skunk/otel4s-core case above, before it was pinned explicitly). Option 3's real
+  `versionScheme` metadata on purerest's own published artifact is what makes that guess
+  trustworthy for purerest's own version bumps specifically — it doesn't cover every third-party
+  library in the diamond, only purerest's own coordinate.
 - **Trigger to revisit**: the track that extracts `purerest` into its own build/repository and starts
-  publishing it as a jar consumed by `order-service`/`inventory-service` (and any future service).
+  publishing it as a jar consumed by `order-service`/`inventory-service` (and any future service) —
+  that's when options 3 and 4 get their first real exercise against an external consumer, and when
+  options 1 and 2 (still undecided) need a decision.
