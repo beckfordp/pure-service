@@ -18,6 +18,7 @@ val postgresqlJdbcVersion = "42.7.13"
 val pureconfigVersion = "0.17.10"
 val testcontainersScalaVersion = "0.43.6"
 val catsRetryVersion = "4.0.0"
+val resilience4jVersion = "2.3.0"
 
 // Skunk 1.0.0 depends on otel4s-core 0.16.0 (its own optional tracing integration),
 // which sbt's binary-compatibility check flags as a suspect eviction against our
@@ -91,7 +92,11 @@ lazy val purerest = project
       "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
       // cats-retry: composable retry policies (exponential backoff, jitter, max
       // attempts) for purerest's resilient HTTP client.
-      "com.github.cb372" %% "cats-retry" % catsRetryVersion
+      "com.github.cb372" %% "cats-retry" % catsRetryVersion,
+      // resilience4j-circuitbreaker: mature circuit-breaker state machine (core,
+      // non-reactive module only), wrapped internally as a pure combinator — never
+      // exposed in purerest's public API.
+      "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion
     )
   )
 
