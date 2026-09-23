@@ -1,0 +1,5 @@
+Phase 1 (Metrics Foundation) checkpoint.
+
+Automated tests: sbt purerest/test (25/25 passed, includes MetricsSuite's manually-emitted-counter scenario against Metrics.test's in-memory MetricsTestkit).
+
+Manual verification: no wiring into a running service yet (Phase 4's job) — the Metrics module (Metrics.oteljava / Metrics.test) exists standalone at this point, same precedent as the resilience track's Phase 1/2 (Retry/CircuitBreaker combinators verified via test suite alone before wiring).
