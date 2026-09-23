@@ -182,6 +182,28 @@ lazy val inventoryService = project
     )
   )
 
+// load-test: Gatling simulations exercising order-service's POST /orders call
+// path under sustained load, to generate realistic RED + resilience metrics.
+// Deliberately NOT added to root's .aggregate(...) below — Gatling's own
+// convention runs simulations under a dedicated `Gatling` sbt configuration
+// (`sbt loadTest/Gatling/test`), not the default `test` task, but its
+// heavier dependencies (an embedded Netty/Jetty-based HTTP stack, chart
+// generation) would still get pulled onto the classpath by a plain `sbt test`
+// if aggregated — keeping it out of .aggregate keeps the normal fast dev/test
+// loop untouched; reach it explicitly via `sbt loadTest/...` or
+// scripts/loadtest-purerest.sh.
+lazy val loadTest = project
+  .in(file("modules/load-test"))
+  .enablePlugins(GatlingPlugin)
+  .settings(
+    scalaVersion := scala3Version,
+    name := "load-test",
+    libraryDependencies ++= Seq(
+      "io.gatling.highcharts" % "gatling-charts-highcharts" % "3.15.1" % Test,
+      "io.gatling" % "gatling-test-framework" % "3.15.1" % Test
+    )
+  )
+
 // root: aggregates the modules so `sbt compile`/`sbt test` run across all of
 // them; not published itself.
 lazy val root = project
