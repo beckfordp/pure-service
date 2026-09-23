@@ -74,6 +74,13 @@
   `minimumNumberOfCalls` = `failureThreshold`, `failureRateThreshold = 100.0f`) —
   giving simple "N consecutive failures" semantics from a plain integer, since
   resilience4j has no raw-count-based mode natively.
+- **Bug found and fixed**: a 5xx `Response` is a normal returned value from
+  `Client[F].run`, not a thrown exception — so recording only `onSuccess`/`onError`
+  (success vs. thrown-exception) let 5xx responses silently count as breaker
+  successes, and the breaker could never trip from them. Fixed via resilience4j's
+  `CircuitBreakerConfig.recordResult(Predicate<Object>)`, classifying a 5xx `Response`
+  as a failure, and calling `breaker.onResult(...)` (which applies that predicate)
+  instead of `onSuccess(...)` for every returned response.
 
 ### 2026-09-23: `Retry.middleware` delegates its execution loop to http4s's own `Retry`
 - **Deviation observed**: retrying a `Client[F].run` call safely is non-trivial — each
