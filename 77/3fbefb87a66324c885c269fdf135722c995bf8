@@ -1,0 +1,15 @@
+Phase Completion Report: Phase 2 - Enrich Metrics
+
+Automated verification: sbt coverage purerest/test orderService/test
+coverageReport (plus inventoryService/test)
+- purerest 45/45, inventoryService 12/12, orderService 28/28, all green.
+- 100% statement/branch coverage on CircuitBreaker.scala and
+  OrderStore.scala.
+- The DB-metrics success/error paths were both proven against a real
+  Testcontainers Postgres instance (not a stub) - genuine query timing
+  and a genuine unreachable-connection failure.
+
+Manual verification: no running observability stack to demo against yet
+(that's Phases 3-4). Substituted with the automated test suite above.
+
+Result: All checks passed. Phase 2 complete.
