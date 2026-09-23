@@ -35,9 +35,11 @@ bigger picture, not as a commitment to build all of it.
    payment-service, no payment status anywhere yet.)*
 5. **Fulfillment** — reserved stock ships, order marked fulfilled. *(Not built.)*
 6. **Customer checks status** — `GET /orders/{id}` shows the order, its reservation,
-   and eventually payment/fulfillment status. *(Reservation half is the next planned
-   track; the order's `status` field should leave room for later payment/fulfillment
-   states rather than only ever meaning "reserved".)*
+   and (eventually) payment/fulfillment status. *(Built — returns the order's
+   `status` (currently always `"reserved"`), `reservationId`, `reservedQuantity`, and
+   `createdAt`; `status`'s value set is expected to grow once payment/fulfillment
+   exist. A 404 with a JSON error body is returned for an unknown id — the first
+   modeled domain error in the codebase, per `product-guidelines.md`.)*
 
 ## Components
 1. **purerest** (library) — server + client toolkit built on Cats Effect 3 and http4s:
