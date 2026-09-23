@@ -1,0 +1,9 @@
+Task: Write failing induced-failure/delay tests (Red)
+
+Summary: Added 3 tests to InventoryRoutesSuite: failureRate=1.0 always returns 500,
+failureRate=0.0 behaves normally, and delay=200ms measurably delays the response.
+Confirmed Red: compile failure (InducedFailureConfig didn't exist, routes()/
+serverEndpoint() didn't accept a 3rd param).
+
+Files changed:
+- modules/inventory-service/src/test/scala/inventoryservice/InventoryRoutesSuite.scala
