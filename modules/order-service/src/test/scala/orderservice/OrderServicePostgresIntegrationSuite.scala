@@ -75,4 +75,47 @@ class OrderServicePostgresIntegrationSuite extends CatsEffectSuite with TestCont
       }
     }
   }
+
+  test("POST /orders returns a clean 5xx without leaking exception internals when Postgres is unreachable") {
+    withContainers { postgres =>
+      val unreachableConfig = PostgresConfig(
+        host = postgres.host,
+        port = postgres.mappedPort(5432) + 1, // nothing listens here
+        database = postgres.databaseName,
+        user = postgres.username,
+        password = postgres.password
+      )
+
+      val resources =
+        for {
+          orderStore <- OrderStore.postgres[IO](unreachableConfig)
+          inventoryStore <- cats.effect.Resource.eval(InventoryStore.inMemory[IO])
+          inventoryServer <- EmberServerBuilder
+            .default[IO]
+            .withHost(host"127.0.0.1")
+            .withPort(port"0")
+            .withHttpApp(InventoryRoutes.routes[IO](inventoryStore, NoOpLogger[IO]).orNotFound)
+            .build
+          httpClient <- HttpClient.resource[IO]
+        } yield (orderStore, inventoryServer, httpClient)
+
+      resources.use { case (orderStore, inventoryServer, httpClient) =>
+        val inventoryBaseUri =
+          Uri.unsafeFromString(s"http://127.0.0.1:${inventoryServer.address.getPort}")
+        val inventoryClient = InventoryClient[IO](httpClient, inventoryBaseUri)
+        val routes = OrderRoutes.routes[IO](orderStore, inventoryClient, NoOpLogger[IO])
+        val request = Request[IO](Method.POST, uri"/orders")
+          .withEntity(CreateOrderRequest("widget", 5))
+
+        for {
+          response <- routes.orNotFound.run(request)
+          body <- response.bodyText.compile.string
+        } yield {
+          assert(response.status.code >= 500, s"expected a 5xx status, got ${response.status}")
+          assert(!body.contains("Exception"), s"response body leaked exception details: $body")
+          assert(!body.toLowerCase.contains("skunk"), s"response body leaked Skunk internals: $body")
+        }
+      }
+    }
+  }
 }
