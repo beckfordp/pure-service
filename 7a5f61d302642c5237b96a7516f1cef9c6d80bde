@@ -1,0 +1,26 @@
+Task: Add V2 migration, extend Order domain model (Green)
+
+Summary: Added V2__add_reservation_to_orders.sql (reservation_id UUID NOT NULL,
+reserved_quantity INT NOT NULL, status TEXT NOT NULL DEFAULT 'reserved'). Extended
+Order with status/reservationId/reservedQuantity/createdAt (java.time.Instant — first
+java.time usage in the codebase; circe 0.14's built-in Instant codec and Skunk's
+timestamptz cover it).
+
+Because extending Order's constructor forces every OrderStore implementation to supply
+the new fields immediately, this commit necessarily also updates OrderStore.create's
+signature (now takes reservationId/reservedQuantity) and adds OrderStore.get(id) for
+both inMemory and postgres, plus OrderRoutes' POST handler to pass the reservation's
+id/quantity through, and fixes the existing OrderStoreSuite/OrderStorePostgresSuite
+call sites to compile. This gets most of Phase 2's implementation done ahead of
+schedule — Phase 2 will still add dedicated new assertions (reservationId/status
+round-tripping, get() returning None for unknown ids) since these fixes only kept
+things compiling, they don't yet assert the new behavior.
+
+Files changed:
+- modules/order-service/src/main/resources/db/migration/V2__add_reservation_to_orders.sql (new)
+- modules/order-service/src/main/scala/orderservice/OrderStore.scala
+- modules/order-service/src/main/scala/orderservice/OrderRoutes.scala
+- modules/order-service/src/test/scala/orderservice/OrderStoreSuite.scala (compile fix only)
+- modules/order-service/src/test/scala/orderservice/OrderStorePostgresSuite.scala (compile fix only)
+
+Verified: full orderService/test suite green (15/15).
