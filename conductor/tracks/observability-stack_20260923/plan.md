@@ -13,11 +13,11 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Enrich Logging' (Protocol in workflow.md) — no running observability stack to demo against yet (that's Phases 3-4), so verification is the automated test suite (purerest 44/44, inventoryService 12/12, orderService 26/26, 100% coverage on the changed route files) plus a manual `sbt bgRun` + curl check confirming the startup log line ("inventory-service starting") actually appears in console output.
 
 ## Phase 2: Enrich Metrics
-- [ ] Task: Write a failing test (Red) asserting a live `purerest.circuit_breaker.state` gauge reflects CLOSED/OPEN correctly via `Metrics.test`'s testkit.
-- [ ] Task: Implement the state gauge in `CircuitBreaker.middleware` to pass (Green).
-- [ ] Task: Write a failing test (Red) — against order-service's real-Postgres integration setup — asserting a DB query duration measurement (with an operation attribute) is recorded for `OrderStore` queries, and an error is recorded on failure.
-- [ ] Task: Implement DB query metrics in `OrderStore`, wired to the already-constructed `Meter[F]`, to pass (Green).
-- [ ] Task: Run full test suite + coverage; confirm 100% on changed files.
+- [x] Task: Write a failing test (Red) asserting a live `purerest.circuit_breaker.state` gauge reflects CLOSED/OPEN correctly via `Metrics.test`'s testkit. [7cca14a]
+- [x] Task: Implement the state gauge in `CircuitBreaker.middleware` to pass (Green). [7cca14a]
+- [x] Task: Write a failing test (Red) — against order-service's real-Postgres integration setup — asserting a DB query duration measurement (with an operation attribute) is recorded for `OrderStore` queries, and an error is recorded on failure. [7cca14a]
+- [x] Task: Implement DB query metrics in `OrderStore`, wired to the already-constructed `Meter[F]`, to pass (Green). [7cca14a]
+- [x] Task: Run full test suite + coverage; confirm 100% on changed files. Verified: CircuitBreaker.scala/OrderStore.scala both 100%/100%; purerest 45/45, inventoryService 12/12, orderService 28/28. [7cca14a]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Enrich Metrics' (Protocol in workflow.md)
 
 ## Phase 3: Containerize Services
