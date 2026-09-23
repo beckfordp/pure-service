@@ -1,0 +1,12 @@
+Fix: flaky DB-unreachable test discovered while running sbt-scoverage's coverage suite
+
+Summary: The 'unreachable Postgres' test used postgres.mappedPort(5432) + 1 to
+simulate a closed port. Under scoverage instrumentation, order-service's suite ran 3
+Testcontainers Postgres instances concurrently with adjacent dynamically-assigned host
+ports (e.g. 51237/38/39) — so +1 could coincide with a DIFFERENT, live container's real
+port, making the 'unreachable' assumption false and the test intermittently see a 201
+instead of a 5xx. Fixed by using a fixed, always-unreachable port (1, a privileged port
+nothing binds to) instead of deriving one from another container's mapped port.
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/OrderServicePostgresIntegrationSuite.scala
