@@ -76,3 +76,18 @@ Hands-on use of the finished stack raised the question purerest hasn't actually 
 - Full customer-journey buildout (catalog, payment, fulfillment) — purerest's design driver, not a commitment
 - A dedicated experiment-control UI — worth revisiting once Iteration 2's runtime-adjustable
   failure rate exists, not before
+- Runtime-tunable retry/circuit-breaker config (maxRetries, backoff, failureThreshold,
+  resetTimeout) — a bigger change than the failure-rate endpoint (static `PureConfig` values
+  baked into client construction, not read per-request), revisit once the induced-failure
+  endpoint and load-test work above are done and the Swagger-UI-plus-Grafana loop's
+  sufficiency can actually be judged
+
+## Future Direction (under consideration)
+- **Renaming this repo to `purerest`** and restructuring it so the library is the primary,
+  CI-published artifact, with `order-service`/`inventory-service` and the load-test/observability
+  stack recast as supporting tooling for *evaluating* the library rather than a multi-service
+  product in their own right. Not decided or scheduled — matches where Iteration 2 already
+  points (purerest is the actual point of the project), reinforced by moving the service-template
+  idea out to its own `pure-service-generator` project. When this is picked up, treat it as its
+  own structural track (repo rename, CI setup, deciding what moves vs. stays local), not a
+  routine backlog item.
