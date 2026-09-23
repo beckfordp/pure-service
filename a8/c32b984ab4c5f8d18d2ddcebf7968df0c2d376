@@ -1,0 +1,7 @@
+Phase 5 coverage task: sbt coverage purerest/test inventoryService/test orderService/test coverageReport found one real gap — Metrics.oteljava (the real Prometheus-exporter-backed path) was only 46% line-covered, since MetricsSuite originally only exercised Metrics.test's in-memory path; the manual verify scripts exercise it too but scoverage instrumentation only sees `sbt test` runs, not separately-launched bgRun processes.
+
+Fixed by adding a genuine integration test: starts Metrics.oteljava on a fixed test port (19099), records a counter, then makes a real HTTP GET against its own /metrics endpoint via purerest's own HttpClient and asserts the recorded series appears in the scraped Prometheus text — not just a coverage-satisfying stub, a real end-to-end assertion that the exporter actually serves what it claims to.
+
+Result: Metrics.scala, ServerMetrics.scala, ClientMetrics.scala, Retry.scala, CircuitBreaker.scala, Resilience.scala all 100%/100% (line/branch). OrderServiceConfig.scala (metricsPort field) 100%/100%. The only 0% files are the pre-existing accepted exception: both services' Main.scala IOApp entrypoints (same precedent as prior tracks — untestable, not this track's responsibility).
+
+Verification: full test suite green across all 3 modules (purerest 36/36, inventoryService 10/10, orderService 21/21).
