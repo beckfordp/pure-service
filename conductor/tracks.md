@@ -4,11 +4,6 @@ This file tracks all major tracks for the project.
 
 ---
 
-- [x] **Track: purerest Metrics (RED + Resilience Signals)**
-  *Link: [./tracks/metrics_20260923/](./tracks/metrics_20260923/)*
-
----
-
 ## Backlog
 
 Title-only placeholders for future tracks — not yet detailed (no spec/plan, no linked
