@@ -1,0 +1,20 @@
+Phase Completion Report: Phase 1 - Standalone Consumer Smoke Test
+
+Automated verification command: ./scripts/verify-purerest-consumption.sh
+- Confirmed smoke-test/ is not listed by `sbt projects` at the repo root
+  (genuinely isolated from the aggregate build).
+- `sbt purerest/publishLocal` succeeded and its version was resolved.
+- smoke-test/'s own `sbt test`, run against that version via
+  -DpurerestVersion, resolved purerest from the local Ivy2 cache (not a
+  ProjectRef) and passed: PurerestConsumptionSuite's real request through
+  ServerMetrics.middleware recorded a real http.server.request.duration
+  measurement.
+
+Manual verification: not applicable in the standard interactive/HTTP sense
+— this track's acceptance criteria are build/consumption-level (a separate
+sbt build resolving and using purerest as a real external jar), not
+service behavior against a running system. Verification was done via the
+automated script above, per this project's prompting-off mode
+(.claude/prompt-off), substituting for the interactive walkthrough.
+
+Result: All checks passed. Phase 1 complete.
