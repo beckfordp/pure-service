@@ -1,0 +1,25 @@
+Phase 4 checkpoint: Induced Failure in inventory-service
+
+Automated tests: sbt inventoryService/test (9/9), orderService/test (21/21),
+purerest/test (23/23).
+
+Manual verification (prompting off): scripts/verify-resilience-end-to-end.sh runs the
+real stack against a genuinely flaky inventory-service (not just stub Client[F]s).
+
+Real finding: the first version, using a 60% induced failure rate for the
+"retry masks transient failures" demo, accidentally tripped the shared circuit
+breaker partway through its own 10-order loop (order-service's hardcoded
+CircuitBreakerConfig(failureThreshold=5, resetTimeout=30s) — enough attempts across
+10 orders' worth of retries produced 5 consecutive failures). Once tripped, the
+breaker rejected almost everything for the rest of the 30s reset window, which has
+nothing to do with retry's own effectiveness and swamped the measurement (2/10
+succeeded instead of the expected ~9-10/10). Not a code bug — a genuine
+resilience-tuning interaction between the two mechanisms' configured thresholds.
+Fixed by lowering the demo's failure rate to 30% (P(one order exhausts all 4
+attempts) ≈0.8% at 30% vs ≈13% at 60%, keeping the breaker safely closed during this
+part of the demo).
+
+Final results: at 30% induced failure, 10/10 orders succeeded via retry. At 100%
+induced failure, request latency dropped from ~1065ms (full retry+backoff exhausted)
+to ~22ms (circuit breaker open, fails fast) by the 3rd request — a clean, convincing
+demonstration of both mechanisms working as designed. All checks passed.
