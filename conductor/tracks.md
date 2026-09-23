@@ -4,7 +4,7 @@ This file tracks all major tracks for the project.
 
 ---
 
-- [ ] **Track: Publish purerest as a versioned jar**
+- [x] **Track: Publish purerest as a versioned jar**
   *Link: [./tracks/publish-jar_20260923/](./tracks/publish-jar_20260923/)*
 
 ---
