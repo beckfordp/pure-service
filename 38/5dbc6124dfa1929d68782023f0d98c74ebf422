@@ -1,0 +1,28 @@
+Task: Standalone smoke-test proving purerest works as a published jar
+
+Summary: Scaffolded smoke-test/ as a genuinely independent sbt build (own
+build.sbt, project/build.properties) deliberately not referenced in the
+root build.sbt; confirmed via `sbt projects` at the repo root that it's
+never swept into the aggregate build. Wrote PurerestConsumptionSuite
+(wraps a stub HttpRoutes[IO] with purerest's ServerMetrics.middleware and
+asserts a real http.server.request.duration measurement is recorded via
+Metrics.test's in-memory testkit) before adding the purerest dependency —
+confirmed Red (fails to compile: org.http4s/purerest unresolved). Added
+`libraryDependencies += "io.github.beckfordp" %% "purerest" % purerestVersion`
+(purerestVersion read from -DpurerestVersion, never hardcoded since it's
+git-derived and changes every commit) — confirmed Green: `sbt
+purerest/publishLocal` in the main repo, then `sbt -DpurerestVersion=<version>
+test` in smoke-test/ resolves purerest from ~/.ivy2/local and passes.
+Added scripts/verify-purerest-consumption.sh automating the whole flow, and
+ran it (all checks passed). Reran the main repo's full test suite
+(purerest 44/44, inventoryService 10/10, orderService 21/21) to confirm
+nothing regressed.
+
+Files changed: smoke-test/build.sbt, smoke-test/project/build.properties,
+smoke-test/src/test/scala/smoketest/PurerestConsumptionSuite.scala,
+scripts/verify-purerest-consumption.sh
+
+Why: Proves purerest genuinely works when consumed the way a real external
+microservice would — an ordinary libraryDependencies entry resolved from a
+published jar — not just via this repo's own internal .dependsOn(purerest)
+project reference, which is a structurally weaker guarantee.
