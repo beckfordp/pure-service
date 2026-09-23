@@ -20,5 +20,5 @@ through the spec/plan questions and promote it into a real track below.
 
 ---
 
-- [ ] **Track: Resilience: retry policies and circuit breaker for purerest's HttpClient**
+- [~] **Track: Resilience: retry policies and circuit breaker for purerest's HttpClient**
   *Link: [./tracks/resilience_20260923/](./tracks/resilience_20260923/)*
