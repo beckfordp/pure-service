@@ -4,6 +4,11 @@ This file tracks all major tracks for the project.
 
 ---
 
+- [ ] **Track: Add a Gatling-based load-test module**
+  *Link: [./tracks/load-test_20260923/](./tracks/load-test_20260923/)*
+
+---
+
 ## Backlog
 
 Title-only placeholders for future tracks — not yet detailed (no spec/plan, no linked
@@ -11,7 +16,6 @@ folder), so `/conductor:implement` cannot pick these up by accident. Reorder fre
 priorities change. When ready to work on one, run `/conductor:newTrack <title>` to go
 through the spec/plan questions and promote it into a real track below.
 
-- Add a Gatling-based load-test module that exercises purerest repeatedly under sustained traffic to generate realistic RED + resilience metrics
 - Stand up a local production-like observability stack (Prometheus + Grafana for metrics dashboards, ELK + Kibana for trace-correlated logs) wired to order-service/inventory-service's real output
 
 ---
