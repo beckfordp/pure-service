@@ -1,0 +1,18 @@
+Task: Implement typed OrderNotFound + GET /orders/{id} route (Green)
+
+Summary: Added sealed trait OrderError / case object OrderNotFound — the first
+modeled domain error in this codebase (every prior endpoint used Unit as its tapir
+error type). Added ErrorResponse(error: String) for the JSON error body. Extended
+OrderResponse with status/createdAt (additive; existing fields unchanged) and gave it
+an Order => OrderResponse convenience constructor. Added getOrderEndpoint (GET
+/orders/{id}) with errorOut mapping OrderNotFound to a 404 + ErrorResponse via
+EndpointOutput.map. Wired the new endpoint into OrderRoutes.routes and Main's
+Docs.routes list (so it also gets OpenAPI/Swagger documentation for free, same as
+every other purerest.docs-registered endpoint).
+
+Files changed:
+- modules/order-service/src/main/scala/orderservice/OrderError.scala (new)
+- modules/order-service/src/main/scala/orderservice/OrderRoutes.scala
+- modules/order-service/src/main/scala/orderservice/Main.scala
+
+Verified: full orderService/test suite green (21/21).
