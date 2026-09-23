@@ -10,6 +10,9 @@ set -euo pipefail
 # refuses to run two independent launcher JVMs concurrently against the same
 # build directory.
 #
+# Prerequisite: order-service persists to PostgreSQL — run `docker compose up -d`
+# first (see docker-compose.yml / README.md).
+#
 # Usage: ./scripts/run-services.sh
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
