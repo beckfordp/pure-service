@@ -134,14 +134,14 @@ object OrderStore {
                   reservationId: String,
                   reservedQuantity: Int
               ): F[Order] =
-                timed("insert") {
-                  pool.use { session =>
-                    for {
-                      id <- Sync[F].delay(UUID.randomUUID())
-                      reservationUuid <- Sync[F].delay(
-                        UUID.fromString(reservationId)
-                      )
-                      createdAt <- session
+                for {
+                  id <- Sync[F].delay(UUID.randomUUID())
+                  reservationUuid <- Sync[F].delay(
+                    UUID.fromString(reservationId)
+                  )
+                  createdAt <- timed("insert") {
+                    pool.use { session =>
+                      session
                         .prepare(insertOrder)
                         .flatMap(
                           _.unique(
@@ -154,46 +154,44 @@ object OrderStore {
                             )
                           )
                         )
-                    } yield Order(
-                      id.toString,
+                    }
+                  }
+                } yield Order(
+                  id.toString,
+                  item,
+                  quantity,
+                  defaultStatus,
+                  reservationId,
+                  reservedQuantity,
+                  createdAt.toInstant
+                )
+
+              def get(id: String): F[Option[Order]] =
+                for {
+                  uuid <- Sync[F].delay(UUID.fromString(id))
+                  row <- timed("select") {
+                    pool.use { session =>
+                      session.prepare(selectOrder).flatMap(_.option(uuid))
+                    }
+                  }
+                } yield row.map {
+                  case (
+                        item,
+                        quantity,
+                        status,
+                        reservationUuid,
+                        reservedQuantity,
+                        createdAt
+                      ) =>
+                    Order(
+                      id,
                       item,
                       quantity,
-                      defaultStatus,
-                      reservationId,
+                      status,
+                      reservationUuid.toString,
                       reservedQuantity,
                       createdAt.toInstant
                     )
-                  }
-                }
-
-              def get(id: String): F[Option[Order]] =
-                timed("select") {
-                  pool.use { session =>
-                    for {
-                      uuid <- Sync[F].delay(UUID.fromString(id))
-                      row <- session
-                        .prepare(selectOrder)
-                        .flatMap(_.option(uuid))
-                    } yield row.map {
-                      case (
-                            item,
-                            quantity,
-                            status,
-                            reservationUuid,
-                            reservedQuantity,
-                            createdAt
-                          ) =>
-                        Order(
-                          id,
-                          item,
-                          quantity,
-                          status,
-                          reservationUuid.toString,
-                          reservedQuantity,
-                          createdAt.toInstant
-                        )
-                    }
-                  }
                 }
             }
           }
