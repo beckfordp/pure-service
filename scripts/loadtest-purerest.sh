@@ -21,11 +21,7 @@ SBT_PID=""
 cleanup() {
   echo
   echo "Cleaning up..."
-  [ -n "$SBT_PID" ] && { kill "$SBT_PID" >/dev/null 2>&1 || true; wait "$SBT_PID" 2>/dev/null || true; }
-  for port in "$INVENTORY_PORT" "$ORDER_PORT" "$ORDER_METRICS_PORT"; do
-    pids="$(lsof -ti "tcp:${port}" 2>/dev/null || true)"
-    [ -n "$pids" ] && echo "$pids" | xargs kill >/dev/null 2>&1 || true
-  done
+  stop_services
   docker compose down -v >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
