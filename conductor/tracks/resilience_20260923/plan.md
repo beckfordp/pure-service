@@ -8,8 +8,8 @@
 
 ## Phase 2: Circuit Breaker (resilience4j-wrapped)
 - [x] Task: Add `resilience4j-circuitbreaker` dependency to `purerest`. [0cd1548]
-- [ ] Task: Write failing tests against a stub `Client[F]`: breaker stays closed under successes; opens after the configured failure threshold; open-state calls fail fast with a typed error and never reach the stub client; transitions to half-open after the reset timeout and closes again on a successful trial call (Red).
-- [ ] Task: Implement `CircuitBreaker.middleware[F[_]: Async](config: CircuitBreakerConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, driving resilience4j-circuitbreaker's core `CircuitBreaker` via `guaranteeCase`; define a typed `CircuitBreakerOpen` error (not a leaked resilience4j exception) for rejected calls (Green).
+- [x] Task: Write failing tests against a stub `Client[F]`: breaker stays closed under successes; opens after the configured failure threshold; open-state calls fail fast with a typed error and never reach the stub client; transitions to half-open after the reset timeout and closes again on a successful trial call (Red). [ff6b743]
+- [x] Task: Implement `CircuitBreaker.middleware[F[_]: Async](config: CircuitBreakerConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, driving resilience4j-circuitbreaker's core `CircuitBreaker`; define a typed `CircuitBreakerOpen` error (not a leaked resilience4j exception) for rejected calls (Green). Uses `tryAcquirePermission()`/`onSuccess`/`onError` directly via `Async[F].delay` (not `guaranteeCase`, since the acquire/release-style hook it provides didn't fit the acquire→run→report shape as cleanly as explicit sequencing). [121c916] [e76e860]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Circuit Breaker (resilience4j-wrapped)' (Protocol in workflow.md)
 
 ## Phase 3: Compose + Wire into order-service
