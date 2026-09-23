@@ -1,0 +1,10 @@
+Phase 4, Tasks 1+2: wire Metrics.oteljava + ServerMetrics/ClientMetrics into both services; add a configurable scrape port per service.
+
+What:
+- order-service: OrderServiceConfig gains a required metricsPort: Int field (PureConfig-derived, HOCON key metrics-port), defaulting to 9090 via ORDER_SERVICE_METRICS_PORT (application.conf), matching the existing port/ORDER_SERVICE_PORT pattern. Main.scala wraps Tracing.console's block in Metrics.oteljava("order-service", config.metricsPort).use, wires ClientMetrics.middleware(meter) around the traced outbound client (innermost, so it measures each individual attempt inside Resilience's retry loop rather than one blob per logical call), and ServerMetrics.middleware(meter) around the traced inbound routes (outermost). Resilience.middleware now receives the real meter instead of the Phase 3 Meter.noop placeholder.
+- inventory-service: adds an ad hoc INVENTORY_SERVICE_METRICS_PORT env var (default 9091), matching its existing ad hoc INVENTORY_SERVICE_PORT style (no PureConfig here). Main.scala wraps its Tracing.console block in Metrics.oteljava("inventory-service", metricsPort.value).use and wires ServerMetrics.middleware(meter) around the traced routes.
+- OrderServiceConfigSuite updated (metrics-port added to its HOCON fixtures and expected case class) — collateral to the config-shape change, not new behavior under test.
+
+Verification: full test suite green across all 3 modules (purerest 35/35, inventoryService 10/10, orderService 21/21); order-service/inventory-service compile confirmed separately first.
+
+Files: modules/order-service/src/main/scala/orderservice/{Main,OrderServiceConfig}.scala, modules/order-service/src/main/resources/application.conf, modules/order-service/src/test/scala/orderservice/OrderServiceConfigSuite.scala, modules/inventory-service/src/main/scala/inventoryservice/Main.scala
