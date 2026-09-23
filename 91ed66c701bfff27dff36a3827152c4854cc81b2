@@ -1,0 +1,12 @@
+Task: Write failing OrderStore.postgres test (Red)
+
+Summary: Added OrderStorePostgresSuite against a real Testcontainers Postgres (not a
+mocked Skunk Session — Skunk's Session is a concrete protocol implementation, not
+designed as a mockable interface, so this matches Phase 2's MigrationsSuite pattern
+instead of the plan's literal 'mocked session' wording). Confirmed Red: compile failure
+(OrderStore.postgres didn't exist).
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/OrderStorePostgresSuite.scala (new)
+- conductor/tracks/persistence_20260922/plan.md (task wording updated to reflect the
+  real-Postgres-over-mock decision)
