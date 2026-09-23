@@ -1,10 +1,10 @@
 # Plan: Resilience (Retry + Circuit Breaker) for purerest's HttpClient
 
-## Phase 1: Retry Combinator (cats-retry)
+## Phase 1: Retry Combinator (cats-retry) [checkpoint: cad8a5c]
 - [x] Task: Add `cats-retry` dependency to `purerest`. [e0542b6]
 - [x] Task: Write failing tests against a stub `Client[F]`: a 5xx/connection-error/timeout response is retried up to max attempts then gives up; a 4xx response is never retried (Red). [72bee71]
 - [x] Task: Implement `Retry.middleware[F[_]: Async](config: RetryConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, using cats-retry's exponential-backoff-with-jitter policy (Green). Signature relaxed to `Temporal[F]` (sufficient, more general than `Async`). No jitter — see tech-stack.md's dated note: delegates execution to http4s's own `Retry` middleware (Resource-safe), cats-retry supplies backoff only; `fullJitter` incompatible with http4s's pure backoff signature. [52fcd28] [8d2a40d]
-- [x] Task: Conductor - User Manual Verification 'Phase 1: Retry Combinator (cats-retry)' (Protocol in workflow.md) — no wiring into a running service yet (that's Phase 3), so verification is the automated test suite itself: full purerest/test green (18/18), including RetrySuite's 6 scenarios against a stub Client[F]. [pending]
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Retry Combinator (cats-retry)' (Protocol in workflow.md) — no wiring into a running service yet (that's Phase 3), so verification is the automated test suite itself: full purerest/test green (18/18), including RetrySuite's 6 scenarios against a stub Client[F]. [cad8a5c]
 
 ## Phase 2: Circuit Breaker (resilience4j-wrapped)
 - [ ] Task: Add `resilience4j-circuitbreaker` dependency to `purerest`.
