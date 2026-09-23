@@ -79,8 +79,11 @@ class OrderServicePostgresIntegrationSuite extends CatsEffectSuite with TestCont
   test("POST /orders returns a clean 5xx without leaking exception internals when Postgres is unreachable") {
     withContainers { postgres =>
       val unreachableConfig = PostgresConfig(
+        // Port 1 is a privileged port nothing binds to in these tests; unlike
+        // `mappedPort(5432) + 1`, it can't collide with another concurrently-running
+        // Testcontainers Postgres instance's dynamically assigned port.
         host = postgres.host,
-        port = postgres.mappedPort(5432) + 1, // nothing listens here
+        port = 1,
         database = postgres.databaseName,
         user = postgres.username,
         password = postgres.password
