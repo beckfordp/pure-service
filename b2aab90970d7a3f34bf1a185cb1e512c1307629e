@@ -1,0 +1,17 @@
+Task: Implement OrderStore.postgres via Skunk (Green)
+
+Summary: Added OrderStore.postgres[F: Async: Console: Network](config): Resource[F,
+OrderStore[F]], using Skunk's Session.Builder(...).pooled(max = 10) fluent API (the
+deprecated Session.pooled(...) overload was avoided). create() checks out a session
+from the pool per call, generates a UUID, and inserts a row via a prepared Command.
+otel4s Tracer/Meter no-op instances are summoned locally since this project doesn't yet
+wire Skunk's own tracing/metrics integration into purerest's tracer (out of scope for
+this track — could be revisited as a purerest-observability enhancement later).
+
+Files changed:
+- modules/order-service/src/main/scala/orderservice/OrderStore.scala
+
+Verified: OrderStorePostgresSuite green (2/2) against real Testcontainers Postgres; zero
+compiler warnings (fixed two Skunk 1.0.0 deprecation warnings — Session.pooled and the
+implicit Network derivation — by using the Builder API and an explicit Network[F]
+context bound).
