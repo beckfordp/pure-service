@@ -4,7 +4,7 @@ This file tracks all major tracks for the project.
 
 ---
 
-- [ ] **Track: purerest Metrics (RED + Resilience Signals)**
+- [~] **Track: purerest Metrics (RED + Resilience Signals)**
   *Link: [./tracks/metrics_20260923/](./tracks/metrics_20260923/)*
 
 ---
