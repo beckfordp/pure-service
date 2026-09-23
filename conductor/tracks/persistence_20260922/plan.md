@@ -5,11 +5,11 @@
 - [x] Task: Add shared dependency versions to `build.sbt` (`skunkVersion`, `flywayVersion`, `pureconfigVersion`, `testcontainersVersion`/`testcontainers-scala-postgresql`) and add them to the `orderService` module's `libraryDependencies` (`org.tpolecat %% skunk-core`, `org.flywaydb % flyway-database-postgresql` + `org.postgresql % postgresql` as a build-only JDBC driver for Flyway, `com.github.pureconfig %% pureconfig-core`; Testcontainers as `% Test`). [ff59d9a]
 - [x] Task: Conductor - User Manual Verification 'Phase 0: Tech Stack & Build Setup' (Protocol in workflow.md) — autonomous run: verified via `sbt orderService/update` succeeding (warning-only eviction, documented in tech-stack.md); no interactive walkthrough needed for a dependency-resolution-only phase.
 
-## Phase 1: Configuration (PureConfig)
-- [ ] Task: Write failing test for a new `OrderServiceConfig` case class (port, inventory base URL, Postgres host/port/db/user/password) loaded via PureConfig from `application.conf` (Red).
-- [ ] Task: Implement `application.conf` + `OrderServiceConfig`/`PureConfig` loader; replace `sys.env.get(...)` calls in `Main.scala` with config-driven values (Green).
-- [ ] Task: Refactor — tidy config case class structure/naming (Optional).
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Configuration (PureConfig)' (Protocol in workflow.md)
+## Phase 1: Configuration (PureConfig) [checkpoint: 43d74b6]
+- [x] Task: Write failing test for a new `OrderServiceConfig` case class (port, inventory base URL, Postgres host/port/db/user/password) loaded via PureConfig from `application.conf` (Red). [0531fd0]
+- [x] Task: Implement `application.conf` + `OrderServiceConfig`/`PureConfig` loader; replace `sys.env.get(...)` calls in `Main.scala` with config-driven values (Green). [160b7d3]
+- [x] Task: Refactor — tidy config case class structure/naming (Optional). No refactor needed — `OrderServiceConfig`/`PostgresConfig` are already minimal, flat case classes.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Configuration (PureConfig)' (Protocol in workflow.md) — autonomous run: added `scripts/verify-order-service-config.sh` (boots order-service with default config, then with `ORDER_SERVICE_PORT` override) and ran it directly; both checks passed. [43d74b6]
 
 ## Phase 2: Schema & Migrations (Flyway)
 - [ ] Task: Write failing test verifying Flyway applies a migration creating the `orders` table against a Testcontainers Postgres (Red).
