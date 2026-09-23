@@ -96,7 +96,11 @@ lazy val purerest = project
       // resilience4j-circuitbreaker: mature circuit-breaker state machine (core,
       // non-reactive module only), wrapped internally as a pure combinator — never
       // exposed in purerest's public API.
-      "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion
+      "io.github.resilience4j" % "resilience4j-circuitbreaker" % resilience4jVersion,
+      // Prometheus scrape-endpoint exporter for otel4s/OTel SDK metrics — still an
+      // incubating OTel component, hence the "-alpha" qualifier tracking the main
+      // opentelemetry-java release train.
+      "io.opentelemetry" % "opentelemetry-exporter-prometheus" % s"$openTelemetryVersion-alpha"
     )
   )
 
