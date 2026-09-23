@@ -1,0 +1,31 @@
+Task: Gatling load-test module generating realistic RED + resilience metrics
+
+Summary: Added modules/load-test as a new sbt subproject (gatling-sbt
+4.13.3 plugin in project/plugins.sbt; gatling-charts-highcharts and
+gatling-test-framework 3.15.1 as Test deps) — deliberately excluded from
+root's .aggregate(...) list so `sbt compile`/`sbt test` at the repo root
+never pulls it in; confirmed via `sbt projects` (loadTest still listed)
+and a clean, unaffected full main-suite run (purerest 44/44,
+inventoryService 10/10, orderService 21/21). Wrote OrderPlacementSimulation
+(repeated POST /orders, configurable -DbaseUrl, ramp to ~15 users over 30s
+then ~5/sec for 60s) and verified it directly against manually-started
+services: 315/315 requests OK. Added scripts/loadtest-purerest.sh
+orchestrating two full passes against real docker-compose services: a
+healthy pass (INVENTORY_INDUCED_FAILURE_RATE=0) that reported real RED
+metrics (http_server/client_request_duration_seconds_count both nonzero),
+and a degraded pass (=0.3) that reported real resilience metrics
+(purerest_retry_attempts_total{outcome=retried} and
+purerest_circuit_breaker_state_transitions_total/_calls_rejected_total
+all nonzero) — the degraded pass's own Gatling results (163 OK / 152 KO)
+showed the circuit breaker genuinely tripping and rejecting calls under
+sustained failure, not just retrying. Ran end-to-end: "All checks passed."
+
+Files changed: build.sbt, project/plugins.sbt,
+modules/load-test/src/test/scala/loadtest/OrderPlacementSimulation.scala,
+scripts/loadtest-purerest.sh
+
+Why: Manual curl-based verify-*.sh scripts can only prove a metric series
+exists with a couple of data points — this generates enough real, sustained
+traffic (including induced-failure traffic) for RED/resilience metrics to
+look like genuine production distributions, which is what the eventual
+Grafana/Kibana observability track needs to have something real to show.
