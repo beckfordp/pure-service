@@ -4,7 +4,7 @@ This file tracks all major tracks for the project.
 
 ---
 
-- [ ] **Track: Stand up a local production-like observability stack**
+- [x] **Track: Stand up a local production-like observability stack**
   *Link: [./tracks/observability-stack_20260923/](./tracks/observability-stack_20260923/)*
 
 ---
