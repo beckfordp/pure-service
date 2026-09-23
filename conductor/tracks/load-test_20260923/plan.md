@@ -8,3 +8,6 @@
 - [x] Task: Document `modules/load-test` and `scripts/loadtest-purerest.sh` in `tech-stack.md`. [5703ef0]
 - [x] Task: Run `sbt compile`/`sbt test` across purerest/order-service/inventory-service to confirm no regressions from adding the new subproject. Verified: purerest 44/44, inventoryService 10/10, orderService 21/21, all green. [d32f642]
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Gatling Load-Test Module' (Protocol in workflow.md) — verification is the already-captured evidence from this phase's own tasks: `scripts/loadtest-purerest.sh` ran end-to-end (healthy pass 315/315 OK with real RED metrics; degraded pass 163 OK/152 KO with real retry + circuit-breaker-rejection metrics, the breaker genuinely tripping); full main test suite green after (purerest 44/44, inventoryService 10/10, orderService 21/21); no code changes since that run.
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions [abf26db]
