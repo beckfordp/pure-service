@@ -1,7 +1,7 @@
 # Plan: Order Persistence (Skunk + PostgreSQL)
 
 ## Phase 0: Tech Stack & Build Setup
-- [ ] Task: Update `conductor/tech-stack.md` — document Skunk (not Doobie) as the Postgres access library, Flyway for migrations, PureConfig for configuration, Testcontainers for integration-test Postgres. Dated note explaining the choice (per workflow.md principle: tech-stack changes documented before implementation).
+- [x] Task: Update `conductor/tech-stack.md` — document Skunk (not Doobie) as the Postgres access library, Flyway for migrations, PureConfig for configuration, Testcontainers for integration-test Postgres. Dated note explaining the choice (per workflow.md principle: tech-stack changes documented before implementation). [9664ef9]
 - [ ] Task: Add shared dependency versions to `build.sbt` (`skunkVersion`, `flywayVersion`, `pureconfigVersion`, `testcontainersVersion`/`testcontainers-scala-postgresql`) and add them to the `orderService` module's `libraryDependencies` (`org.tpolecat %% skunk-core`, `org.flywaydb % flyway-database-postgresql` + `org.postgresql % postgresql` as a build-only JDBC driver for Flyway, `com.github.pureconfig %% pureconfig-core`; Testcontainers as `% Test`).
 - [ ] Task: Conductor - User Manual Verification 'Phase 0: Tech Stack & Build Setup' (Protocol in workflow.md)
 
