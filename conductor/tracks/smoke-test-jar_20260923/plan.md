@@ -1,6 +1,6 @@
 # Plan: Smoke-test purerest consumption as an external published jar
 
-## Phase 1: Standalone Consumer Smoke Test
+## Phase 1: Standalone Consumer Smoke Test [checkpoint: c8bf8a0]
 - [x] Task: Scaffold `smoke-test/` as an independent sbt build (`build.sbt` with scalaVersion + munit/munit-cats-effect test deps, reading `purerestVersion` from a system property; `project/build.properties` matching this repo's sbt version) — without a purerest dependency yet. Confirm `sbt projects` at the repo root does not list it (proves isolation from the aggregate build). [385dbc6]
 - [x] Task: Write a test in `smoke-test/` that imports purerest's `Metrics`/`ServerMetrics` types and exercises them (Red): run `sbt test` inside `smoke-test/` and confirm it fails to compile — purerest isn't a dependency yet, proving the test genuinely needs the published artifact. [385dbc6]
 - [x] Task: Add `libraryDependencies += "io.github.beckfordp" %% "purerest" % purerestVersion` to `smoke-test/build.sbt` (Green): after running `sbt purerest/publishLocal` in the main repo and capturing its version, run `sbt -DpurerestVersion=<version> test` inside `smoke-test/` and confirm it now resolves purerest from the local Ivy2 cache and the runtime-exercise test passes. [385dbc6]
