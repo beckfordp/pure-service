@@ -1,0 +1,12 @@
+Task: Wire INVENTORY_INDUCED_FAILURE_RATE/INVENTORY_INDUCED_DELAY_MS into Main.scala
+
+Summary: Main.scala reads both env vars (matching this service's existing ad hoc
+sys.env style, e.g. INVENTORY_SERVICE_PORT) into an InducedFailureConfig passed to
+InventoryRoutes.serverEndpoint. Both default to off/0 (failureRate=0.0, delay=Zero)
+when unset, so normal runs are unaffected.
+
+Files changed:
+- modules/inventory-service/src/main/scala/inventoryservice/Main.scala
+
+Verified: full inventoryService/test suite green (9/9); orderService/test still green
+(21/21, unaffected).
