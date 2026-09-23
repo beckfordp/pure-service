@@ -35,6 +35,18 @@ case object CircuitBreakerOpen extends RuntimeException("Circuit breaker is open
   */
 object CircuitBreaker {
 
+  /** resilience4j's `onResult` hook uses this predicate to decide whether a returned
+    * value (not a thrown exception) should count as a failure for the breaker's
+    * sliding window. Without this, a 5xx `Response` — returned as a normal value by
+    * `Client[F].run`, never thrown — would be indistinguishable from a real success.
+    */
+  private val isFailureResult: java.util.function.Predicate[Any] =
+    (result: Any) =>
+      result match {
+        case response: Response[?] => response.status.responseClass == org.http4s.Status.ServerError
+        case _                     => false
+      }
+
   def middleware[F[_]: Async](config: CircuitBreakerConfig)(client: Client[F]): Client[F] = {
     val r4jConfig = R4jCircuitBreakerConfig
       .custom()
@@ -44,6 +56,7 @@ object CircuitBreaker {
       .failureRateThreshold(100.0f)
       .waitDurationInOpenState(JDuration.ofMillis(config.resetTimeout.toMillis))
       .permittedNumberOfCallsInHalfOpenState(1)
+      .recordResult(isFailureResult)
       .build()
     val breaker = R4jCircuitBreaker.of("purerest", r4jConfig)
 
@@ -56,7 +69,9 @@ object CircuitBreaker {
             client.run(req).attempt.evalMap {
               case Right(response) =>
                 Async[F].monotonic
-                  .flatMap(end => Async[F].delay(breaker.onSuccess((end - start).toNanos, TimeUnit.NANOSECONDS)))
+                  .flatMap(end =>
+                    Async[F].delay(breaker.onResult((end - start).toNanos, TimeUnit.NANOSECONDS, response))
+                  )
                   .as(response)
               case Left(error) =>
                 Async[F].monotonic

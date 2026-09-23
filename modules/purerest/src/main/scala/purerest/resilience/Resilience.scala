@@ -1,0 +1,19 @@
+package purerest.resilience
+
+import cats.effect.Async
+import org.http4s.client.Client
+import org.typelevel.log4cats.StructuredLogger
+
+final case class ResilienceConfig(retry: RetryConfig, circuitBreaker: CircuitBreakerConfig)
+
+/** Composes [[Retry.middleware]] (outer) around [[CircuitBreaker.middleware]] (inner)
+  * — resilience4j's own documented recommended ordering. Each retry attempt passes
+  * through the circuit breaker afresh; a breaker-open rejection is not itself
+  * retried ([[Retry]]'s retry-scope only covers connection errors/timeouts/5xx, not
+  * [[CircuitBreakerOpen]]), so an open breaker fails fast on the very next attempt
+  * rather than being retried until the retry budget is exhausted.
+  */
+object Resilience {
+  def middleware[F[_]: Async](config: ResilienceConfig)(logger: StructuredLogger[F])(client: Client[F]): Client[F] =
+    Retry.middleware[F](config.retry)(logger)(CircuitBreaker.middleware[F](config.circuitBreaker)(client))
+}
