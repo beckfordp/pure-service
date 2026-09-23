@@ -1,0 +1,13 @@
+Task: Wire OrderStore.postgres into Main (Green)
+
+Summary: Main.scala now constructs OrderStore.postgres[IO](config.postgres) and uses it
+via Resource, in place of OrderStore.inMemory. order-service now genuinely persists
+orders through the full HTTP request path.
+
+Files changed:
+- modules/order-service/src/main/scala/orderservice/Main.scala
+
+Verified: full orderService/test suite green (13/13, including
+OrderServicePostgresIntegrationSuite and OrderStorePostgresSuite against real
+Testcontainers Postgres); scripts/verify-order-service-migrations.sh still passes,
+confirming order-service boots and migrates against a real Postgres end-to-end.
