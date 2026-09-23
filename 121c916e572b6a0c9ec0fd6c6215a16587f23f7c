@@ -1,0 +1,22 @@
+Task: Implement CircuitBreaker.middleware (Green)
+
+Summary: Added CircuitBreaker.middleware[F: Async](config)(client): Client[F], wrapping
+resilience4j's core CircuitBreaker (CircuitBreaker.of(name, config), no registry
+needed). Configured as a count-based sliding window of exactly failureThreshold calls
+with a 100% failure-rate threshold — i.e. simple N-consecutive-failures semantics,
+matching the config's simple integer count (resilience4j's engine is rate-based
+internally, not raw-count-based, so this is how a 'threshold' int gets mapped onto
+it). tryAcquirePermission() (non-throwing) gates each call; a false permission raises
+purerest's own CircuitBreakerOpen (a NoStackTrace case object) — resilience4j's own
+CallNotPermittedException never surfaces. onSuccess/onError report timed outcomes back
+to the breaker via Async[F].monotonic-measured durations.
+
+Signature uses Async[F] (not just Temporal[F] as first attempted) since
+tryAcquirePermission/onSuccess/onError are invoked via Async[F].delay, which needs
+Sync — Temporal alone doesn't provide it.
+
+Files changed:
+- modules/purerest/src/main/scala/purerest/resilience/CircuitBreaker.scala (new)
+
+Verified: full purerest/test suite green (21/21), including the half-open -> closed
+recovery transition (using a real ~100ms sleep past the configured reset timeout).
