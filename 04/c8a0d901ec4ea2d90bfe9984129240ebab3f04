@@ -1,0 +1,5 @@
+Phase 3 (Resilience Metrics) checkpoint.
+
+Automated tests: sbt purerest/test inventoryService/test orderService/test (purerest 35/35, orderService 21/21, inventoryService green) — includes RetryMetricsSuite (4) and CircuitBreakerMetricsSuite (3) asserting purerest.retry.attempts / purerest.circuit_breaker.state_transitions / purerest.circuit_breaker.calls_rejected via the MetricExpectation/PointExpectation DSL.
+
+Manual verification: order-service/inventory-service still wired with Meter.noop (real Metrics.oteljava wiring is Phase 4's job) — separately confirmed both services compile cleanly against the new Retry/CircuitBreaker/Resilience signatures.
