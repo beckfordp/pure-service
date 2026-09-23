@@ -32,7 +32,9 @@ object OrderStore {
   private val insertOrder: skunk.Command[(UUID, String, Int)] =
     sql"insert into orders (id, item, quantity) values ($uuid, $varchar, $int4)".command
 
-  def postgres[F[_]: Async: Console: Network](config: PostgresConfig): Resource[F, OrderStore[F]] = {
+  def postgres[F[_]: Async: Console: Network](
+      config: PostgresConfig
+  ): Resource[F, OrderStore[F]] = {
     import org.typelevel.otel4s.trace.Tracer.Implicits.noop
     import org.typelevel.otel4s.metrics.Meter.Implicits.noop
     Session
@@ -48,7 +50,9 @@ object OrderStore {
             pool.use { session =>
               for {
                 id <- Sync[F].delay(UUID.randomUUID())
-                _ <- session.prepare(insertOrder).flatMap(_.execute((id, item, quantity)))
+                _ <- session
+                  .prepare(insertOrder)
+                  .flatMap(_.execute((id, item, quantity)))
               } yield Order(id.toString, item, quantity)
             }
         }

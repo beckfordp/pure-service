@@ -16,9 +16,13 @@ object Main extends IOApp.Simple {
     for {
       config <- OrderServiceConfig.load[IO]
       port <- IO.fromOption(Port.fromInt(config.port))(
-        new IllegalArgumentException(s"Invalid order-service port: ${config.port}")
+        new IllegalArgumentException(
+          s"Invalid order-service port: ${config.port}"
+        )
       )
-      inventoryServiceBaseUri <- IO.fromEither(Uri.fromString(config.inventoryServiceBaseUrl))
+      inventoryServiceBaseUri <- IO.fromEither(
+        Uri.fromString(config.inventoryServiceBaseUrl)
+      )
       _ <- Migrations.run[IO](config.postgres)
       _ <- Tracing.console[IO]("order-service").use { tracer =>
         for {
@@ -26,7 +30,8 @@ object Main extends IOApp.Simple {
           _ <- OrderStore.postgres[IO](config.postgres).use { store =>
             HttpClient.resource[IO].use { httpClient =>
               val tracedClient = ClientTracing.middleware(tracer)(httpClient)
-              val inventory = InventoryClient[IO](tracedClient, inventoryServiceBaseUri)
+              val inventory =
+                InventoryClient[IO](tracedClient, inventoryServiceBaseUri)
               val docsRoutes = Docs.routes[IO](
                 "Order Service",
                 "1.0",

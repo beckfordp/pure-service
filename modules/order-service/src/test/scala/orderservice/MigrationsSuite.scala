@@ -11,7 +11,9 @@ import java.sql.DriverManager
 class MigrationsSuite extends CatsEffectSuite with TestContainerForAll {
 
   override val containerDef: PostgreSQLContainer.Def =
-    PostgreSQLContainer.Def(dockerImageName = DockerImageName.parse("postgres:16-alpine"))
+    PostgreSQLContainer.Def(dockerImageName =
+      DockerImageName.parse("postgres:16-alpine")
+    )
 
   test("running migrations creates the orders table") {
     withContainers { postgres =>
@@ -24,14 +26,22 @@ class MigrationsSuite extends CatsEffectSuite with TestContainerForAll {
       )
 
       Migrations.run[IO](config).map { _ =>
-        val conn = DriverManager.getConnection(postgres.jdbcUrl, postgres.username, postgres.password)
+        val conn = DriverManager.getConnection(
+          postgres.jdbcUrl,
+          postgres.username,
+          postgres.password
+        )
         try {
           val rs = conn
             .createStatement()
             .executeQuery(
               "select column_name, data_type from information_schema.columns where table_name = 'orders' order by ordinal_position"
             )
-          val columns = Iterator.unfold(())(_ => if (rs.next()) Some((rs.getString("column_name"), ())) else None).toList
+          val columns = Iterator
+            .unfold(())(_ =>
+              if (rs.next()) Some((rs.getString("column_name"), ())) else None
+            )
+            .toList
           assertEquals(columns, List("id", "item", "quantity", "created_at"))
         } finally conn.close()
       }

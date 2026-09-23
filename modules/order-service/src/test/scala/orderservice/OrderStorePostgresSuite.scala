@@ -10,7 +10,9 @@ import org.testcontainers.utility.DockerImageName
 class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
 
   override val containerDef: PostgreSQLContainer.Def =
-    PostgreSQLContainer.Def(dockerImageName = DockerImageName.parse("postgres:16-alpine"))
+    PostgreSQLContainer.Def(dockerImageName =
+      DockerImageName.parse("postgres:16-alpine")
+    )
 
   private def configFor(postgres: PostgreSQLContainer): PostgresConfig =
     PostgresConfig(
@@ -24,12 +26,13 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
   test("create persists an order and returns it") {
     withContainers { postgres =>
       val config = configFor(postgres)
-      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use { store =>
-        store.create("widget", 2).map { order =>
-          assertEquals(order.item, "widget")
-          assertEquals(order.quantity, 2)
-          assert(order.id.nonEmpty)
-        }
+      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use {
+        store =>
+          store.create("widget", 2).map { order =>
+            assertEquals(order.item, "widget")
+            assertEquals(order.quantity, 2)
+            assert(order.id.nonEmpty)
+          }
       }
     }
   }
@@ -37,11 +40,12 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
   test("create produces distinct ids across calls") {
     withContainers { postgres =>
       val config = configFor(postgres)
-      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use { store =>
-        for {
-          first <- store.create("widget", 1)
-          second <- store.create("widget", 1)
-        } yield assertNotEquals(first.id, second.id)
+      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use {
+        store =>
+          for {
+            first <- store.create("widget", 1)
+            second <- store.create("widget", 1)
+          } yield assertNotEquals(first.id, second.id)
       }
     }
   }

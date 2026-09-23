@@ -1,9 +1,10 @@
 package orderservice
 
-import munit.FunSuite
+import cats.effect.IO
+import munit.CatsEffectSuite
 import pureconfig.ConfigSource
 
-class OrderServiceConfigSuite extends FunSuite {
+class OrderServiceConfigSuite extends CatsEffectSuite {
 
   private val validHocon =
     """
@@ -52,5 +53,16 @@ class OrderServiceConfigSuite extends FunSuite {
         |""".stripMargin
 
     assert(ConfigSource.string(missingPassword).load[OrderServiceConfig].isLeft)
+  }
+
+  test("load[F] reads the shipped application.conf defaults") {
+    OrderServiceConfig.load[IO].map { config =>
+      assertEquals(config.port, 8080)
+      assertEquals(config.inventoryServiceBaseUrl, "http://localhost:8081")
+      assertEquals(
+        config.postgres,
+        PostgresConfig("localhost", 5432, "orders", "orders", "orders")
+      )
+    }
   }
 }
