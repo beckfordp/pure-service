@@ -1,0 +1,8 @@
+Phase 5 checkpoint: Coverage & Cleanup
+
+Verification: full orderService/test (15/15 passed), coverage report generated
+(module aggregate 70.33% stmt/50% branch, but 100%/100% for every file this track
+touched — OrderServiceConfig, Migrations, OrderStore), scalafmtOnly on the track's
+8 files reports nothing left to format.
+
+This closes out the persistence_20260922 track's plan. All 5 phases complete.
