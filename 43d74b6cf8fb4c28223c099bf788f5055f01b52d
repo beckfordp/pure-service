@@ -1,0 +1,11 @@
+Phase 1 checkpoint: Configuration (PureConfig)
+
+Automated tests: sbt orderService/test (9/9 passed, includes OrderServiceConfigSuite).
+
+Manual verification (autonomous run, per user request — script instead of interactive
+walkthrough): scripts/verify-order-service-config.sh boots order-service twice (default
+application.conf port 8080; then with ORDER_SERVICE_PORT=8099 override) and confirms
+each binds on the expected port. Both checks passed.
+
+Confirms: config is PureConfig/application.conf-driven, and the env-var override
+mechanism run-services.sh depends on still works unchanged.
