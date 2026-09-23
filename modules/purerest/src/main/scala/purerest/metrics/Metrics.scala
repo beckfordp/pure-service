@@ -35,7 +35,15 @@ object Metrics {
           val meterProvider = SdkMeterProvider
             .builder()
             .registerMetricReader(
-              PrometheusHttpServer.builder().setPort(port).build()
+              // Explicit "0.0.0.0": without it, the underlying Prometheus
+              // exporter binds loopback-only, which is invisible to a
+              // scraper running in a different container (or on a different
+              // host) even though `curl localhost:<port>/metrics` from
+              // *inside* the same container/process works fine — the gap
+              // this track's real docker-compose network setup caught,
+              // where curl-from-the-host-while-the-service-also-ran-on-the-
+              // host (every prior verify-*.sh script) couldn't.
+              PrometheusHttpServer.builder().setHost("0.0.0.0").setPort(port).build()
             )
             .build()
           OpenTelemetrySdk
