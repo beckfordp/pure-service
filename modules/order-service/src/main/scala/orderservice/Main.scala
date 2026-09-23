@@ -12,37 +12,35 @@ import purerest.tracing.{ClientTracing, ServerTracing, Tracing}
 
 object Main extends IOApp.Simple {
 
-  private val port: Port =
-    sys.env.get("ORDER_SERVICE_PORT").flatMap(Port.fromString).getOrElse(port"8080")
-
-  private val inventoryServiceBaseUri: Uri =
-    sys.env
-      .get("INVENTORY_SERVICE_BASE_URL")
-      .flatMap(Uri.fromString(_).toOption)
-      .getOrElse(uri"http://localhost:8081")
-
   val run: IO[Unit] =
-    Tracing.console[IO]("order-service").use { tracer =>
-      for {
-        logger <- Logging.create[IO](tracer, "order-service")
-        store <- OrderStore.inMemory[IO]
-        _ <- HttpClient.resource[IO].use { httpClient =>
-          val tracedClient = ClientTracing.middleware(tracer)(httpClient)
-          val inventory = InventoryClient[IO](tracedClient, inventoryServiceBaseUri)
-          val docsRoutes = Docs.routes[IO](
-            "Order Service",
-            "1.0",
-            List(OrderRoutes.serverEndpoint[IO](store, inventory, logger))
-          )
-          val routes = ServerTracing.middleware(tracer)(docsRoutes)
-          EmberServerBuilder
-            .default[IO]
-            .withHost(host"0.0.0.0")
-            .withPort(port)
-            .withHttpApp(routes.orNotFound)
-            .build
-            .useForever
-        }
-      } yield ()
-    }
+    for {
+      config <- OrderServiceConfig.load[IO]
+      port <- IO.fromOption(Port.fromInt(config.port))(
+        new IllegalArgumentException(s"Invalid order-service port: ${config.port}")
+      )
+      inventoryServiceBaseUri <- IO.fromEither(Uri.fromString(config.inventoryServiceBaseUrl))
+      _ <- Tracing.console[IO]("order-service").use { tracer =>
+        for {
+          logger <- Logging.create[IO](tracer, "order-service")
+          store <- OrderStore.inMemory[IO]
+          _ <- HttpClient.resource[IO].use { httpClient =>
+            val tracedClient = ClientTracing.middleware(tracer)(httpClient)
+            val inventory = InventoryClient[IO](tracedClient, inventoryServiceBaseUri)
+            val docsRoutes = Docs.routes[IO](
+              "Order Service",
+              "1.0",
+              List(OrderRoutes.serverEndpoint[IO](store, inventory, logger))
+            )
+            val routes = ServerTracing.middleware(tracer)(docsRoutes)
+            EmberServerBuilder
+              .default[IO]
+              .withHost(host"0.0.0.0")
+              .withPort(port)
+              .withHttpApp(routes.orNotFound)
+              .build
+              .useForever
+          }
+        } yield ()
+      }
+    } yield ()
 }
