@@ -19,8 +19,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Compose + Wire into order-service' (Protocol in workflow.md) — added `scripts/verify-resilience-wiring.sh` (docker-compose + both services, confirms POST /orders still succeeds with the resilient client wrapping a healthy inventory-service) and ran it directly; all checks passed. Genuine retry/circuit-breaker-under-failure verification is Phase 4's job, once inventory-service can be made flaky. [07c0be0]
 
 ## Phase 4: Induced Failure in inventory-service
-- [ ] Task: Write a failing test: with `INVENTORY_INDUCED_FAILURE_RATE=1.0`, `inventory-service`'s reserve endpoint returns 500; with `INVENTORY_INDUCED_DELAY_MS` set, the response is measurably delayed (Red).
-- [ ] Task: Add `INVENTORY_INDUCED_FAILURE_RATE`/`INVENTORY_INDUCED_DELAY_MS` env-var-driven injection to `inventory-service`'s `InventoryRoutes`/`Main.scala`, defaulting to off/0 (Green).
+- [x] Task: Write a failing test: with `INVENTORY_INDUCED_FAILURE_RATE=1.0`, `inventory-service`'s reserve endpoint returns 500; with `INVENTORY_INDUCED_DELAY_MS` set, the response is measurably delayed (Red). [924a5a4]
+- [x] Task: Add `INVENTORY_INDUCED_FAILURE_RATE`/`INVENTORY_INDUCED_DELAY_MS` env-var-driven injection to `inventory-service`'s `InventoryRoutes`/`Main.scala`, defaulting to off/0 (Green). [bd2153e] [e8f3d6b]
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Induced Failure in inventory-service' (Protocol in workflow.md) — end-to-end: induced transient failures get retried and `POST /orders` still succeeds; sustained failure trips the circuit breaker and subsequent calls fail fast.
 
 ## Phase 5: Coverage & Cleanup
