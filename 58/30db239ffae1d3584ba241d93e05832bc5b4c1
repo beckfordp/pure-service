@@ -1,0 +1,16 @@
+Task: Fix Prometheus exporter loopback-only binding (Phase 4)
+
+Summary: PrometheusHttpServer.builder() had no explicit host, defaulting to
+127.0.0.1. Confirmed via docker exec + /proc/net/tcp inspection that the
+listener was bound to 0100007F (127.0.0.1) not 0.0.0.0 — curl from inside
+the same container worked, but Prometheus running in a sibling container
+got connection refused. Fixed with .setHost("0.0.0.0"). Verified via
+rebuild + docker compose up --force-recreate + Prometheus /api/v1/targets
+showing both services "up", then a live query confirming real counts.
+
+Files changed: modules/purerest/src/main/scala/purerest/metrics/Metrics.scala
+
+Why: This is a real correctness bug in already-shipped code from the
+original metrics track, invisible until this track's containerization work
+actually ran the service across container boundaries instead of on a
+single host.
