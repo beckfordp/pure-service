@@ -16,5 +16,9 @@ through the spec/plan questions and promote it into a real track below.
 - Apply scalafmt formatting across the whole existing codebase (discovered during persistence_20260922: scalafmt was never actually run before — sbt-scalafmt/scoverage plugins didn't even exist)
 - Reservation expiry/release (unpaid orders currently lock stock forever — inventory-service has no cancel/release mechanism)
 - Payment integration (payment-service + payment status surfaced on GET /orders/{id}, alongside the order `status` field)
+- purerest metrics (RED metrics — request rate/errors/duration — for inbound and outbound calls, per product.md's Core Use Case; build on otel4s's `Meter` API rather than a separate library like Micrometer/Prometheus-client-java, since tracing already uses otel4s — export via OTel's Prometheus exporter. Add retry-attempt/circuit-breaker-state metrics once the resilience track exists.)
 
 ---
+
+- [ ] **Track: Resilience: retry policies and circuit breaker for purerest's HttpClient**
+  *Link: [./tracks/resilience_20260923/](./tracks/resilience_20260923/)*

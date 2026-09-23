@@ -1,0 +1,29 @@
+# Plan: Resilience (Retry + Circuit Breaker) for purerest's HttpClient
+
+## Phase 1: Retry Combinator (cats-retry)
+- [ ] Task: Add `cats-retry` dependency to `purerest`.
+- [ ] Task: Write failing tests against a stub `Client[F]`: a 5xx/connection-error/timeout response is retried up to max attempts then gives up; a 4xx response is never retried (Red).
+- [ ] Task: Implement `Retry.middleware[F[_]: Async](config: RetryConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, using cats-retry's exponential-backoff-with-jitter policy (Green).
+- [ ] Task: Conductor - User Manual Verification 'Phase 1: Retry Combinator (cats-retry)' (Protocol in workflow.md)
+
+## Phase 2: Circuit Breaker (resilience4j-wrapped)
+- [ ] Task: Add `resilience4j-circuitbreaker` dependency to `purerest`.
+- [ ] Task: Write failing tests against a stub `Client[F]`: breaker stays closed under successes; opens after the configured failure threshold; open-state calls fail fast with a typed error and never reach the stub client; transitions to half-open after the reset timeout and closes again on a successful trial call (Red).
+- [ ] Task: Implement `CircuitBreaker.middleware[F[_]: Async](config: CircuitBreakerConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, driving resilience4j-circuitbreaker's core `CircuitBreaker` via `guaranteeCase`; define a typed `CircuitBreakerOpen` error (not a leaked resilience4j exception) for rejected calls (Green).
+- [ ] Task: Conductor - User Manual Verification 'Phase 2: Circuit Breaker (resilience4j-wrapped)' (Protocol in workflow.md)
+
+## Phase 3: Compose + Wire into order-service
+- [ ] Task: Write a failing test for the composed `Resilience.middleware` (retry wrapping circuit breaker) against a stub client, confirming retries pass through the breaker and a breaker-open rejection is not endlessly retried (Red).
+- [ ] Task: Implement `Resilience.middleware[F[_]: Async](config: ResilienceConfig)(client: Client[F]): Client[F]` composing `Retry.middleware(Retry.middleware's config)(CircuitBreaker.middleware(...)(client))`; log retries and breaker-open rejections via purerest's structured logging (Green).
+- [ ] Task: Wire `Resilience.middleware(...)(ClientTracing.middleware(tracer)(httpClient))` into `order-service`'s `Main.scala` for its `InventoryClient`.
+- [ ] Task: Conductor - User Manual Verification 'Phase 3: Compose + Wire into order-service' (Protocol in workflow.md)
+
+## Phase 4: Induced Failure in inventory-service
+- [ ] Task: Write a failing test: with `INVENTORY_INDUCED_FAILURE_RATE=1.0`, `inventory-service`'s reserve endpoint returns 500; with `INVENTORY_INDUCED_DELAY_MS` set, the response is measurably delayed (Red).
+- [ ] Task: Add `INVENTORY_INDUCED_FAILURE_RATE`/`INVENTORY_INDUCED_DELAY_MS` env-var-driven injection to `inventory-service`'s `InventoryRoutes`/`Main.scala`, defaulting to off/0 (Green).
+- [ ] Task: Conductor - User Manual Verification 'Phase 4: Induced Failure in inventory-service' (Protocol in workflow.md) — end-to-end: induced transient failures get retried and `POST /orders` still succeeds; sustained failure trips the circuit breaker and subsequent calls fail fast.
+
+## Phase 5: Coverage & Cleanup
+- [ ] Task: Run `sbt coverage purerest/test inventoryService/test orderService/test coverageReport`; confirm 100% statement/branch coverage on every file this track adds or changes.
+- [ ] Task: Run `scalafmtOnly` scoped to this track's own files (matching prior tracks' precedent of not reformatting the wider pre-existing codebase).
+- [ ] Task: Conductor - User Manual Verification 'Phase 5: Coverage & Cleanup' (Protocol in workflow.md)
