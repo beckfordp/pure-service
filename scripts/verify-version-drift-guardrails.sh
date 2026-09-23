@@ -42,28 +42,30 @@ done
 echo
 echo "2. Running 'sbt update' — should succeed cleanly at Level.Error with only the"
 echo "   documented overrides in place (no other evictions silently passing)..."
-if sbt -batch "update" >/tmp/verify-version-drift-guardrails-update.log 2>&1; then
+UPDATE_LOG="$(mktemp -t verify-version-drift-guardrails-update)"
+if sbt -batch "update" >"$UPDATE_LOG" 2>&1; then
   echo "   OK: sbt update succeeded"
 else
-  echo "   FAIL: sbt update failed — see /tmp/verify-version-drift-guardrails-update.log" >&2
-  tail -40 /tmp/verify-version-drift-guardrails-update.log >&2
+  echo "   FAIL: sbt update failed — see $UPDATE_LOG" >&2
+  tail -40 "$UPDATE_LOG" >&2
   FAILED=1
 fi
 
 echo
 echo "3. Running the full test suite across all three modules..."
+TEST_LOG="$(mktemp -t verify-version-drift-guardrails-test)"
 if sbt -batch "purerest/test" "inventoryService/test" "orderService/test" \
-  >/tmp/verify-version-drift-guardrails-test.log 2>&1; then
-  if grep -q "^\[info\] Passed:" /tmp/verify-version-drift-guardrails-test.log; then
-    grep "^\[info\] Passed:" /tmp/verify-version-drift-guardrails-test.log | sed 's/^/   /'
+  >"$TEST_LOG" 2>&1; then
+  if grep -q "^\[info\] Passed:" "$TEST_LOG"; then
+    grep "^\[info\] Passed:" "$TEST_LOG" | sed 's/^/   /'
     echo "   OK: full test suite passed"
   else
     echo "   FAIL: sbt test succeeded but no 'Passed:' summary found — inspect the log" >&2
     FAILED=1
   fi
 else
-  echo "   FAIL: sbt test failed — see /tmp/verify-version-drift-guardrails-test.log" >&2
-  tail -60 /tmp/verify-version-drift-guardrails-test.log >&2
+  echo "   FAIL: sbt test failed — see $TEST_LOG" >&2
+  tail -60 "$TEST_LOG" >&2
   FAILED=1
 fi
 
