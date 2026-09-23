@@ -27,7 +27,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     }
   }
 
-  test("with induced failure rate 1.0, POST /inventory/reserve always returns 500") {
+  test(
+    "with induced failure rate 1.0, POST /inventory/reserve always returns 500"
+  ) {
     for {
       store <- InventoryStore.inMemory[IO]
       routes = InventoryRoutes.routes[IO](
@@ -41,7 +43,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     } yield assertEquals(response.status, Status.InternalServerError)
   }
 
-  test("with a tiny positive induced failure rate, POST /inventory/reserve still usually succeeds") {
+  test(
+    "with a tiny positive induced failure rate, POST /inventory/reserve still usually succeeds"
+  ) {
     // Exercises the branch where failureRate > 0 but the random roll doesn't trigger
     // a failure — distinct from the failureRate <= 0.0 short-circuit tested below.
     // Flake probability is astronomically low (~1e-7).
@@ -58,7 +62,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     } yield assertEquals(response.status, Status.Created)
   }
 
-  test("with induced failure rate 0.0, POST /inventory/reserve still succeeds") {
+  test(
+    "with induced failure rate 0.0, POST /inventory/reserve still succeeds"
+  ) {
     for {
       store <- InventoryStore.inMemory[IO]
       routes = InventoryRoutes.routes[IO](
@@ -87,7 +93,10 @@ class InventoryRoutesSuite extends CatsEffectSuite {
       end <- IO.monotonic
     } yield {
       assertEquals(response.status, Status.Created)
-      assert((end - start) >= 200.millis, s"expected at least a 200ms delay, took ${end - start}")
+      assert(
+        (end - start) >= 200.millis,
+        s"expected at least a 200ms delay, took ${end - start}"
+      )
     }
   }
 
@@ -100,11 +109,15 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     } yield assertEquals(response.status, Status.NotFound)
   }
 
-  test("wrapped routes (with tracing middleware) record a span for a handled request") {
+  test(
+    "wrapped routes (with tracing middleware) record a span for a handled request"
+  ) {
     Tracing.test[IO]("inventory-service-test").use { testTracer =>
       for {
         store <- InventoryStore.inMemory[IO]
-        routes = ServerTracing.middleware(testTracer.tracer)(InventoryRoutes.routes[IO](store, NoOpLogger[IO]))
+        routes = ServerTracing.middleware(testTracer.tracer)(
+          InventoryRoutes.routes[IO](store, NoOpLogger[IO])
+        )
         request = Request[IO](Method.POST, uri"/inventory/reserve")
           .withEntity(ReserveRequest("widget", 3))
         response <- routes.orNotFound.run(request)

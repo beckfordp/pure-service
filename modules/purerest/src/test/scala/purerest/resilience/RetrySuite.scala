@@ -11,22 +11,33 @@ import scala.concurrent.duration._
 
 class RetrySuite extends CatsEffectSuite {
 
-  private def respondingClient(counter: Ref[IO, Int])(behavior: Int => Status): Client[IO] =
+  private def respondingClient(
+      counter: Ref[IO, Int]
+  )(behavior: Int => Status): Client[IO] =
     Client[IO] { _ =>
-      Resource.eval(counter.updateAndGet(_ + 1).map(n => Response[IO](behavior(n))))
+      Resource.eval(
+        counter.updateAndGet(_ + 1).map(n => Response[IO](behavior(n)))
+      )
     }
 
-  private def failingClient(counter: Ref[IO, Int])(error: Throwable): Client[IO] =
+  private def failingClient(
+      counter: Ref[IO, Int]
+  )(error: Throwable): Client[IO] =
     Client[IO] { _ =>
       Resource.eval(counter.update(_ + 1) *> IO.raiseError[Response[IO]](error))
     }
 
-  private val fastConfig = RetryConfig(maxRetries = 2, baseDelay = 1.millisecond)
+  private val fastConfig =
+    RetryConfig(maxRetries = 2, baseDelay = 1.millisecond)
 
-  test("retries a 5xx response and succeeds once the underlying client recovers") {
+  test(
+    "retries a 5xx response and succeeds once the underlying client recovers"
+  ) {
     for {
       counter <- Ref.of[IO, Int](0)
-      client = respondingClient(counter)(n => if (n < 3) Status.InternalServerError else Status.Ok)
+      client = respondingClient(counter)(n =>
+        if (n < 3) Status.InternalServerError else Status.Ok
+      )
       resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(client)
       response <- resilientClient.run(Request[IO]()).use(IO.pure)
       attempts <- counter.get
@@ -78,7 +89,9 @@ class RetrySuite extends CatsEffectSuite {
   test("retries timeouts and raises after exhausting retries") {
     for {
       counter <- Ref.of[IO, Int](0)
-      client = failingClient(counter)(new java.util.concurrent.TimeoutException("boom"))
+      client = failingClient(counter)(
+        new java.util.concurrent.TimeoutException("boom")
+      )
       resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(client)
       result <- resilientClient.run(Request[IO]()).use(IO.pure).attempt
       attempts <- counter.get

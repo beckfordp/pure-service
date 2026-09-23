@@ -8,7 +8,12 @@ import org.http4s.implicits._
 import purerest.client.HttpClient
 import purerest.docs.Docs
 import purerest.logging.Logging
-import purerest.resilience.{CircuitBreakerConfig, Resilience, ResilienceConfig, RetryConfig}
+import purerest.resilience.{
+  CircuitBreakerConfig,
+  Resilience,
+  ResilienceConfig,
+  RetryConfig
+}
 import purerest.tracing.{ClientTracing, ServerTracing, Tracing}
 
 import scala.concurrent.duration._
@@ -17,7 +22,8 @@ object Main extends IOApp.Simple {
 
   private val resilienceConfig = ResilienceConfig(
     retry = RetryConfig(maxRetries = 3, baseDelay = 100.millis),
-    circuitBreaker = CircuitBreakerConfig(failureThreshold = 5, resetTimeout = 30.seconds)
+    circuitBreaker =
+      CircuitBreakerConfig(failureThreshold = 5, resetTimeout = 30.seconds)
   )
 
   val run: IO[Unit] =
@@ -38,7 +44,9 @@ object Main extends IOApp.Simple {
           _ <- OrderStore.postgres[IO](config.postgres).use { store =>
             HttpClient.resource[IO].use { httpClient =>
               val tracedClient = ClientTracing.middleware(tracer)(httpClient)
-              val resilientClient = Resilience.middleware[IO](resilienceConfig)(logger)(tracedClient)
+              val resilientClient = Resilience.middleware[IO](resilienceConfig)(
+                logger
+              )(tracedClient)
               val inventory =
                 InventoryClient[IO](resilientClient, inventoryServiceBaseUri)
               val docsRoutes = Docs.routes[IO](
