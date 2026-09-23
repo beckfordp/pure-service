@@ -1,0 +1,28 @@
+Phase Completion Report: Phase 1 - Gatling Load-Test Module
+
+Automated verification command: ./scripts/loadtest-purerest.sh
+- Healthy pass (INVENTORY_INDUCED_FAILURE_RATE=0): Gatling reported
+  315/315 OK, 0 KO; order-service's /metrics showed nonzero
+  http_server_request_duration_seconds_count (316) and
+  http_client_request_duration_seconds_count (315).
+- Degraded pass (INVENTORY_INDUCED_FAILURE_RATE=0.3): Gatling reported
+  315 total, 163 OK, 152 KO — the circuit breaker genuinely tripping and
+  rejecting calls under sustained failure, not just retrying;
+  order-service's /metrics showed nonzero
+  purerest_retry_attempts_total{outcome="retried"} and
+  purerest_circuit_breaker_state_transitions_total/_calls_rejected_total.
+- Script exited "All checks passed."
+- Also directly verified `sbt loadTest/Gatling/test` in isolation earlier
+  (315/315 OK, HTML report generated), and confirmed `sbt projects`/a full
+  main-suite rerun (purerest 44/44, inventoryService 10/10, orderService
+  21/21) show the new module is registered but doesn't affect the normal
+  build/test loop.
+
+Manual verification: not applicable in the standard interactive walkthrough
+sense — this track's acceptance criteria are load-test-script-level (real
+sustained traffic producing real metric series), already fully captured by
+the automated run above. Per this project's prompting-off mode
+(.claude/prompt-off), that captured run substitutes for an interactive
+walkthrough; no code changed since it ran, so it was not re-run.
+
+Result: All checks passed. Phase 1 complete.
