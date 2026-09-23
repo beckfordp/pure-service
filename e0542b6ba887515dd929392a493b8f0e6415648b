@@ -1,0 +1,13 @@
+Task: Add cats-retry dependency to purerest
+
+Summary: Added catsRetryVersion (4.0.0) and com.github.cb372 %% cats-retry to
+purerest's libraryDependencies. Documented the choice (cats-retry 4.0.0's Scala-3-only,
+result-handler API over the superseded v3.x line) and the upcoming resilience4j
+circuit-breaker wrapping approach in tech-stack.md's Resilience section, per
+workflow.md's 'tech stack is deliberate' principle.
+
+Files changed:
+- build.sbt
+- conductor/tech-stack.md
+
+Verified: sbt purerest/update resolves cleanly, no errors or eviction warnings.
