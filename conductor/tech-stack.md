@@ -68,6 +68,12 @@
   this way. Gets mature failure-rate/slow-call-duration-based tripping logic without
   reinventing its subtleties, while keeping purerest's own API 100% idiomatic
   tagless-final Cats Effect — resilience4j types never leak into it.
+- `CircuitBreakerConfig(failureThreshold: Int, resetTimeout: FiniteDuration)` maps onto
+  resilience4j's rate-based engine as a count-based sliding window of exactly
+  `failureThreshold` calls with a 100% failure-rate threshold (`slidingWindowSize` =
+  `minimumNumberOfCalls` = `failureThreshold`, `failureRateThreshold = 100.0f`) —
+  giving simple "N consecutive failures" semantics from a plain integer, since
+  resilience4j has no raw-count-based mode natively.
 
 ### 2026-09-23: `Retry.middleware` delegates its execution loop to http4s's own `Retry`
 - **Deviation observed**: retrying a `Client[F].run` call safely is non-trivial — each
