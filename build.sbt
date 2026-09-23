@@ -12,6 +12,19 @@ val otel4sVersion = "1.1.0"
 val openTelemetryVersion = "1.66.0"
 val log4catsVersion = "2.8.0"
 val tapirVersion = "1.11.25"
+val skunkVersion = "1.0.0"
+val flywayVersion = "11.8.2"
+val postgresqlJdbcVersion = "42.7.13"
+val pureconfigVersion = "0.17.10"
+val testcontainersScalaVersion = "0.43.6"
+
+// Skunk 1.0.0 depends on otel4s-core 0.16.0 (its own optional tracing integration),
+// which sbt's binary-compatibility check flags as a suspect eviction against our
+// pinned otel4s 1.1.0 (early-semver 0.x -> 1.x jump). "Highest version wins" is the
+// correct resolution here — nothing in this project invokes Skunk's otel4s
+// integration — so the eviction is downgraded from a build-failing error to a
+// warning. See conductor/tech-stack.md's "Transitive version drift" deferred concern.
+ThisBuild / evictionErrorLevel := Level.Warn
 
 // Settings shared by every module in this build.
 lazy val commonSettings = Seq(
@@ -97,7 +110,24 @@ lazy val orderService = project
       "io.circe" %% "circe-parser" % circeVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-core" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion
+      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
+      // skunk: non-blocking, pure-FP Postgres access — order-service's persistence layer.
+      "org.tpolecat" %% "skunk-core" % skunkVersion,
+      // flyway: JDBC-based schema migration tool, run on startup to create/update the
+      // orders table. Independent of Skunk (which handles all runtime queries).
+      "org.flywaydb" % "flyway-core" % flywayVersion,
+      "org.flywaydb" % "flyway-database-postgresql" % flywayVersion,
+      // postgresql (pgjdbc): build-only JDBC driver, used solely by Flyway to run
+      // migrations. Runtime-only: never referenced directly in code, loaded by
+      // Flyway/JDBC's DriverManager via SPI.
+      "org.postgresql" % "postgresql" % postgresqlJdbcVersion % Runtime,
+      // pureconfig: loads application.conf (Postgres connection, service port,
+      // inventory base URL) into typed config case classes.
+      "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
+      // testcontainers-scala: spins up a real, ephemeral Postgres container for
+      // integration tests (not used by main code).
+      "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaVersion % Test,
+      "com.dimafeng" %% "testcontainers-scala-munit" % testcontainersScalaVersion % Test
     )
   )
 

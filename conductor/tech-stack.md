@@ -56,6 +56,21 @@
 
 ## Deferred Concerns
 
+### 2026-09-23: `ThisBuild / evictionErrorLevel := Level.Warn`
+- **Deviation observed**: Adding Skunk 1.0.0 to `order-service` made `sbt update` fail
+  outright — Skunk depends on `otel4s-core` 0.16.0 (its own optional tracing
+  integration), which conflicts with this project's pinned `otel4s` 1.1.0. sbt's
+  default eviction check treats the 0.x -> 1.x jump as a suspected binary
+  incompatibility and fails the build rather than warning.
+- **Resolution**: `ThisBuild / evictionErrorLevel := Level.Warn` in `build.sbt`,
+  downgrading this class of check to a warning project-wide — "highest version wins"
+  (1.1.0) is correct here since nothing in this codebase invokes Skunk's otel4s
+  integration.
+- **Relates to** the transitive-version-drift concern below: this is the same
+  underlying sbt/Coursier eviction mechanism, triggered earlier than expected (by a
+  third-party library's own dependency, not by the purerest-extraction split this
+  section otherwise anticipates).
+
 ### Transitive version drift once purerest becomes a published artifact
 - **Today**: `purerest`, `order-service`, and `inventory-service` are subprojects of one sbt build,
   and every shared library version (`tapirVersion`, `http4sVersion`, `catsEffectVersion`, `circeVersion`,
