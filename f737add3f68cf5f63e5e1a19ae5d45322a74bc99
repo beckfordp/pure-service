@@ -1,0 +1,7 @@
+Phase 2 checkpoint: OrderStore — create() and get()
+
+Automated tests: sbt orderService/test (19/19 passed).
+
+No interactive/manual verification step this phase — OrderStore is internal, no HTTP
+route exists yet for get() (that's Phase 3). The automated Postgres-backed tests are
+the verification.
