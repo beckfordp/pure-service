@@ -24,10 +24,10 @@
 - [x] Task: Refactor — review error handling (DB connection failure, constraint violations) maps to typed errors, not leaked exceptions (Optional). Verified via a test against an unreachable Postgres: http4s/Ember's default exception handling already returns a clean 5xx with no leaked internals — no production code change needed. [062fdb0]
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Skunk-backed OrderStore' (Protocol in workflow.md) — autonomous run: added `scripts/verify-order-service-postgres-persistence.sh` (real Postgres + inventory-service + order-service, POST /orders, direct DB row check, service restart, idempotent-migration check, post-restart row check) and ran it directly; all checks passed, including the track's overall 'survives restart' acceptance criterion. [10bf0c5]
 
-## Phase 4: Local Dev Environment (Docker Compose)
-- [ ] Task: Add `docker-compose.yml` provisioning a Postgres container matching `application.conf` defaults, for `sbt "order-service/run"` and manual testing.
-- [ ] Task: Update relevant docs (e.g. README/run script) with `docker compose up` as a prerequisite step for running order-service locally.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Local Dev Environment (Docker Compose)' (Protocol in workflow.md)
+## Phase 4: Local Dev Environment (Docker Compose) [checkpoint: 9d166f3]
+- [x] Task: Add `docker-compose.yml` provisioning a Postgres container matching `application.conf` defaults, for `sbt "order-service/run"` and manual testing. [1defcbe]
+- [x] Task: Update relevant docs (e.g. README/run script) with `docker compose up` as a prerequisite step for running order-service locally. [882b9cf]
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Local Dev Environment (Docker Compose)' (Protocol in workflow.md) — autonomous run: added `scripts/verify-docker-compose-setup.sh` (docker compose up + both services + POST /orders end-to-end) and ran it directly; all checks passed. [9d166f3]
 
 ## Phase 5: Coverage & Cleanup
 - [ ] Task: Run `sbt coverage test coverageReport`; confirm >80% coverage for new code, add tests to close gaps.
