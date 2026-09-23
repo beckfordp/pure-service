@@ -1,0 +1,3 @@
+Phase 5 task: run scalafmtOnly scoped to this track's files (all resilience.* sources in purerest, plus InventoryRoutes/Main/InventoryRoutesSuite in inventory-service, plus Main.scala in order-service), matching the persistence track's precedent of not reformatting the wider pre-existing codebase.
+
+Verification: full test suites re-run after reformatting (purerest/test, inventoryService/test, orderService/test) — all green, no behavioral changes, style-only diff.
