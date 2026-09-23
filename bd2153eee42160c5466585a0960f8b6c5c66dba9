@@ -1,0 +1,14 @@
+Task: Implement induced failure/delay injection (Green)
+
+Summary: Added InducedFailureConfig(failureRate: Double, delay: FiniteDuration), with
+InducedFailureConfig.disabled as the zero-effect default. serverEndpoint/routes gained
+an optional 3rd param (default = disabled), so existing call sites (Main.scala,
+existing tests) keep compiling/behaving identically. maybeInduceFailure sleeps for
+ then rolls a random double against  to decide whether to raise a
+plain RuntimeException (falls through to http4s's default clean 500 handling, same as
+every other uncaught-exception path in this codebase).
+
+Files changed:
+- modules/inventory-service/src/main/scala/inventoryservice/InventoryRoutes.scala
+
+Verified: full inventoryService/test suite green (9/9).
