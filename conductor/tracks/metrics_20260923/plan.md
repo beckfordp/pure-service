@@ -11,10 +11,10 @@
 - [x] Task: Implement `ServerMetrics.middleware` and `ClientMetrics.middleware` in `purerest.metrics` (Green). [ba9d9a6]
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Server & Client RED Metrics' (Protocol in workflow.md) — no wiring into a running service yet (Phase 4); verification is the automated test suite: full purerest/test green (28/28), including ServerMetricsSuite/ClientMetricsSuite's histogram-with-attributes scenarios. [5c2dc8f]
 
-## Phase 3: Resilience Metrics
+## Phase 3: Resilience Metrics [checkpoint: 04c8a0d]
 - [x] Task: Write failing tests: a retried call records `purerest.retry.attempts` with the right `outcome` attribute across retried/succeeded/exhausted scenarios; a circuit breaker open/close/reject records `purerest.circuit_breaker.state_transitions` / `purerest.circuit_breaker.calls_rejected` (Red). [46214fe]
 - [x] Task: Extend `Retry.middleware` and `CircuitBreaker.middleware` to accept a `Meter[F]` and emit these counters; update `Resilience.middleware`'s signature accordingly (Green). [46214fe]
-- [x] Task: Conductor - User Manual Verification 'Phase 3: Resilience Metrics' (Protocol in workflow.md) — order-service/inventory-service wiring is still Meter.noop (Phase 4's job); verification is the automated test suite across all modules: purerest 35/35 (including RetryMetricsSuite/CircuitBreakerMetricsSuite), inventoryService and orderService both green (21/21), plus a separate compile check confirming order-service/inventory-service build cleanly after the signature change.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Resilience Metrics' (Protocol in workflow.md) — order-service/inventory-service wiring is still Meter.noop (Phase 4's job); verification is the automated test suite across all modules: purerest 35/35 (including RetryMetricsSuite/CircuitBreakerMetricsSuite), inventoryService and orderService both green (21/21), plus a separate compile check confirming order-service/inventory-service build cleanly after the signature change. [04c8a0d]
 
 ## Phase 4: Wire into Services
 - [ ] Task: Wire `Metrics.oteljava` + `ServerMetrics.middleware`/`ClientMetrics.middleware` into `order-service` and `inventory-service`'s `Main.scala`, alongside existing tracing; wire the `Meter[F]` into `Resilience.middleware`'s construction in `order-service`.
