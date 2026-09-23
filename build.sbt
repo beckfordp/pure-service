@@ -56,6 +56,9 @@ lazy val purerest = project
   .settings(commonSettings)
   .settings(
     name := "purerest",
+    // Real Maven/Ivy coordinate for publishing purerest as a jar, derived from this
+    // project's own GitHub remote (github.com/beckfordp/pure-service).
+    organization := "io.github.beckfordp",
     // early-semver: purerest's own published version communicates binary
     // compatibility the way its 0.x/1.x/etc. Typelevel-ecosystem dependencies
     // already do, so a future consumer's eviction checks (once purerest is
