@@ -14,8 +14,6 @@ import org.testcontainers.utility.DockerImageName
 import org.typelevel.log4cats.noop.NoOpLogger
 import purerest.client.HttpClient
 
-import java.sql.DriverManager
-
 class OrderServicePostgresIntegrationSuite
     extends CatsEffectSuite
     with TestContainerForAll {
@@ -67,29 +65,19 @@ class OrderServicePostgresIntegrationSuite
           .withEntity(CreateOrderRequest("widget", 5))
 
         for {
-          response <- routes.orNotFound.run(request)
-          order <- response.as[OrderResponse]
+          postResponse <- routes.orNotFound.run(request)
+          created <- postResponse.as[OrderResponse]
+          getResponse <- routes.orNotFound.run(Request[IO](Method.GET, Uri.unsafeFromString(s"/orders/${created.id}")))
+          fetched <- getResponse.as[OrderResponse]
         } yield {
-          assertEquals(response.status, Status.Created)
-          assertEquals(order.item, "widget")
-          assertEquals(order.quantity, 5)
-          assert(order.reservationId.nonEmpty)
+          assertEquals(postResponse.status, Status.Created)
+          assertEquals(created.item, "widget")
+          assertEquals(created.quantity, 5)
+          assert(created.reservationId.nonEmpty)
 
-          val conn = DriverManager.getConnection(
-            postgres.jdbcUrl,
-            postgres.username,
-            postgres.password
-          )
-          try {
-            val rs = conn
-              .createStatement()
-              .executeQuery(
-                s"select item, quantity from orders where id = '${order.id}'"
-              )
-            assert(rs.next(), "expected a persisted row for the created order")
-            assertEquals(rs.getString("item"), "widget")
-            assertEquals(rs.getInt("quantity"), 5)
-          } finally conn.close()
+          assertEquals(getResponse.status, Status.Ok)
+          assertEquals(fetched, created)
+          assertEquals(fetched.status, "reserved")
         }
       }
     }
