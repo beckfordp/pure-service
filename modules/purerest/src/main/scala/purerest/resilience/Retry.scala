@@ -1,6 +1,6 @@
 package purerest.resilience
 
-import cats.effect.Temporal
+import cats.effect.{Ref, Temporal}
 import cats.effect.kernel.Resource
 import cats.syntax.all._
 import org.http4s.Response
@@ -11,6 +11,8 @@ import org.http4s.client.middleware.{
 }
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpFactory
+import org.typelevel.otel4s.Attribute
+import org.typelevel.otel4s.metrics.Meter
 import retry.{PolicyDecision, RetryPolicies, RetryStatus}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -60,9 +62,25 @@ object Retry {
       }
   }
 
+  /** Records `purerest.retry.attempts`: for a request that took `attempts`
+    * total tries and ended in `finalOutcome` ("succeeded" or "exhausted"), the
+    * `attempts - 1` earlier tries are recorded as `outcome = "retried"` and the
+    * final one as `outcome = finalOutcome`. Derived from the aggregate attempt
+    * count http4s's `Retry` middleware reports — this middleware only observes
+    * the overall outcome, not each individual attempt.
+    */
+  private def recordAttempts[F[_]: Temporal](
+      meter: Meter[F]
+  )(attempts: Int, finalOutcome: String): F[Unit] =
+    meter.counter[Long]("purerest.retry.attempts").create.flatMap { counter =>
+      val retried = (attempts - 1).toLong
+      (if (retried > 0) counter.add(retried, Attribute("outcome", "retried"))
+       else Temporal[F].unit) *> counter.inc(Attribute("outcome", finalOutcome))
+    }
+
   def middleware[F[_]: Temporal](
       config: RetryConfig
-  )(logger: StructuredLogger[F])(client: Client[F]): Client[F] = {
+  )(logger: StructuredLogger[F])(meter: Meter[F])(client: Client[F]): Client[F] = {
     implicit val loggerFactory: org.typelevel.log4cats.LoggerFactory[F] =
       NoOpFactory[F]
     val policy = Http4sRetryPolicy[F](
@@ -73,26 +91,41 @@ object Retry {
           case Left(error)     => isRetriableError(error)
         }
     )
-    val retried = Http4sRetry.create(policy, logRetries = false)(client)
     Client[F] { req =>
-      retried
-        .run(req)
-        .evalMap { response =>
-          response.attributes.lookup(Http4sRetry.AttemptCountKey) match {
-            case Some(attempts) if attempts > 1 =>
-              logger
-                .info(
-                  s"Request to ${req.uri} succeeded after $attempts attempt(s)"
-                )
-                .as(response)
-            case _ => response.pure[F]
+      Resource.eval(Ref.of[F, Int](0)).flatMap { attemptCounter =>
+        // A thin counting wrapper around the underlying client, so the real
+        // per-request attempt count is known on every path (including a
+        // non-retriable error's single attempt) — http4s's Retry only reports
+        // an attempt count via response attributes, which doesn't exist on the
+        // error path.
+        val countingClient = Client[F] { r =>
+          Resource.eval(attemptCounter.update(_ + 1)) *> client.run(r)
+        }
+        val retried = Http4sRetry.create(policy, logRetries = false)(countingClient)
+        retried
+          .run(req)
+          .evalMap { response =>
+            attemptCounter.get.flatMap { attempts =>
+              val finalOutcome =
+                if (isRetriableResponse(response)) "exhausted" else "succeeded"
+              val logIfRetried =
+                if (attempts > 1)
+                  logger.info(
+                    s"Request to ${req.uri} succeeded after $attempts attempt(s)"
+                  )
+                else Temporal[F].unit
+              recordAttempts(meter)(attempts, finalOutcome) *> logIfRetried.as(response)
+            }
           }
-        }
-        .onError { case error =>
-          Resource.eval(
-            logger.warn(error)(s"Request to ${req.uri} failed after retries")
-          )
-        }
+          .onError { case error =>
+            Resource.eval(
+              attemptCounter.get.flatMap { attempts =>
+                recordAttempts(meter)(attempts, "exhausted") *>
+                  logger.warn(error)(s"Request to ${req.uri} failed after retries")
+              }
+            )
+          }
+      }
     }
   }
 }

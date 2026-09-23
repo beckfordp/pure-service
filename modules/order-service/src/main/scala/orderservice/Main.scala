@@ -15,6 +15,7 @@ import purerest.resilience.{
   RetryConfig
 }
 import purerest.tracing.{ClientTracing, ServerTracing, Tracing}
+import org.typelevel.otel4s.metrics.Meter
 
 import scala.concurrent.duration._
 
@@ -46,7 +47,7 @@ object Main extends IOApp.Simple {
               val tracedClient = ClientTracing.middleware(tracer)(httpClient)
               val resilientClient = Resilience.middleware[IO](resilienceConfig)(
                 logger
-              )(tracedClient)
+              )(Meter.noop[IO])(tracedClient)
               val inventory =
                 InventoryClient[IO](resilientClient, inventoryServiceBaseUri)
               val docsRoutes = Docs.routes[IO](

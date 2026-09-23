@@ -4,6 +4,7 @@ import cats.effect.{IO, Ref, Resource}
 import munit.CatsEffectSuite
 import org.http4s.client.Client
 import org.http4s.{Request, Response, Status}
+import org.typelevel.otel4s.metrics.Meter
 
 import scala.concurrent.duration._
 
@@ -54,7 +55,7 @@ class CircuitBreakerSuite extends CatsEffectSuite {
       protectedClient =
         CircuitBreaker.middleware[IO](
           CircuitBreakerConfig(failureThreshold = 3, resetTimeout = 50.millis)
-        )(client)
+        )(Meter.noop[IO])(client)
       _ <- protectedClient.run(Request[IO]()).use(IO.pure)
       _ <- protectedClient.run(Request[IO]()).use(IO.pure)
       _ <- protectedClient.run(Request[IO]()).use(IO.pure)
@@ -71,7 +72,7 @@ class CircuitBreakerSuite extends CatsEffectSuite {
       protectedClient =
         CircuitBreaker.middleware[IO](
           CircuitBreakerConfig(failureThreshold = 2, resetTimeout = 1.hour)
-        )(client)
+        )(Meter.noop[IO])(client)
       _ <- protectedClient.run(Request[IO]()).use(IO.pure).attempt
       _ <- protectedClient.run(Request[IO]()).use(IO.pure).attempt
       attemptsBeforeOpen <- counter.get
@@ -97,7 +98,7 @@ class CircuitBreakerSuite extends CatsEffectSuite {
       protectedClient =
         CircuitBreaker.middleware[IO](
           CircuitBreakerConfig(failureThreshold = 1, resetTimeout = 50.millis)
-        )(client)
+        )(Meter.noop[IO])(client)
       _ <- protectedClient
         .run(Request[IO]())
         .use(IO.pure)

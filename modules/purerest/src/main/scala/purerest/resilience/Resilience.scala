@@ -3,6 +3,7 @@ package purerest.resilience
 import cats.effect.Async
 import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
+import org.typelevel.otel4s.metrics.Meter
 
 final case class ResilienceConfig(
     retry: RetryConfig,
@@ -20,8 +21,8 @@ final case class ResilienceConfig(
 object Resilience {
   def middleware[F[_]: Async](
       config: ResilienceConfig
-  )(logger: StructuredLogger[F])(client: Client[F]): Client[F] =
-    Retry.middleware[F](config.retry)(logger)(
-      CircuitBreaker.middleware[F](config.circuitBreaker)(client)
+  )(logger: StructuredLogger[F])(meter: Meter[F])(client: Client[F]): Client[F] =
+    Retry.middleware[F](config.retry)(logger)(meter)(
+      CircuitBreaker.middleware[F](config.circuitBreaker)(meter)(client)
     )
 }

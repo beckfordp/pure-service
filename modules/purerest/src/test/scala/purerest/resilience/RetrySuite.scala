@@ -6,6 +6,7 @@ import munit.CatsEffectSuite
 import org.http4s.client.Client
 import org.http4s.{Request, Response, Status}
 import org.typelevel.log4cats.noop.NoOpLogger
+import org.typelevel.otel4s.metrics.Meter
 
 import scala.concurrent.duration._
 
@@ -38,7 +39,7 @@ class RetrySuite extends CatsEffectSuite {
       client = respondingClient(counter)(n =>
         if (n < 3) Status.InternalServerError else Status.Ok
       )
-      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(client)
+      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(Meter.noop[IO])(client)
       response <- resilientClient.run(Request[IO]()).use(IO.pure)
       attempts <- counter.get
     } yield {
@@ -51,7 +52,7 @@ class RetrySuite extends CatsEffectSuite {
     for {
       counter <- Ref.of[IO, Int](0)
       client = respondingClient(counter)(_ => Status.InternalServerError)
-      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(client)
+      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(Meter.noop[IO])(client)
       response <- resilientClient.run(Request[IO]()).use(IO.pure)
       attempts <- counter.get
     } yield {
@@ -64,7 +65,7 @@ class RetrySuite extends CatsEffectSuite {
     for {
       counter <- Ref.of[IO, Int](0)
       client = respondingClient(counter)(_ => Status.BadRequest)
-      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(client)
+      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(Meter.noop[IO])(client)
       response <- resilientClient.run(Request[IO]()).use(IO.pure)
       attempts <- counter.get
     } yield {
@@ -77,7 +78,7 @@ class RetrySuite extends CatsEffectSuite {
     for {
       counter <- Ref.of[IO, Int](0)
       client = failingClient(counter)(new java.net.ConnectException("boom"))
-      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(client)
+      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(Meter.noop[IO])(client)
       result <- resilientClient.run(Request[IO]()).use(IO.pure).attempt
       attempts <- counter.get
     } yield {
@@ -92,7 +93,7 @@ class RetrySuite extends CatsEffectSuite {
       client = failingClient(counter)(
         new java.util.concurrent.TimeoutException("boom")
       )
-      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(client)
+      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(Meter.noop[IO])(client)
       result <- resilientClient.run(Request[IO]()).use(IO.pure).attempt
       attempts <- counter.get
     } yield {
@@ -105,7 +106,7 @@ class RetrySuite extends CatsEffectSuite {
     for {
       counter <- Ref.of[IO, Int](0)
       client = failingClient(counter)(new RuntimeException("boom"))
-      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(client)
+      resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(Meter.noop[IO])(client)
       result <- resilientClient.run(Request[IO]()).use(IO.pure).attempt
       attempts <- counter.get
     } yield {

@@ -11,6 +11,8 @@ import io.github.resilience4j.circuitbreaker.{
 }
 import org.http4s.Response
 import org.http4s.client.Client
+import org.typelevel.otel4s.Attribute
+import org.typelevel.otel4s.metrics.Meter
 
 import java.time.{Duration => JDuration}
 import java.util.concurrent.TimeUnit
@@ -65,9 +67,34 @@ object CircuitBreaker {
         case _ => false
       }
 
+  /** Records a `purerest.circuit_breaker.state_transitions` measurement when
+    * the breaker's state differs before and after a call — net of any
+    * intermediate hop (e.g. an OPEN -> HALF_OPEN -> CLOSED recovery is recorded
+    * as a single OPEN -> CLOSED transition), since this middleware only
+    * observes state synchronously before and after its own
+    * acquire/run/report sequence, not via a separate event listener.
+    */
+  private def recordTransition[F[_]: Async](
+      meter: Meter[F]
+  )(before: R4jCircuitBreaker.State, after: R4jCircuitBreaker.State): F[Unit] =
+    if (before == after) Async[F].unit
+    else
+      meter
+        .counter[Long]("purerest.circuit_breaker.state_transitions")
+        .create
+        .flatMap(
+          _.inc(
+            Attribute("from_state", before.name),
+            Attribute("to_state", after.name)
+          )
+        )
+
+  private def recordRejection[F[_]: Async](meter: Meter[F]): F[Unit] =
+    meter.counter[Long]("purerest.circuit_breaker.calls_rejected").create.flatMap(_.inc())
+
   def middleware[F[_]: Async](
       config: CircuitBreakerConfig
-  )(client: Client[F]): Client[F] = {
+  )(meter: Meter[F])(client: Client[F]): Client[F] = {
     val r4jConfig = R4jCircuitBreakerConfig
       .custom()
       .slidingWindowType(R4jCircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
@@ -81,37 +108,44 @@ object CircuitBreaker {
     val breaker = R4jCircuitBreaker.of("purerest", r4jConfig)
 
     Client[F] { req =>
-      Resource.eval(Async[F].delay(breaker.tryAcquirePermission())).flatMap {
-        case false =>
-          Resource.eval(Async[F].raiseError[Response[F]](CircuitBreakerOpen))
-        case true =>
-          Resource.eval(Async[F].monotonic).flatMap { start =>
-            client.run(req).attempt.evalMap {
-              case Right(response) =>
-                Async[F].monotonic
-                  .flatMap(end =>
-                    Async[F].delay(
-                      breaker.onResult(
-                        (end - start).toNanos,
-                        TimeUnit.NANOSECONDS,
-                        response
-                      )
+      Resource.eval(Async[F].delay(breaker.getState)).flatMap { stateBefore =>
+        Resource.eval(Async[F].delay(breaker.tryAcquirePermission())).flatMap {
+          case false =>
+            Resource.eval(
+              recordRejection(meter) *> Async[F].raiseError[Response[F]](CircuitBreakerOpen)
+            )
+          case true =>
+            Resource.eval(Async[F].monotonic).flatMap { start =>
+              client.run(req).attempt.evalMap {
+                case Right(response) =>
+                  Async[F].monotonic
+                    .flatMap(end =>
+                      Async[F].delay(
+                        breaker.onResult(
+                          (end - start).toNanos,
+                          TimeUnit.NANOSECONDS,
+                          response
+                        )
+                      ) *> Async[F].delay(breaker.getState)
                     )
-                  )
-                  .as(response)
-              case Left(error) =>
-                Async[F].monotonic
-                  .flatMap(end =>
-                    Async[F].delay(
-                      breaker.onError(
-                        (end - start).toNanos,
-                        TimeUnit.NANOSECONDS,
-                        error
-                      )
+                    .flatMap(stateAfter => recordTransition(meter)(stateBefore, stateAfter))
+                    .as(response)
+                case Left(error) =>
+                  Async[F].monotonic
+                    .flatMap(end =>
+                      Async[F].delay(
+                        breaker.onError(
+                          (end - start).toNanos,
+                          TimeUnit.NANOSECONDS,
+                          error
+                        )
+                      ) *> Async[F].delay(breaker.getState)
                     )
-                  ) *> Async[F].raiseError[Response[F]](error)
+                    .flatMap(stateAfter => recordTransition(meter)(stateBefore, stateAfter)) *>
+                    Async[F].raiseError[Response[F]](error)
+              }
             }
-          }
+        }
       }
     }
   }

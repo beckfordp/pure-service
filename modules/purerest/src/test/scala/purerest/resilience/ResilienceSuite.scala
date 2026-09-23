@@ -5,6 +5,7 @@ import munit.CatsEffectSuite
 import org.http4s.client.Client
 import org.http4s.{Request, Response, Status}
 import org.typelevel.log4cats.noop.NoOpLogger
+import org.typelevel.otel4s.metrics.Meter
 
 import scala.concurrent.duration._
 
@@ -30,7 +31,7 @@ class ResilienceSuite extends CatsEffectSuite {
         circuitBreaker =
           CircuitBreakerConfig(failureThreshold = 10, resetTimeout = 1.hour)
       )
-      resilientClient = Resilience.middleware[IO](config)(NoOpLogger[IO])(
+      resilientClient = Resilience.middleware[IO](config)(NoOpLogger[IO])(Meter.noop[IO])(
         client
       )
       response <- resilientClient.run(Request[IO]()).use(IO.pure)
@@ -50,7 +51,7 @@ class ResilienceSuite extends CatsEffectSuite {
         circuitBreaker =
           CircuitBreakerConfig(failureThreshold = 1, resetTimeout = 1.hour)
       )
-      resilientClient = Resilience.middleware[IO](config)(NoOpLogger[IO])(
+      resilientClient = Resilience.middleware[IO](config)(NoOpLogger[IO])(Meter.noop[IO])(
         client
       )
       result <- resilientClient.run(Request[IO]()).use(IO.pure).attempt
