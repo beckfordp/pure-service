@@ -12,7 +12,7 @@
 - [x] Task: Run `sbt coverage purerest/test orderService/test inventoryService/test coverageReport`; confirm 100% coverage on changed files, full suite green. Verified: OrderRoutes.scala/InventoryRoutes.scala both 100%/100%; purerest 44/44, inventoryService 12/12, orderService 26/26. [4418886]
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Enrich Logging' (Protocol in workflow.md) — no running observability stack to demo against yet (that's Phases 3-4), so verification is the automated test suite (purerest 44/44, inventoryService 12/12, orderService 26/26, 100% coverage on the changed route files) plus a manual `sbt bgRun` + curl check confirming the startup log line ("inventory-service starting") actually appears in console output.
 
-## Phase 2: Enrich Metrics
+## Phase 2: Enrich Metrics [checkpoint: 773fbef]
 - [x] Task: Write a failing test (Red) asserting a live `purerest.circuit_breaker.state` gauge reflects CLOSED/OPEN correctly via `Metrics.test`'s testkit. [7cca14a]
 - [x] Task: Implement the state gauge in `CircuitBreaker.middleware` to pass (Green). [7cca14a]
 - [x] Task: Write a failing test (Red) — against order-service's real-Postgres integration setup — asserting a DB query duration measurement (with an operation attribute) is recorded for `OrderStore` queries, and an error is recorded on failure. [7cca14a]
