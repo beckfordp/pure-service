@@ -1,0 +1,19 @@
+Task: Set up coverage and formatting tooling (Phase 5 prerequisite)
+
+Summary: Neither sbt-scoverage nor sbt-scalafmt were actually configured in this
+project despite workflow.md's Quality Gates and tech-stack.md referencing both — a
+pre-existing gap from before this track, discovered while attempting the plan's
+'sbt coverage test coverageReport' and 'sbt scalafmtCheck' steps. Added both plugins
+(org.scoverage:sbt-scoverage 2.4.4, org.scalameta:sbt-scalafmt 2.5.2) and a minimal
+.scalafmt.conf (version 3.10.7, scala3 dialect — 'default Scala 3 style' per
+tech-stack.md, no custom overrides).
+
+Files changed:
+- project/plugins.sbt (new)
+- .scalafmt.conf (new)
+
+Note: running scalafmtCheckAll for the first time flags nearly every pre-existing file
+across all three modules as unformatted, since scalafmt was never actually run before.
+Reformatting the whole codebase is out of scope for this persistence-focused track —
+only formatted the files this track itself touched (see next commit). Left the rest for
+a separate cleanup track/backlog item.
