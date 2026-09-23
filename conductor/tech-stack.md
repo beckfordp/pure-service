@@ -9,8 +9,20 @@
   writes to the local Ivy2 cache (`~/.ivy2/local/io.github.beckfordp/purerest_3/<version>/`).
   `order-service`/`inventory-service` still consume it via the internal `ProjectRef`
   (`.dependsOn(purerest)`), not the published jar — this is prep for the eventual real
-  extraction and for smoke-testing purerest as an external `libraryDependencies` consumer
-  (a separate track), not yet a live consumption path.
+  extraction, not yet a live consumption path.
+- **`smoke-test/`** is a genuinely standalone sbt build (its own `build.sbt`/`project/`,
+  deliberately not referenced anywhere in the root `build.sbt`, so `sbt projects`/`compile`/
+  `test` at the repo root never sweeps it in) that proves purerest actually works when
+  resolved purely as a published jar — an ordinary `libraryDependencies` entry against the
+  local Ivy2 cache, the way a real external microservice would consume it, not this repo's
+  internal `ProjectRef`. It wraps a stub route with `ServerMetrics.middleware` and asserts a
+  real `http.server.request.duration` measurement is recorded, using classes/resources that
+  only exist in the published jar. Run via `scripts/verify-purerest-consumption.sh` (publishes
+  purerest, resolves its current version, then runs `smoke-test/`'s own `sbt test` against
+  it) whenever purerest changes — or manually: `sbt purerest/publishLocal` in the main repo,
+  then `cd smoke-test && sbt -DpurerestVersion=<version> test` (the version from
+  `sbt purerest/version`; the property is required, not defaulted, so a stale/wrong version
+  can't silently pass).
 - **Organization**: `io.github.beckfordp`, derived from this project's own GitHub remote
   (`github.com/beckfordp/pure-service`).
 - **Versioning**: **sbt-dynver** derives `version` from git tags/commits automatically
