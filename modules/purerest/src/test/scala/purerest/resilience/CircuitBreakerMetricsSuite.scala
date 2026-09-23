@@ -89,6 +89,39 @@ class CircuitBreakerMetricsSuite extends CatsEffectSuite {
     }
   }
 
+  test("tripping the breaker open updates the live state gauge to OPEN") {
+    Metrics.test[IO]("purerest-circuit-breaker-metrics-test").use { testMeter =>
+      for {
+        counter <- Ref.of[IO, Int](0)
+        client = failingClient(counter)(new RuntimeException("boom"))
+        protectedClient = CircuitBreaker.middleware[IO](
+          CircuitBreakerConfig(failureThreshold = 2, resetTimeout = 1.hour)
+        )(testMeter.meter)(client)
+        _ <- protectedClient.run(Request[IO]()).use(IO.pure).attempt
+        _ <- protectedClient.run(Request[IO]()).use(IO.pure).attempt
+        metrics <- testMeter.collectMetrics
+      } yield MetricExpectations.checkAll(
+        metrics,
+        MetricExpectation
+          .gauge[Long]("purerest.circuit_breaker.state")
+          .containsPoints(
+            PointExpectation
+              .numeric(1L)
+              .attributesExact(Attribute("state", "OPEN")),
+            PointExpectation
+              .numeric(0L)
+              .attributesExact(Attribute("state", "CLOSED")),
+            PointExpectation
+              .numeric(0L)
+              .attributesExact(Attribute("state", "HALF_OPEN"))
+          )
+      ) match {
+        case Right(_)         => ()
+        case Left(mismatches) => fail(MetricExpectations.format(mismatches))
+      }
+    }
+  }
+
   test(
     "recovering via a half-open trial call records an OPEN -> CLOSED state transition"
   ) {

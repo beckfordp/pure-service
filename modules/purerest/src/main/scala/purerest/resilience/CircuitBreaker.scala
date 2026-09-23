@@ -12,7 +12,7 @@ import io.github.resilience4j.circuitbreaker.{
 import org.http4s.Response
 import org.http4s.client.Client
 import org.typelevel.otel4s.Attribute
-import org.typelevel.otel4s.metrics.{Counter, Meter}
+import org.typelevel.otel4s.metrics.{Counter, Gauge, Meter}
 
 import java.time.{Duration => JDuration}
 import java.util.concurrent.TimeUnit
@@ -74,19 +74,23 @@ object CircuitBreaker {
       Ref.unsafe(None)
     val callsRejectedCounterRef: Ref[F, Option[Counter[F, Long]]] =
       Ref.unsafe(None)
+    val stateGaugeRef: Ref[F, Option[Gauge[F, Long]]] =
+      Ref.unsafe(None)
 
-    def memoized(
+    def memoized[A](
+        ref: Ref[F, Option[A]],
+        create: F[A]
+    ): F[A] =
+      ref.get.flatMap {
+        case Some(instrument) => instrument.pure[F]
+        case None => create.flatTap(instrument => ref.set(Some(instrument)))
+      }
+
+    def memoizedCounter(
         ref: Ref[F, Option[Counter[F, Long]]],
         name: String
     ): F[Counter[F, Long]] =
-      ref.get.flatMap {
-        case Some(counter) => counter.pure[F]
-        case None          =>
-          meter
-            .counter[Long](name)
-            .create
-            .flatTap(counter => ref.set(Some(counter)))
-      }
+      memoized(ref, meter.counter[Long](name).create)
 
     def recordTransition(
         before: R4jCircuitBreaker.State,
@@ -94,7 +98,7 @@ object CircuitBreaker {
     ): F[Unit] =
       if (before == after) Async[F].unit
       else
-        memoized(
+        memoizedCounter(
           stateTransitionsCounterRef,
           "purerest.circuit_breaker.state_transitions"
         ).flatMap(
@@ -105,10 +109,35 @@ object CircuitBreaker {
         )
 
     def recordRejection: F[Unit] =
-      memoized(
+      memoizedCounter(
         callsRejectedCounterRef,
         "purerest.circuit_breaker.calls_rejected"
       ).flatMap(_.inc())
+
+    /** Records the breaker's current state as a live gauge — one point per
+      * possible `R4jCircuitBreaker.State`, 1 for the current state and 0 for
+      * the others, so a dashboard can query `purerest_circuit_breaker_state{
+      * state="OPEN"} == 1` for "is the breaker open right now" instead of
+      * having to infer it from historical transition counters. Updated on every
+      * state check (not just on transitions), so it's always fresh.
+      */
+    def recordState(state: R4jCircuitBreaker.State): F[Unit] =
+      memoized(
+        stateGaugeRef,
+        meter.gauge[Long]("purerest.circuit_breaker.state").create
+      )
+        .flatMap { gauge =>
+          List(
+            R4jCircuitBreaker.State.CLOSED,
+            R4jCircuitBreaker.State.OPEN,
+            R4jCircuitBreaker.State.HALF_OPEN
+          ).traverse_ { candidate =>
+            gauge.record(
+              if (candidate == state) 1L else 0L,
+              Attribute("state", candidate.name)
+            )
+          }
+        }
 
     val r4jConfig = R4jCircuitBreakerConfig
       .custom()
@@ -123,50 +152,60 @@ object CircuitBreaker {
     val breaker = R4jCircuitBreaker.of("purerest", r4jConfig)
 
     Client[F] { req =>
-      Resource.eval(Async[F].delay(breaker.getState)).flatMap { stateBefore =>
-        Resource.eval(Async[F].delay(breaker.tryAcquirePermission())).flatMap {
-          case false =>
-            Resource.eval(
-              recordRejection *> Async[F]
-                .raiseError[Response[F]](CircuitBreakerOpen)
-            )
-          case true =>
-            Resource.eval(Async[F].monotonic).flatMap { start =>
-              client.run(req).attempt.evalMap {
-                case Right(response) =>
-                  Async[F].monotonic
-                    .flatMap(end =>
-                      Async[F].delay(
-                        breaker.onResult(
-                          (end - start).toNanos,
-                          TimeUnit.NANOSECONDS,
-                          response
+      Resource
+        .eval(Async[F].delay(breaker.getState).flatTap(recordState))
+        .flatMap { stateBefore =>
+          Resource
+            .eval(Async[F].delay(breaker.tryAcquirePermission()))
+            .flatMap {
+              case false =>
+                Resource.eval(
+                  recordRejection *> Async[F]
+                    .raiseError[Response[F]](CircuitBreakerOpen)
+                )
+              case true =>
+                Resource.eval(Async[F].monotonic).flatMap { start =>
+                  client.run(req).attempt.evalMap {
+                    case Right(response) =>
+                      Async[F].monotonic
+                        .flatMap(end =>
+                          Async[F].delay(
+                            breaker.onResult(
+                              (end - start).toNanos,
+                              TimeUnit.NANOSECONDS,
+                              response
+                            )
+                          ) *> Async[F].delay(breaker.getState)
                         )
-                      ) *> Async[F].delay(breaker.getState)
-                    )
-                    .flatMap(stateAfter =>
-                      recordTransition(stateBefore, stateAfter)
-                    )
-                    .as(response)
-                case Left(error) =>
-                  Async[F].monotonic
-                    .flatMap(end =>
-                      Async[F].delay(
-                        breaker.onError(
-                          (end - start).toNanos,
-                          TimeUnit.NANOSECONDS,
-                          error
+                        .flatMap(stateAfter =>
+                          recordState(stateAfter) *> recordTransition(
+                            stateBefore,
+                            stateAfter
+                          )
                         )
-                      ) *> Async[F].delay(breaker.getState)
-                    )
-                    .flatMap(stateAfter =>
-                      recordTransition(stateBefore, stateAfter)
-                    ) *>
-                    Async[F].raiseError[Response[F]](error)
-              }
+                        .as(response)
+                    case Left(error) =>
+                      Async[F].monotonic
+                        .flatMap(end =>
+                          Async[F].delay(
+                            breaker.onError(
+                              (end - start).toNanos,
+                              TimeUnit.NANOSECONDS,
+                              error
+                            )
+                          ) *> Async[F].delay(breaker.getState)
+                        )
+                        .flatMap(stateAfter =>
+                          recordState(stateAfter) *> recordTransition(
+                            stateBefore,
+                            stateAfter
+                          )
+                        ) *>
+                        Async[F].raiseError[Response[F]](error)
+                  }
+                }
             }
         }
-      }
     }
   }
 }

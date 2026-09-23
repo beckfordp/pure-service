@@ -50,7 +50,7 @@ object Main extends IOApp.Simple {
                 "inventory_service_base_url" -> config.inventoryServiceBaseUrl
               )
             )("order-service starting")
-            _ <- OrderStore.postgres[IO](config.postgres).use { store =>
+            _ <- OrderStore.postgres[IO](config.postgres, meter).use { store =>
               HttpClient.resource[IO].use { httpClient =>
                 val tracedClient = ClientTracing.middleware(tracer)(httpClient)
                 val metricClient =

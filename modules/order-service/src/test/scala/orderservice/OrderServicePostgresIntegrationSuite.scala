@@ -12,6 +12,7 @@ import org.http4s.implicits._
 import org.http4s.{Method, Request, Status, Uri}
 import org.testcontainers.utility.DockerImageName
 import org.typelevel.log4cats.noop.NoOpLogger
+import org.typelevel.otel4s.metrics.Meter
 import purerest.client.HttpClient
 
 class OrderServicePostgresIntegrationSuite
@@ -36,7 +37,7 @@ class OrderServicePostgresIntegrationSuite
       val resources =
         for {
           _ <- cats.effect.Resource.eval(Migrations.run[IO](config))
-          orderStore <- OrderStore.postgres[IO](config)
+          orderStore <- OrderStore.postgres[IO](config, Meter.noop[IO])
           inventoryStore <- cats.effect.Resource.eval(
             InventoryStore.inMemory[IO]
           )
@@ -105,7 +106,8 @@ class OrderServicePostgresIntegrationSuite
 
       val resources =
         for {
-          orderStore <- OrderStore.postgres[IO](unreachableConfig)
+          orderStore <- OrderStore
+            .postgres[IO](unreachableConfig, Meter.noop[IO])
           inventoryStore <- cats.effect.Resource.eval(
             InventoryStore.inMemory[IO]
           )

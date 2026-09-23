@@ -4,12 +4,15 @@ import cats.effect.{Async, Ref, Resource, Sync}
 import cats.effect.std.Console
 import cats.syntax.all._
 import fs2.io.net.Network
+import org.typelevel.otel4s.Attribute
+import org.typelevel.otel4s.metrics.Meter
 import skunk.Session
 import skunk.codec.all._
 import skunk.implicits._
 
 import java.time.OffsetDateTime
 import java.util.UUID
+import scala.concurrent.duration.SECONDS
 
 final case class Order(
     id: String,
@@ -80,7 +83,8 @@ object OrderStore {
     """.query(text *: int4 *: text *: uuid *: int4 *: timestamptz)
 
   def postgres[F[_]: Async: Console: Network](
-      config: PostgresConfig
+      config: PostgresConfig,
+      meter: Meter[F]
   ): Resource[F, OrderStore[F]] = {
     import org.typelevel.otel4s.trace.Tracer.Implicits.noop
     import org.typelevel.otel4s.metrics.Meter.Implicits.noop
@@ -91,62 +95,108 @@ object OrderStore {
       .withUserAndPassword(config.user, config.password)
       .withDatabase(config.database)
       .pooled(max = 10)
-      .map { pool =>
-        new OrderStore[F] {
-          def create(
-              item: String,
-              quantity: Int,
-              reservationId: String,
-              reservedQuantity: Int
-          ): F[Order] =
-            pool.use { session =>
+      .evalMap { pool =>
+        meter
+          .histogram[Double]("db.client.operation.duration")
+          .withUnit("s")
+          .create
+          .map { histogram =>
+            /** Times a Skunk query, recording a `db.client.operation.duration`
+              * measurement tagged with `db.system`/`db.operation` (OTel
+              * semantic-convention names), plus `error.type` if it fails — this
+              * is order-service's only Postgres consumer, so it's instrumented
+              * directly here rather than via a new purerest combinator.
+              */
+            def timed[A](operation: String)(fa: F[A]): F[A] =
               for {
-                id <- Sync[F].delay(UUID.randomUUID())
-                reservationUuid <- Sync[F].delay(UUID.fromString(reservationId))
-                createdAt <- session
-                  .prepare(insertOrder)
-                  .flatMap(
-                    _.unique(
-                      (id, item, quantity, reservationUuid, reservedQuantity)
-                    )
-                  )
-              } yield Order(
-                id.toString,
-                item,
-                quantity,
-                defaultStatus,
-                reservationId,
-                reservedQuantity,
-                createdAt.toInstant
-              )
-            }
+                start <- Async[F].monotonic
+                result <- fa.attempt
+                end <- Async[F].monotonic
+                outcomeAttributes = result match {
+                  case Right(_)    => Nil
+                  case Left(error) =>
+                    List(Attribute("error.type", error.getClass.getName))
+                }
+                _ <- histogram.record(
+                  (end - start).toUnit(SECONDS),
+                  List(
+                    Attribute("db.system", "postgresql"),
+                    Attribute("db.operation", operation)
+                  ) ++ outcomeAttributes
+                )
+                a <- result.liftTo[F]
+              } yield a
 
-          def get(id: String): F[Option[Order]] =
-            pool.use { session =>
-              for {
-                uuid <- Sync[F].delay(UUID.fromString(id))
-                row <- session.prepare(selectOrder).flatMap(_.option(uuid))
-              } yield row.map {
-                case (
+            new OrderStore[F] {
+              def create(
+                  item: String,
+                  quantity: Int,
+                  reservationId: String,
+                  reservedQuantity: Int
+              ): F[Order] =
+                timed("insert") {
+                  pool.use { session =>
+                    for {
+                      id <- Sync[F].delay(UUID.randomUUID())
+                      reservationUuid <- Sync[F].delay(
+                        UUID.fromString(reservationId)
+                      )
+                      createdAt <- session
+                        .prepare(insertOrder)
+                        .flatMap(
+                          _.unique(
+                            (
+                              id,
+                              item,
+                              quantity,
+                              reservationUuid,
+                              reservedQuantity
+                            )
+                          )
+                        )
+                    } yield Order(
+                      id.toString,
                       item,
                       quantity,
-                      status,
-                      reservationUuid,
+                      defaultStatus,
+                      reservationId,
                       reservedQuantity,
-                      createdAt
-                    ) =>
-                  Order(
-                    id,
-                    item,
-                    quantity,
-                    status,
-                    reservationUuid.toString,
-                    reservedQuantity,
-                    createdAt.toInstant
-                  )
-              }
+                      createdAt.toInstant
+                    )
+                  }
+                }
+
+              def get(id: String): F[Option[Order]] =
+                timed("select") {
+                  pool.use { session =>
+                    for {
+                      uuid <- Sync[F].delay(UUID.fromString(id))
+                      row <- session
+                        .prepare(selectOrder)
+                        .flatMap(_.option(uuid))
+                    } yield row.map {
+                      case (
+                            item,
+                            quantity,
+                            status,
+                            reservationUuid,
+                            reservedQuantity,
+                            createdAt
+                          ) =>
+                        Order(
+                          id,
+                          item,
+                          quantity,
+                          status,
+                          reservationUuid.toString,
+                          reservedQuantity,
+                          createdAt.toInstant
+                        )
+                    }
+                  }
+                }
             }
-        }
+          }
       }
   }
 }
