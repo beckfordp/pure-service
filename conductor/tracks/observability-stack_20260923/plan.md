@@ -21,10 +21,10 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Enrich Metrics' (Protocol in workflow.md) — no running observability stack to demo against yet (that's Phases 3-4), so verification is the automated test suite: full suite green (purerest 45/45, inventoryService 12/12, orderService 28/28), 100% coverage on CircuitBreaker.scala/OrderStore.scala, including real-Postgres integration tests proving both metrics against genuine success and connection-failure scenarios.
 
 ## Phase 3: Containerize Services
-- [ ] Task: Add `sbt-native-packager` `1.11.1`; enable `JavaAppPackaging`/`DockerPlugin` on both services (`dockerBaseImage`, `dockerUpdateLatest`).
-- [ ] Task: Add `logback-docker.xml` to purerest (JSON via new `logstash-logback-encoder` Runtime dep); wire `Docker / javaOptions` to select it.
-- [ ] Task: Run `sbt orderService/Docker/publishLocal inventoryService/Docker/publishLocal`; confirm images exist and briefly `docker run` each to confirm JSON stdout logging.
-- [ ] Task: Confirm the existing `scripts/verify-*.sh` sbt-bgRun flow and `sbt compile`/`sbt test` at the repo root are unaffected.
+- [x] Task: Add `sbt-native-packager` `1.11.1`; enable `JavaAppPackaging`/`DockerPlugin` on both services (`dockerBaseImage`, `dockerUpdateLatest`). Discovered `dockerBaseImage` needed to be the Debian-based `eclipse-temurin:21-jre`, not `-alpine` (no bash for the generated launch script), and `dockerUpdateLatest`/`dockerExposedPorts` must be unscoped keys, not `Docker /`-scoped. [d1859f5]
+- [x] Task: Add `logback-docker.xml` to purerest (JSON via new `logstash-logback-encoder` Runtime dep); wire it to be selected via `Universal / javaOptions` (not `Docker / javaOptions`, which turned out not to be consumed by the script-generation task at all). [d1859f5]
+- [x] Task: Run `sbt orderService/Docker/publishLocal inventoryService/Docker/publishLocal`; confirm images exist and briefly `docker run` each to confirm JSON stdout logging. Also discovered and fixed: sbt-dynver's `+`-containing version string is an invalid Docker tag character, needed `Docker / version` sanitization. Verified: both images build; inventory-service (no external deps) runs, responds, and logs real structured JSON; order-service starts and fails cleanly against Postgres as expected standalone (Phase 4 provides it). [d1859f5]
+- [x] Task: Confirm the existing `scripts/verify-*.sh` sbt-bgRun flow and `sbt compile`/`sbt test` at the repo root are unaffected. Verified: purerest 45/45, inventoryService 12/12, orderService 28/28, all green. [d1859f5]
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Containerize Services' (Protocol in workflow.md)
 
 ## Phase 4: Observability Stack
