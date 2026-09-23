@@ -1,0 +1,7 @@
+Phase 1 checkpoint: Retry Combinator (cats-retry)
+
+Automated tests: sbt purerest/test (18/18 passed, includes RetrySuite's 6 scenarios).
+
+No interactive/manual verification step this phase — Retry.middleware isn't wired into
+a running service yet (Phase 3 wires it into order-service's InventoryClient). The
+automated stub-Client[F] tests are the verification.
