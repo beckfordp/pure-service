@@ -25,5 +25,5 @@
 
 ## Phase 5: Coverage & Cleanup
 - [x] Task: Run `sbt coverage purerest/test inventoryService/test orderService/test coverageReport`; confirm 100% statement/branch coverage on every file this track adds or changes. Found and closed two real gaps (CircuitBreaker's unreachable-in-practice `Predicate[Any]` fallback branch; InventoryRoutes' untested partial-probability branch). [1c279c7]
-- [ ] Task: Run `scalafmtOnly` scoped to this track's own files (matching prior tracks' precedent of not reformatting the wider pre-existing codebase).
+- [x] Task: Run `scalafmtOnly` scoped to this track's own files (matching prior tracks' precedent of not reformatting the wider pre-existing codebase). [9fb9c20]
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: Coverage & Cleanup' (Protocol in workflow.md)
