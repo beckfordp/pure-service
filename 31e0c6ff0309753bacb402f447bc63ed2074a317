@@ -1,0 +1,7 @@
+Phase 1 checkpoint: Schema & Domain Model
+
+Automated tests: sbt orderService/test (15/15 passed).
+
+Manual verification (prompting off — script instead of interactive walkthrough):
+scripts/verify-order-reservations-schema.sh confirms both Flyway migrations apply on a
+fresh Postgres and the orders table has the expected 7 columns. All checks passed.
