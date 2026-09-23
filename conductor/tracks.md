@@ -4,7 +4,7 @@ This file tracks all major tracks for the project.
 
 ---
 
-- [ ] **Track: Harden purerest version-drift guardrails (prep)**
+- [x] **Track: Harden purerest version-drift guardrails (prep)**
   *Link: [./tracks/version-drift-guardrails_20260923/](./tracks/version-drift-guardrails_20260923/)*
 
 ---
