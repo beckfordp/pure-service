@@ -1,0 +1,8 @@
+Task: Extend MigrationsSuite for reservation columns (Red)
+
+Summary: Extended the existing column-list assertion to expect reservation_id,
+reserved_quantity, status in addition to the V1 columns. Confirmed Red (assertion
+failure — columns didn't exist yet) before adding the V2 migration.
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/MigrationsSuite.scala
