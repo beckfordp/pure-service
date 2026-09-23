@@ -1,0 +1,11 @@
+Phase 4 tasks: Coverage & scalafmt
+
+Coverage: sbt coverage orderService/test orderService/coverageReport — 100%
+statement/branch on every file this track added or changed (OrderStore, OrderResponse,
+OrderRoutes; OrderError has no instrumentable statements). Main.scala's untestable
+IOApp entrypoint remains 0% (pre-existing condition, unrelated to this track's own
+lines).
+
+scalafmt: ran scalafmtOnly scoped to this track's 9 Scala files (+ the SQL migration,
+which scalafmt ignores); 6 needed reformatting, applied and committed here. Full
+orderService/test suite re-verified green (21/21) after reformatting.
