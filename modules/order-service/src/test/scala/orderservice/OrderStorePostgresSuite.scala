@@ -23,16 +23,19 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
       password = postgres.password
     )
 
-  test("create persists an order and returns it") {
+  test("create persists an order with its reservation and returns it") {
     withContainers { postgres =>
       val config = configFor(postgres)
-      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use {
-        store =>
-          store.create("widget", 2, java.util.UUID.randomUUID().toString, 2).map { order =>
-            assertEquals(order.item, "widget")
-            assertEquals(order.quantity, 2)
-            assert(order.id.nonEmpty)
-          }
+      val reservationId = java.util.UUID.randomUUID().toString
+      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use { store =>
+        store.create("widget", 2, reservationId, 2).map { order =>
+          assertEquals(order.item, "widget")
+          assertEquals(order.quantity, 2)
+          assertEquals(order.status, "reserved")
+          assertEquals(order.reservationId, reservationId)
+          assertEquals(order.reservedQuantity, 2)
+          assert(order.id.nonEmpty)
+        }
       }
     }
   }
@@ -46,6 +49,28 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
             first <- store.create("widget", 1, java.util.UUID.randomUUID().toString, 1)
             second <- store.create("widget", 1, java.util.UUID.randomUUID().toString, 1)
           } yield assertNotEquals(first.id, second.id)
+      }
+    }
+  }
+
+  test("get returns the persisted order, including its reservation") {
+    withContainers { postgres =>
+      val config = configFor(postgres)
+      val reservationId = java.util.UUID.randomUUID().toString
+      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use { store =>
+        for {
+          created <- store.create("widget", 3, reservationId, 3)
+          found <- store.get(created.id)
+        } yield assertEquals(found, Some(created))
+      }
+    }
+  }
+
+  test("get returns None for an unknown id") {
+    withContainers { postgres =>
+      val config = configFor(postgres)
+      Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use { store =>
+        store.get(java.util.UUID.randomUUID().toString).map(assertEquals(_, None))
       }
     }
   }
