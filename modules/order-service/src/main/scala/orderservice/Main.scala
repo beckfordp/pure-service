@@ -23,23 +23,24 @@ object Main extends IOApp.Simple {
       _ <- Tracing.console[IO]("order-service").use { tracer =>
         for {
           logger <- Logging.create[IO](tracer, "order-service")
-          store <- OrderStore.inMemory[IO]
-          _ <- HttpClient.resource[IO].use { httpClient =>
-            val tracedClient = ClientTracing.middleware(tracer)(httpClient)
-            val inventory = InventoryClient[IO](tracedClient, inventoryServiceBaseUri)
-            val docsRoutes = Docs.routes[IO](
-              "Order Service",
-              "1.0",
-              List(OrderRoutes.serverEndpoint[IO](store, inventory, logger))
-            )
-            val routes = ServerTracing.middleware(tracer)(docsRoutes)
-            EmberServerBuilder
-              .default[IO]
-              .withHost(host"0.0.0.0")
-              .withPort(port)
-              .withHttpApp(routes.orNotFound)
-              .build
-              .useForever
+          _ <- OrderStore.postgres[IO](config.postgres).use { store =>
+            HttpClient.resource[IO].use { httpClient =>
+              val tracedClient = ClientTracing.middleware(tracer)(httpClient)
+              val inventory = InventoryClient[IO](tracedClient, inventoryServiceBaseUri)
+              val docsRoutes = Docs.routes[IO](
+                "Order Service",
+                "1.0",
+                List(OrderRoutes.serverEndpoint[IO](store, inventory, logger))
+              )
+              val routes = ServerTracing.middleware(tracer)(docsRoutes)
+              EmberServerBuilder
+                .default[IO]
+                .withHost(host"0.0.0.0")
+                .withPort(port)
+                .withHttpApp(routes.orNotFound)
+                .build
+                .useForever
+            }
           }
         } yield ()
       }
