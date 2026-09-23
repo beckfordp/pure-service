@@ -1,6 +1,6 @@
 package purerest.resilience
 
-import cats.effect.{Ref, Temporal}
+import cats.effect.{Async, Ref, Temporal}
 import cats.effect.kernel.Resource
 import cats.syntax.all._
 import org.http4s.Response
@@ -12,7 +12,7 @@ import org.http4s.client.middleware.{
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.noop.NoOpFactory
 import org.typelevel.otel4s.Attribute
-import org.typelevel.otel4s.metrics.Meter
+import org.typelevel.otel4s.metrics.{Counter, Meter}
 import retry.{PolicyDecision, RetryPolicies, RetryStatus}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -62,23 +62,7 @@ object Retry {
       }
   }
 
-  /** Records `purerest.retry.attempts`: for a request that took `attempts`
-    * total tries and ended in `finalOutcome` ("succeeded" or "exhausted"), the
-    * `attempts - 1` earlier tries are recorded as `outcome = "retried"` and the
-    * final one as `outcome = finalOutcome`. Derived from the aggregate attempt
-    * count http4s's `Retry` middleware reports — this middleware only observes
-    * the overall outcome, not each individual attempt.
-    */
-  private def recordAttempts[F[_]: Temporal](
-      meter: Meter[F]
-  )(attempts: Int, finalOutcome: String): F[Unit] =
-    meter.counter[Long]("purerest.retry.attempts").create.flatMap { counter =>
-      val retried = (attempts - 1).toLong
-      (if (retried > 0) counter.add(retried, Attribute("outcome", "retried"))
-       else Temporal[F].unit) *> counter.inc(Attribute("outcome", finalOutcome))
-    }
-
-  def middleware[F[_]: Temporal](
+  def middleware[F[_]: Async](
       config: RetryConfig
   )(
       logger: StructuredLogger[F]
@@ -93,6 +77,38 @@ object Retry {
           case Left(error)     => isRetriableError(error)
         }
     )
+
+    val attemptsCounterRef: Ref[F, Option[Counter[F, Long]]] =
+      Ref.unsafe(None)
+
+    /** Records `purerest.retry.attempts`: for a request that took `attempts`
+      * total tries and ended in `finalOutcome` ("succeeded" or "exhausted"),
+      * the `attempts - 1` earlier tries are recorded as `outcome = "retried"`
+      * and the final one as `outcome = finalOutcome`. Derived from the
+      * aggregate attempt count http4s's `Retry` middleware reports — this
+      * middleware only observes the overall outcome, not each individual
+      * attempt. The counter instrument is created once, on first use, and
+      * reused for every subsequent call rather than recreated per call.
+      */
+    def recordAttempts(attempts: Int, finalOutcome: String): F[Unit] =
+      attemptsCounterRef.get
+        .flatMap {
+          case Some(counter) => counter.pure[F]
+          case None          =>
+            meter
+              .counter[Long]("purerest.retry.attempts")
+              .create
+              .flatTap(counter => attemptsCounterRef.set(Some(counter)))
+        }
+        .flatMap { counter =>
+          val retried = (attempts - 1).toLong
+          (if (retried > 0)
+             counter.add(retried, Attribute("outcome", "retried"))
+           else Temporal[F].unit) *> counter.inc(
+            Attribute("outcome", finalOutcome)
+          )
+        }
+
     Client[F] { req =>
       Resource.eval(Ref.of[F, Int](0)).flatMap { attemptCounter =>
         // A thin counting wrapper around the underlying client, so the real
@@ -117,7 +133,7 @@ object Retry {
                     s"Request to ${req.uri} succeeded after $attempts attempt(s)"
                   )
                 else Temporal[F].unit
-              recordAttempts(meter)(attempts, finalOutcome) *> logIfRetried.as(
+              recordAttempts(attempts, finalOutcome) *> logIfRetried.as(
                 response
               )
             }
@@ -125,7 +141,7 @@ object Retry {
           .onError { case error =>
             Resource.eval(
               attemptCounter.get.flatMap { attempts =>
-                recordAttempts(meter)(attempts, "exhausted") *>
+                recordAttempts(attempts, "exhausted") *>
                   logger
                     .warn(error)(s"Request to ${req.uri} failed after retries")
               }

@@ -45,6 +45,31 @@ class ClientMetricsSuite extends CatsEffectSuite {
   }
 
   test(
+    "reuses the same histogram instrument across multiple calls on the wrapped client"
+  ) {
+    Metrics.test[IO]("purerest-client-metrics-test").use { testMeter =>
+      val client = Client.fromHttpApp(stubApp)
+      val wrapped = ClientMetrics.middleware(testMeter.meter)(client)
+      for {
+        _ <- wrapped.run(Request[IO](uri = uri"/ping")).use_
+        _ <- wrapped.run(Request[IO](uri = uri"/ping")).use_
+        metrics <- testMeter.collectMetrics
+      } yield {
+        val data = metrics.find(_.getName == "http.client.request.duration")
+        assert(
+          data.isDefined,
+          s"expected an http.client.request.duration series, got: $metrics"
+        )
+        // Both calls share identical attributes, so a reused instrument aggregates
+        // them into a single point (count=2) rather than one point per call.
+        val points = data.get.getHistogramData.getPoints
+        assertEquals(points.size, 1)
+        assertEquals(points.iterator.next.getCount, 2L)
+      }
+    }
+  }
+
+  test(
     "a call that raises still records a duration measurement, tagged with error.type"
   ) {
     Metrics.test[IO]("purerest-client-metrics-test").use { testMeter =>
@@ -56,7 +81,10 @@ class ClientMetricsSuite extends CatsEffectSuite {
         result <- wrapped.run(Request[IO](uri = uri"/ping")).use_.attempt
         metrics <- testMeter.collectMetrics
       } yield {
-        assert(result.isLeft, s"expected the raised error to propagate, got: $result")
+        assert(
+          result.isLeft,
+          s"expected the raised error to propagate, got: $result"
+        )
         MetricExpectations.checkAll(
           metrics,
           MetricExpectation

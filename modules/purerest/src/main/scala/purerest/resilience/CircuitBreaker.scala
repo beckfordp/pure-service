@@ -1,6 +1,6 @@
 package purerest.resilience
 
-import cats.effect.Async
+import cats.effect.{Async, Ref}
 import cats.effect.kernel.Resource
 import cats.syntax.all._
 import io.github.resilience4j.circuitbreaker.{
@@ -12,7 +12,7 @@ import io.github.resilience4j.circuitbreaker.{
 import org.http4s.Response
 import org.http4s.client.Client
 import org.typelevel.otel4s.Attribute
-import org.typelevel.otel4s.metrics.Meter
+import org.typelevel.otel4s.metrics.{Counter, Meter}
 
 import java.time.{Duration => JDuration}
 import java.util.concurrent.TimeUnit
@@ -67,37 +67,49 @@ object CircuitBreaker {
         case _ => false
       }
 
-  /** Records a `purerest.circuit_breaker.state_transitions` measurement when
-    * the breaker's state differs before and after a call — net of any
-    * intermediate hop (e.g. an OPEN -> HALF_OPEN -> CLOSED recovery is recorded
-    * as a single OPEN -> CLOSED transition), since this middleware only
-    * observes state synchronously before and after its own acquire/run/report
-    * sequence, not via a separate event listener.
-    */
-  private def recordTransition[F[_]: Async](
-      meter: Meter[F]
-  )(before: R4jCircuitBreaker.State, after: R4jCircuitBreaker.State): F[Unit] =
-    if (before == after) Async[F].unit
-    else
-      meter
-        .counter[Long]("purerest.circuit_breaker.state_transitions")
-        .create
-        .flatMap(
+  def middleware[F[_]: Async](
+      config: CircuitBreakerConfig
+  )(meter: Meter[F])(client: Client[F]): Client[F] = {
+    val stateTransitionsCounterRef: Ref[F, Option[Counter[F, Long]]] =
+      Ref.unsafe(None)
+    val callsRejectedCounterRef: Ref[F, Option[Counter[F, Long]]] =
+      Ref.unsafe(None)
+
+    def memoized(
+        ref: Ref[F, Option[Counter[F, Long]]],
+        name: String
+    ): F[Counter[F, Long]] =
+      ref.get.flatMap {
+        case Some(counter) => counter.pure[F]
+        case None          =>
+          meter
+            .counter[Long](name)
+            .create
+            .flatTap(counter => ref.set(Some(counter)))
+      }
+
+    def recordTransition(
+        before: R4jCircuitBreaker.State,
+        after: R4jCircuitBreaker.State
+    ): F[Unit] =
+      if (before == after) Async[F].unit
+      else
+        memoized(
+          stateTransitionsCounterRef,
+          "purerest.circuit_breaker.state_transitions"
+        ).flatMap(
           _.inc(
             Attribute("from_state", before.name),
             Attribute("to_state", after.name)
           )
         )
 
-  private def recordRejection[F[_]: Async](meter: Meter[F]): F[Unit] =
-    meter
-      .counter[Long]("purerest.circuit_breaker.calls_rejected")
-      .create
-      .flatMap(_.inc())
+    def recordRejection: F[Unit] =
+      memoized(
+        callsRejectedCounterRef,
+        "purerest.circuit_breaker.calls_rejected"
+      ).flatMap(_.inc())
 
-  def middleware[F[_]: Async](
-      config: CircuitBreakerConfig
-  )(meter: Meter[F])(client: Client[F]): Client[F] = {
     val r4jConfig = R4jCircuitBreakerConfig
       .custom()
       .slidingWindowType(R4jCircuitBreakerConfig.SlidingWindowType.COUNT_BASED)
@@ -115,7 +127,7 @@ object CircuitBreaker {
         Resource.eval(Async[F].delay(breaker.tryAcquirePermission())).flatMap {
           case false =>
             Resource.eval(
-              recordRejection(meter) *> Async[F]
+              recordRejection *> Async[F]
                 .raiseError[Response[F]](CircuitBreakerOpen)
             )
           case true =>
@@ -133,7 +145,7 @@ object CircuitBreaker {
                       ) *> Async[F].delay(breaker.getState)
                     )
                     .flatMap(stateAfter =>
-                      recordTransition(meter)(stateBefore, stateAfter)
+                      recordTransition(stateBefore, stateAfter)
                     )
                     .as(response)
                 case Left(error) =>
@@ -148,7 +160,7 @@ object CircuitBreaker {
                       ) *> Async[F].delay(breaker.getState)
                     )
                     .flatMap(stateAfter =>
-                      recordTransition(meter)(stateBefore, stateAfter)
+                      recordTransition(stateBefore, stateAfter)
                     ) *>
                     Async[F].raiseError[Response[F]](error)
               }

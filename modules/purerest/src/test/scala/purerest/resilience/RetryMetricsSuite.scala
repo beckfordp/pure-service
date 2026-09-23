@@ -87,6 +87,28 @@ class RetryMetricsSuite extends CatsEffectSuite {
     }
   }
 
+  test(
+    "reuses the same counter instrument across multiple calls on the wrapped client"
+  ) {
+    Metrics.test[IO]("purerest-retry-metrics-test").use { testMeter =>
+      for {
+        counter <- Ref.of[IO, Int](0)
+        client = respondingClient(counter)(_ => Status.Ok)
+        resilientClient = Retry.middleware[IO](fastConfig)(NoOpLogger[IO])(
+          testMeter.meter
+        )(client)
+        _ <- resilientClient.run(Request[IO]()).use(IO.pure)
+        _ <- resilientClient.run(Request[IO]()).use(IO.pure)
+        metrics <- testMeter.collectMetrics
+      } yield assertOutcomeCounts(
+        metrics,
+        retried = 0,
+        outcome = "succeeded",
+        outcomeCount = 2
+      )
+    }
+  }
+
   test("a call that succeeds after retries records 'retried' and 'succeeded'") {
     Metrics.test[IO]("purerest-retry-metrics-test").use { testMeter =>
       for {
