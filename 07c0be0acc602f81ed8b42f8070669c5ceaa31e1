@@ -1,0 +1,8 @@
+Phase 3 checkpoint: Compose + Wire into order-service
+
+Automated tests: sbt orderService/test (21/21), sbt purerest/test (23/23).
+
+Manual verification (prompting off): scripts/verify-resilience-wiring.sh confirms the
+resilient+traced client doesn't regress the happy path — POST /orders still succeeds
+against a healthy inventory-service. Genuine retry/circuit-breaker-under-failure
+behavior is verified in Phase 4, once inventory-service supports induced failure.
