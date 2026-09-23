@@ -16,6 +16,29 @@
 
 `inventory-service` is a second, independently-built purerest consumer (not inventory-service-specific), so it can also be made deliberately slow/flaky to exercise purerest's resilience features.
 
+## Customer Journey (Vision)
+The Core Use Case above is the technical design driver (why purerest's cross-cutting
+concerns exist). This section is the north-star customer narrative behind it — the
+full order lifecycle a real buyer would experience, most of which is not built yet.
+It exists to give future tracks context on where a given slice of work sits in the
+bigger picture, not as a commitment to build all of it.
+
+1. **Browse & decide** — customer picks an item + quantity. *(No catalog exists —
+   likely always out of scope for this project unless a `catalog-service` shows up.)*
+2. **Place order** — `POST /orders {item, quantity}`. order-service reserves stock on
+   inventory-service synchronously, persists the order, returns the order + a
+   reservation id. *(Built.)*
+3. **Reservation held** — inventory-service holds stock against that reservation. No
+   expiry, no release, no cancel exists — once reserved, reserved forever. *(Built, but
+   minimal — nothing frees stock if the customer never pays; see backlog.)*
+4. **Payment** — customer pays for the reserved order. *(Not built — no
+   payment-service, no payment status anywhere yet.)*
+5. **Fulfillment** — reserved stock ships, order marked fulfilled. *(Not built.)*
+6. **Customer checks status** — `GET /orders/{id}` shows the order, its reservation,
+   and eventually payment/fulfillment status. *(Reservation half is the next planned
+   track; the order's `status` field should leave room for later payment/fulfillment
+   states rather than only ever meaning "reserved".)*
+
 ## Components
 1. **purerest** (library) — server + client toolkit built on Cats Effect 3 and http4s:
    - Tracing middleware/propagation (OpenTelemetry)
