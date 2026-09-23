@@ -1,0 +1,15 @@
+Phase 2 checkpoint: Schema & Migrations (Flyway)
+
+Automated tests: sbt orderService/test (10/10 passed, includes MigrationsSuite against
+real Testcontainers Postgres).
+
+Manual verification (autonomous run, per user request — script instead of interactive
+walkthrough): scripts/verify-order-service-migrations.sh starts a throwaway Postgres
+container matching application.conf defaults, boots real order-service against it,
+confirms Flyway's migration log lines appear, and confirms the orders table has the
+expected columns (id, item, quantity, created_at). All checks passed.
+
+Notable deviations this phase (both documented in tech-stack.md Deferred Concerns):
+- ThisBuild / evictionErrorLevel := Level.Warn (Skunk's otel4s-core 0.16.0 vs pinned 1.1.0)
+- docker-java.properties api.version=1.44 (testcontainers-java/Docker 29 MinAPIVersion
+  incompatibility, upstream issues #11210/#11212/#11360)
