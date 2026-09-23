@@ -1,0 +1,12 @@
+Task: Wire Resilience.middleware into order-service's InventoryClient
+
+Summary: Main.scala now wraps the traced client with Resilience.middleware before
+constructing InventoryClient, using a hardcoded ResilienceConfig (maxRetries=3,
+baseDelay=100ms, failureThreshold=5, resetTimeout=30s) — per the spec's NFR, config is
+passed as explicit middleware parameters, not a new config-file mechanism, matching
+Tracing/Logging's existing hardcoded-defaults style in this file.
+
+Files changed:
+- modules/order-service/src/main/scala/orderservice/Main.scala
+
+Verified: full orderService/test suite green (21/21).
