@@ -27,7 +27,7 @@
 - [x] Task: Confirm the existing `scripts/verify-*.sh` sbt-bgRun flow and `sbt compile`/`sbt test` at the repo root are unaffected. Verified: purerest 45/45, inventoryService 12/12, orderService 28/28, all green. [d1859f5]
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Containerize Services' (Protocol in workflow.md) — manually ran both images directly with `docker run`: inventory-service responded 404 to an unmatched route and its logs were genuine JSON with structured fields (trace_id, port, induced_failure_rate, etc.); order-service started and failed cleanly against an absent Postgres, exactly as expected running standalone outside docker-compose. Full test suite green after.
 
-## Phase 4: Observability Stack
+## Phase 4: Observability Stack [checkpoint: e3fce80]
 - [x] Task: Extend `docker-compose.yml` with order-service/inventory-service + prometheus/grafana/elasticsearch/kibana/filebeat, all under `profiles: ["observability"]`; add Prometheus scrape config + Filebeat docker-log-collection config. [47fa27f]
 - [x] Task: Run `docker compose --profile observability up -d`; confirm all 8 services healthy, and plain `docker compose up -d` still starts only Postgres. Also found and fixed (separate commit) a real Prometheus-exporter loopback-binding bug in already-shipped `purerest` code, and a real Elasticsearch disk-watermark/red-cluster issue, both surfaced only by this real cross-container network setup. [5830db2] [47fa27f]
 - [x] Task: Add Grafana provisioning (datasource + the dashboard JSON); confirm via Grafana's HTTP API. Verified `/api/datasources` and `/api/search` both list the provisioned resources, and the dashboard's actual PromQL queries (run through Grafana's datasource proxy) return real, non-empty results. [47fa27f]
