@@ -26,3 +26,6 @@
 - [x] Task: Run `sbt coverage purerest/test inventoryService/test orderService/test coverageReport`; confirm 100% statement/branch coverage on every file this track adds or changes; close any gaps found. Found and closed one real gap (Metrics.oteljava's real Prometheus-exporter path was only exercised manually, not by `sbt test`). [a8c32b9]
 - [x] Task: Run `scalafmtOnly` scoped to this track's own files. [abc53a2]
 - [x] Task: Conductor - User Manual Verification 'Phase 5: End-to-End Verification & Cleanup' (Protocol in workflow.md) — verification is the already-captured evidence from this phase's own tasks: scripts/verify-metrics-end-to-end.sh passed with real retry/circuit-breaker metric values matching the traced-through scenario; 100% coverage on all track-added/changed files (commit a8c32b9); full test suite green after scalafmt (purerest 36/36, inventoryService 10/10, orderService 21/21). [d56edd1]
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions [92c3870]
