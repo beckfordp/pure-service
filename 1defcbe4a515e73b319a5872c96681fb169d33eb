@@ -1,0 +1,12 @@
+Task: Add docker-compose.yml for local Postgres
+
+Summary: Added docker-compose.yml provisioning a postgres:16-alpine container matching
+application.conf defaults (db/user/password=orders, port 5432), with a named volume for
+data persistence across container restarts and a healthcheck.
+
+Files changed:
+- docker-compose.yml (new)
+
+Verified: docker compose config validates; docker compose up -d brings up a healthy
+container; sbt orderService/run boots and migrates against it with zero manual DB setup
+beyond docker compose up.
