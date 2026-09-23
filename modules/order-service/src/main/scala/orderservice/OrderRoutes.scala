@@ -42,7 +42,7 @@ object OrderRoutes {
     createOrderEndpoint.serverLogicSuccess[F] { req =>
       for {
         reservation <- inventory.reserve(req.item, req.quantity)
-        order <- store.create(req.item, req.quantity)
+        order <- store.create(req.item, req.quantity, reservation.id, reservation.quantity)
         _ <- logger.info(s"created order ${order.id} for ${order.quantity} x ${order.item} (reservation ${reservation.id})")
       } yield OrderResponse(order.id, order.item, order.quantity, reservation.id)
     }

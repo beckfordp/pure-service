@@ -28,7 +28,7 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
       val config = configFor(postgres)
       Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use {
         store =>
-          store.create("widget", 2).map { order =>
+          store.create("widget", 2, java.util.UUID.randomUUID().toString, 2).map { order =>
             assertEquals(order.item, "widget")
             assertEquals(order.quantity, 2)
             assert(order.id.nonEmpty)
@@ -43,8 +43,8 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
       Migrations.run[IO](config) *> OrderStore.postgres[IO](config).use {
         store =>
           for {
-            first <- store.create("widget", 1)
-            second <- store.create("widget", 1)
+            first <- store.create("widget", 1, java.util.UUID.randomUUID().toString, 1)
+            second <- store.create("widget", 1, java.util.UUID.randomUUID().toString, 1)
           } yield assertNotEquals(first.id, second.id)
       }
     }
