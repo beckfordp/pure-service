@@ -45,7 +45,7 @@ bigger picture, not as a commitment to build all of it.
 1. **purerest** (library) — server + client toolkit built on Cats Effect 3 and http4s:
    - Tracing middleware/propagation (OpenTelemetry)
    - Structured, contextual logging (log4cats)
-   - Metrics (Prometheus-compatible)
+   - Metrics (Prometheus-compatible; RED + resilience signals, live circuit-breaker state, order-service DB query duration/error rate)
    - Resilient HTTP client: retry policies + circuit breaker, composed via combinators — no annotations
    - Self-documenting API endpoints (tapir): each endpoint is described once and interpreted into
      both real http4s routes and a generated, always-in-sync OpenAPI spec + browsable Swagger UI
@@ -56,6 +56,7 @@ bigger picture, not as a commitment to build all of it.
 - purerest: tracing, structured logging, metrics, retry, circuit breaker — as library building blocks
 - order-service: `POST /orders` endpoint, order persistence, resilient call to inventory-service
 - inventory-service: stock reservation endpoint(s), reference consumer of purerest
+- local observability stack: Docker Compose profile standing up both services + Prometheus/Grafana/Elasticsearch/Kibana/Filebeat, wired to real request/DB/resilience metrics and structured, correlated logs — see README.md's "Build, run, and observe this system"
 
 ## Non-Goals (for now)
 - Authentication/authorization
