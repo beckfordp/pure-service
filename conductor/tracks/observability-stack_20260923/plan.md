@@ -28,11 +28,11 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Containerize Services' (Protocol in workflow.md) — manually ran both images directly with `docker run`: inventory-service responded 404 to an unmatched route and its logs were genuine JSON with structured fields (trace_id, port, induced_failure_rate, etc.); order-service started and failed cleanly against an absent Postgres, exactly as expected running standalone outside docker-compose. Full test suite green after.
 
 ## Phase 4: Observability Stack
-- [ ] Task: Extend `docker-compose.yml` with order-service/inventory-service + prometheus/grafana/elasticsearch/kibana/filebeat, all under `profiles: ["observability"]`; add Prometheus scrape config + Filebeat docker-log-collection config.
-- [ ] Task: Run `docker compose --profile observability up -d`; confirm all 8 services healthy, and plain `docker compose up -d` still starts only Postgres.
-- [ ] Task: Add Grafana provisioning (datasource + the dashboard JSON); confirm via Grafana's HTTP API.
-- [ ] Task: Confirm Filebeat is shipping both services' container logs into Elasticsearch.
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: Observability Stack' (Protocol in workflow.md)
+- [x] Task: Extend `docker-compose.yml` with order-service/inventory-service + prometheus/grafana/elasticsearch/kibana/filebeat, all under `profiles: ["observability"]`; add Prometheus scrape config + Filebeat docker-log-collection config. [47fa27f]
+- [x] Task: Run `docker compose --profile observability up -d`; confirm all 8 services healthy, and plain `docker compose up -d` still starts only Postgres. Also found and fixed (separate commit) a real Prometheus-exporter loopback-binding bug in already-shipped `purerest` code, and a real Elasticsearch disk-watermark/red-cluster issue, both surfaced only by this real cross-container network setup. [5830db2] [47fa27f]
+- [x] Task: Add Grafana provisioning (datasource + the dashboard JSON); confirm via Grafana's HTTP API. Verified `/api/datasources` and `/api/search` both list the provisioned resources, and the dashboard's actual PromQL queries (run through Grafana's datasource proxy) return real, non-empty results. [47fa27f]
+- [x] Task: Confirm Filebeat is shipping both services' container logs into Elasticsearch. Verified via `_search`: structured JSON fields (trace_id, item, quantity, reservation_id, order_id, logger_name) are indexed as independently queryable top-level fields, not buried in the raw message text. [47fa27f]
+- [x] Task: Conductor - User Manual Verification 'Phase 4: Observability Stack' (Protocol in workflow.md) — placed real orders through the running stack; confirmed live data in all three systems: Prometheus targets both "up" with real request-rate/DB-query/circuit-breaker-state metrics resolving through the dashboard's own queries, Grafana datasource + dashboard both provisioned and queryable via its HTTP API, Elasticsearch indexing structured app-log fields. Re-confirmed plain `docker compose up -d` (after a full `--profile observability down`) starts only postgres.
 
 ## Phase 5: Verification, Docs, README
 - [ ] Task: Add `scripts/verify-observability-stack.sh` (brings up the profile, runs the Gatling healthy + degraded passes, checks Prometheus/Grafana/Elasticsearch); run it end-to-end.
