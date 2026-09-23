@@ -7,8 +7,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Metrics Foundation' (Protocol in workflow.md) — no wiring into a running service yet (that's Phase 4), so verification is the automated test suite itself: full purerest/test green (25/25), including MetricsSuite's manually-emitted-counter scenario against the in-memory testkit. [ff0a951]
 
 ## Phase 2: Server & Client RED Metrics
-- [ ] Task: Write failing tests against a stub `HttpRoutes[F]`/`Client[F]` and `Metrics.test`'s testkit: a handled request records a `http.server.request.duration` / `http.client.request.duration` measurement with the expected method/route-or-address/status-code attributes (Red).
-- [ ] Task: Implement `ServerMetrics.middleware` and `ClientMetrics.middleware` in `purerest.metrics` (Green).
+- [x] Task: Write failing tests against a stub `HttpRoutes[F]`/`Client[F]` and `Metrics.test`'s testkit: a handled request records a `http.server.request.duration` / `http.client.request.duration` measurement with the expected method/route-or-address/status-code attributes (Red). [ba9d9a6]
+- [x] Task: Implement `ServerMetrics.middleware` and `ClientMetrics.middleware` in `purerest.metrics` (Green). [ba9d9a6]
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Server & Client RED Metrics' (Protocol in workflow.md)
 
 ## Phase 3: Resilience Metrics
