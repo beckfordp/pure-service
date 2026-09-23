@@ -1,0 +1,17 @@
+Task: Implement OrderServiceConfig via PureConfig, wire into Main (Green)
+
+Summary: Added OrderServiceConfig/PostgresConfig case classes (derives ConfigReader) and
+OrderServiceConfig.load[F]. Added application.conf with defaults (port 8080, inventory
+base URL, Postgres host/port/db/user/password), preserving env-var overrides
+(ORDER_SERVICE_PORT, INVENTORY_SERVICE_BASE_URL, POSTGRES_*) via HOCON ${?VAR}
+substitution so run-services.sh keeps working unchanged. Replaced Main.scala's ad hoc
+sys.env.get(...) reads with config-driven port/inventoryServiceBaseUri, using
+IO.fromOption/IO.fromEither to fail fast on invalid values.
+
+Files changed:
+- modules/order-service/src/main/scala/orderservice/OrderServiceConfig.scala (new)
+- modules/order-service/src/main/resources/application.conf (new)
+- modules/order-service/src/main/scala/orderservice/Main.scala
+
+Verified: OrderServiceConfigSuite green (2/2); full orderService/test suite green (9/9);
+manually booted via sbt orderService/run, confirmed bind on port 8080 from config.
