@@ -11,10 +11,10 @@
 - [x] Task: Refactor — tidy config case class structure/naming (Optional). No refactor needed — `OrderServiceConfig`/`PostgresConfig` are already minimal, flat case classes.
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Configuration (PureConfig)' (Protocol in workflow.md) — autonomous run: added `scripts/verify-order-service-config.sh` (boots order-service with default config, then with `ORDER_SERVICE_PORT` override) and ran it directly; both checks passed. [43d74b6]
 
-## Phase 2: Schema & Migrations (Flyway)
-- [ ] Task: Write failing test verifying Flyway applies a migration creating the `orders` table against a Testcontainers Postgres (Red).
-- [ ] Task: Add Flyway migration `V1__create_orders_table.sql` (`id UUID PRIMARY KEY`, `item TEXT NOT NULL`, `quantity INT NOT NULL`, `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`); wire Flyway to run on `order-service` startup using config-driven connection settings (Green).
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Schema & Migrations (Flyway)' (Protocol in workflow.md)
+## Phase 2: Schema & Migrations (Flyway) [checkpoint: 8ea30b1]
+- [x] Task: Write failing test verifying Flyway applies a migration creating the `orders` table against a Testcontainers Postgres (Red). [bca2eda]
+- [x] Task: Add Flyway migration `V1__create_orders_table.sql` (`id UUID PRIMARY KEY`, `item TEXT NOT NULL`, `quantity INT NOT NULL`, `created_at TIMESTAMPTZ NOT NULL DEFAULT now()`); wire Flyway to run on `order-service` startup using config-driven connection settings (Green). [d0679d7]
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Schema & Migrations (Flyway)' (Protocol in workflow.md) — autonomous run: added `scripts/verify-order-service-migrations.sh` (throwaway Postgres container + real order-service boot + Flyway log check + orders-table column check) and ran it directly; all checks passed. [8ea30b1]
 
 ## Phase 3: Skunk-backed OrderStore
 - [ ] Task: Write failing unit tests for a new `OrderStore.postgres`/Skunk-backed implementation against a mocked/stubbed Skunk `Session` (Red).
