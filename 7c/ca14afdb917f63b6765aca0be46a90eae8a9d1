@@ -1,0 +1,26 @@
+Task: Live circuit-breaker state gauge + order-service DB metrics (Phase 2)
+
+Summary: Added purerest.circuit_breaker.state gauge to
+CircuitBreaker.middleware (one point per possible resilience4j state,
+1 for current, 0 for the others, updated on every state check) -
+confirmed via a new CircuitBreakerMetricsSuite test using Metrics.test's
+testkit. Added db.client.operation.duration histogram instrumentation to
+OrderStore.postgres (db.system/db.operation/error.type attributes),
+wired to the Meter[F] already constructed in order-service's Main.scala
+- confirmed Red (compile-level signature mismatch after updating all
+call sites) then Green via two new OrderStorePostgresSuite tests against
+a real Testcontainers Postgres: one asserting both insert/select
+operations are recorded on success, one asserting error.type is recorded
+against a genuinely unreachable connection (port 1). Full suite green,
+100% coverage on both changed files, scalafmt clean.
+
+Files changed: modules/purerest/src/main/scala/purerest/resilience/
+CircuitBreaker.scala, modules/purerest/src/test/scala/purerest/resilience/
+CircuitBreakerMetricsSuite.scala, modules/order-service/src/main/scala/
+orderservice/{Main,OrderStore}.scala, modules/order-service/src/test/scala/
+orderservice/{OrderStorePostgresSuite,OrderServicePostgresIntegrationSuite}.scala
+
+Why: Both gaps were explicitly deferred in the original metrics track and
+directly limit what the observability-stack track's Grafana dashboard can
+show - no way to see current breaker state, no visibility into order-
+service's real Postgres dependency on the critical path.
