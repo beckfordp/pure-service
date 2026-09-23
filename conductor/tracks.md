@@ -19,5 +19,5 @@ through the spec/plan questions and promote it into a real track below.
 
 ---
 
-- [~] **Track: Get Orders Showing Reservations**
+- [x] **Track: Get Orders Showing Reservations**
   *Link: [./tracks/order-reservations_20260923/](./tracks/order-reservations_20260923/)*
