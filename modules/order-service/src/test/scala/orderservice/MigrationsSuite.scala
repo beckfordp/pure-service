@@ -42,7 +42,18 @@ class MigrationsSuite extends CatsEffectSuite with TestContainerForAll {
               if (rs.next()) Some((rs.getString("column_name"), ())) else None
             )
             .toList
-          assertEquals(columns, List("id", "item", "quantity", "created_at"))
+          assertEquals(
+            columns,
+            List(
+              "id",
+              "item",
+              "quantity",
+              "created_at",
+              "reservation_id",
+              "reserved_quantity",
+              "status"
+            )
+          )
         } finally conn.close()
       }
     }
