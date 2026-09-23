@@ -19,10 +19,26 @@ object CreateOrderRequest {
   implicit val codec: Codec[CreateOrderRequest] = deriveCodec
 }
 
-final case class OrderResponse(id: String, item: String, quantity: Int, reservationId: String)
+final case class OrderResponse(
+    id: String,
+    item: String,
+    quantity: Int,
+    reservationId: String,
+    status: String,
+    createdAt: java.time.Instant
+)
 
 object OrderResponse {
   implicit val codec: Codec[OrderResponse] = deriveCodec
+
+  def apply(order: Order): OrderResponse =
+    OrderResponse(order.id, order.item, order.quantity, order.reservationId, order.status, order.createdAt)
+}
+
+final case class ErrorResponse(error: String)
+
+object ErrorResponse {
+  implicit val codec: Codec[ErrorResponse] = deriveCodec
 }
 
 object OrderRoutes {
@@ -34,6 +50,17 @@ object OrderRoutes {
       .out(statusCode(StatusCode.Created))
       .out(jsonBody[OrderResponse])
 
+  private val notFoundOutput: EndpointOutput[OrderError] =
+    statusCode(StatusCode.NotFound)
+      .and(jsonBody[ErrorResponse])
+      .map[OrderError](_ => OrderNotFound)(_ => ErrorResponse("Order not found"))
+
+  private val getOrderEndpoint: PublicEndpoint[String, OrderError, OrderResponse, Any] =
+    endpoint.get
+      .in("orders" / path[String]("id"))
+      .out(jsonBody[OrderResponse])
+      .errorOut(notFoundOutput)
+
   def serverEndpoint[F[_]: Async](
       store: OrderStore[F],
       inventory: InventoryClient[F],
@@ -44,7 +71,15 @@ object OrderRoutes {
         reservation <- inventory.reserve(req.item, req.quantity)
         order <- store.create(req.item, req.quantity, reservation.id, reservation.quantity)
         _ <- logger.info(s"created order ${order.id} for ${order.quantity} x ${order.item} (reservation ${reservation.id})")
-      } yield OrderResponse(order.id, order.item, order.quantity, reservation.id)
+      } yield OrderResponse(order)
+    }
+
+  def getOrderServerEndpoint[F[_]: Async](store: OrderStore[F]): ServerEndpoint[Any, F] =
+    getOrderEndpoint.serverLogic[F] { id =>
+      store.get(id).map {
+        case Some(order) => Right(OrderResponse(order))
+        case None        => Left(OrderNotFound)
+      }
     }
 
   def routes[F[_]: Async](
@@ -52,5 +87,7 @@ object OrderRoutes {
       inventory: InventoryClient[F],
       logger: StructuredLogger[F]
   ): HttpRoutes[F] =
-    Http4sServerInterpreter[F]().toRoutes(List(serverEndpoint(store, inventory, logger)))
+    Http4sServerInterpreter[F]().toRoutes(
+      List(serverEndpoint(store, inventory, logger), getOrderServerEndpoint(store))
+    )
 }

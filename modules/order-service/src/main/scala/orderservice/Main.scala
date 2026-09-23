@@ -35,7 +35,10 @@ object Main extends IOApp.Simple {
               val docsRoutes = Docs.routes[IO](
                 "Order Service",
                 "1.0",
-                List(OrderRoutes.serverEndpoint[IO](store, inventory, logger))
+                List(
+                  OrderRoutes.serverEndpoint[IO](store, inventory, logger),
+                  OrderRoutes.getOrderServerEndpoint[IO](store)
+                )
               )
               val routes = ServerTracing.middleware(tracer)(docsRoutes)
               EmberServerBuilder
