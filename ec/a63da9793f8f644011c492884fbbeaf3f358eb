@@ -1,0 +1,24 @@
+Phase Completion Report: Phase 3 - Containerize Services
+
+Manual verification (this phase's own real target — building/running
+actual containers, not just unit tests):
+- `docker run inventory-service:latest`: responded 404 to GET /nope;
+  logs were genuine JSON (logstash-logback-encoder), including
+  structured fields (trace_id, port, metrics_port, induced_failure_rate,
+  induced_delay_ms) as real top-level JSON keys, not a text blob.
+- `docker run order-service:latest`: started, attempted its Postgres
+  connection, failed cleanly with a clear Flyway connection error —
+  exactly the expected behavior running standalone outside
+  docker-compose (Phase 4 provides the real Postgres/network).
+- Both images confirmed present with :latest tags via `docker images`.
+
+Automated verification: full suite green after (purerest 45/45,
+inventoryService 12/12, orderService 28/28) — existing sbt bgRun /
+scripts/verify-*.sh workflow unaffected.
+
+Three real, non-obvious problems were found and fixed only by actually
+running the images (not caught by compiling build.sbt alone): the
+Alpine base image's missing bash, sbt-dynver's invalid Docker tag
+characters, and dockerUpdateLatest/javaOptions key mis-scoping.
+
+Result: All checks passed. Phase 3 complete.
