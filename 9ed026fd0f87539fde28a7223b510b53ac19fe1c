@@ -1,0 +1,17 @@
+Task: Add POST /orders Postgres persistence integration test
+
+Summary: Added OrderServicePostgresIntegrationSuite mirroring the existing
+OrderServiceIntegrationSuite pattern (real inventory-service server + real HTTP client),
+but with a real Testcontainers Postgres backing OrderStore.postgres instead of the
+in-memory store, and a direct JDBC query afterward confirming the row was persisted
+with the expected item/quantity.
+
+Deviation from plan wording: this test passed immediately (no Red observed) since
+OrderStore.postgres was already implemented by the prior task — it serves as a
+confirming/regression test of the HTTP-route-level behavior, not a TDD driver for new
+implementation. Main.scala still needs wiring to OrderStore.postgres (next task) — this
+test builds routes directly and bypasses Main.
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/OrderServicePostgresIntegrationSuite.scala (new)
+- conductor/tracks/persistence_20260922/plan.md
