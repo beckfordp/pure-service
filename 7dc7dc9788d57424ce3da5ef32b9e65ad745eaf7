@@ -1,0 +1,8 @@
+Phase 2 checkpoint: Circuit Breaker (resilience4j-wrapped)
+
+Automated tests: sbt purerest/test (21/21 passed, includes CircuitBreakerSuite's 3
+scenarios: stays closed, opens + fails fast, half-open recovery to closed).
+
+No interactive/manual verification step this phase — CircuitBreaker.middleware isn't
+wired into a running service yet (Phase 3). The automated stub-Client[F] tests are the
+verification.
