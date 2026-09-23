@@ -1,6 +1,6 @@
 # Plan: Harden purerest version-drift guardrails (prep)
 
-## Phase 1: Version-Drift Guardrail Prep
+## Phase 1: Version-Drift Guardrail Prep [checkpoint: e4efc7f]
 - [x] Task: Set `ThisBuild / evictionErrorLevel := Level.Error` in `build.sbt` (Red) and run `sbt update` to confirm it now fails on the known Skunk/otel4s-core eviction (otel4s-core 0.16.0 vs. pinned 1.1.0) — proving the new guardrail actually catches something before adding the fix. [1b60590]
 - [x] Task: Add an explicit, commented `ThisBuild / dependencyOverrides += "org.typelevel" %% "otel4s-core" % otel4sVersion` pinning the eviction (Green); run `sbt update` again to confirm it now succeeds cleanly. [1b60590]
 - [x] Task: Set `purerest / versionScheme := Some("early-semver")` on purerest's own project settings in `build.sbt`. [1b60590]
