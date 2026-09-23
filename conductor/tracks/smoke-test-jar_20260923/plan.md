@@ -5,6 +5,6 @@
 - [x] Task: Write a test in `smoke-test/` that imports purerest's `Metrics`/`ServerMetrics` types and exercises them (Red): run `sbt test` inside `smoke-test/` and confirm it fails to compile — purerest isn't a dependency yet, proving the test genuinely needs the published artifact. [385dbc6]
 - [x] Task: Add `libraryDependencies += "io.github.beckfordp" %% "purerest" % purerestVersion` to `smoke-test/build.sbt` (Green): after running `sbt purerest/publishLocal` in the main repo and capturing its version, run `sbt -DpurerestVersion=<version> test` inside `smoke-test/` and confirm it now resolves purerest from the local Ivy2 cache and the runtime-exercise test passes. [385dbc6]
 - [x] Task: Add `scripts/verify-purerest-consumption.sh` (publishes purerest, resolves its version, runs `smoke-test/`'s suite against it) and run it. [385dbc6]
-- [ ] Task: Document `smoke-test/`'s purpose and how to run it in `tech-stack.md`'s Publishing section.
+- [x] Task: Document `smoke-test/`'s purpose and how to run it in `tech-stack.md`'s Publishing section. [36aa939]
 - [x] Task: Run `sbt compile`/`sbt test` at the repo root (main build) to confirm `smoke-test/` isn't swept in and nothing regressed. Verified: purerest 44/44, inventoryService 10/10, orderService 21/21, all green. [385dbc6]
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Standalone Consumer Smoke Test' (Protocol in workflow.md)
