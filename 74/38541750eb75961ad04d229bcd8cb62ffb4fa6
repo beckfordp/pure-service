@@ -1,0 +1,27 @@
+Task: Auto-provision Kibana's purerest-logs Data View (post-review fix)
+
+Summary: User hit this live while interactively exercising the finished
+stack (docker compose up + Gatling load test + open Grafana/Kibana) — asked
+"I need to configure kibana to see the logs.. not seeing anything." Root
+cause: Kibana (unlike Grafana) has no file-based Data View provisioning;
+the track's Phase 4 work never created one, so Discover was genuinely
+empty despite Filebeat correctly shipping documents into Elasticsearch
+(confirmed: 4500+ real docs present via a direct ES query at the time).
+
+Fixed with a one-shot `kibana-setup` compose service (curlimages/curl)
+that POSTs the Data View + sets it default via Kibana's own HTTP API,
+gated on a new Kibana healthcheck. Verified idempotent (a second run
+returns 400 on the already-exists POST but the container still exits 0 and
+the default-index call still succeeds). Re-ran scripts/verify-observability-
+stack.sh end-to-end with a new assertion added for this Data View: all
+checks passed, including the pre-existing metrics/log checks (unaffected).
+
+Files changed: docker-compose.yml, scripts/verify-observability-stack.sh,
+conductor/tech-stack.md, README.md
+
+Why: This was a genuine, user-facing gap in the finished track's Phase 4
+deliverable (Kibana browsable was an explicit acceptance criterion) that
+automated verification didn't catch because the verify script queried
+Elasticsearch directly rather than through Kibana's own UI/API — exactly
+the kind of gap real interactive use surfaces that a script checking the
+wrong layer misses.
