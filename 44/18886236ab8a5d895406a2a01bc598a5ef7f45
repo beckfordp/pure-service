@@ -1,0 +1,26 @@
+Task: Enrich order-service/inventory-service logging (Phase 1, tasks 1-7 combined)
+
+Summary: Added log4cats-testing (Test-scoped) to both services' own build.sbt
+entries. Wrote failing tests (StructuredTestingLogger) for request-received/
+completed logging on all endpoints (incl. GET /orders/{id}'s 404 path),
+error-path logging around inventory.reserve/store.create in order-service,
+and the induced-failure trigger's warn log in inventory-service — confirmed
+each Red, then implemented to Green. Dropped an initially-added onError wrap
+around InventoryStore.reserve (an unconditional in-memory write that can't
+fail — would have been dead, uncoverable code) per "don't add error handling
+for scenarios that can't happen." Added startup config-summary logging to
+both Main.scala's, verified manually via console output (bgRun + curl).
+Full suite green (purerest/orderService/inventoryService), 100% coverage on
+OrderRoutes.scala/InventoryRoutes.scala, scalafmt clean on touched files.
+
+Files changed: build.sbt, modules/order-service/src/main/scala/orderservice/
+{Main,OrderRoutes}.scala, modules/order-service/src/test/scala/orderservice/
+OrderRoutesSuite.scala, modules/inventory-service/src/main/scala/
+inventoryservice/{Main,InventoryRoutes}.scala, modules/inventory-service/
+src/test/scala/inventoryservice/InventoryRoutesSuite.scala
+
+Why: Current logging was thin (2 lines total, no error-path or
+induced-failure logging) — inadequate for the observability-stack track's
+goal of meaningful, correlated Kibana content. The induced-failure trigger
+being silent was the most important gap: the chaos path driving
+retries/circuit-breaker trips had no log-side explanation.
