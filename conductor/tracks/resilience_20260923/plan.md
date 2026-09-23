@@ -10,7 +10,7 @@
 - [x] Task: Add `resilience4j-circuitbreaker` dependency to `purerest`. [0cd1548]
 - [x] Task: Write failing tests against a stub `Client[F]`: breaker stays closed under successes; opens after the configured failure threshold; open-state calls fail fast with a typed error and never reach the stub client; transitions to half-open after the reset timeout and closes again on a successful trial call (Red). [ff6b743]
 - [x] Task: Implement `CircuitBreaker.middleware[F[_]: Async](config: CircuitBreakerConfig)(client: Client[F]): Client[F]` in `purerest.resilience`, driving resilience4j-circuitbreaker's core `CircuitBreaker`; define a typed `CircuitBreakerOpen` error (not a leaked resilience4j exception) for rejected calls (Green). Uses `tryAcquirePermission()`/`onSuccess`/`onError` directly via `Async[F].delay` (not `guaranteeCase`, since the acquire/release-style hook it provides didn't fit the acquire→run→report shape as cleanly as explicit sequencing). [121c916] [e76e860]
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Circuit Breaker (resilience4j-wrapped)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Circuit Breaker (resilience4j-wrapped)' (Protocol in workflow.md) — no wiring into a running service yet (Phase 3); verification is the automated test suite: full purerest/test green (21/21), including CircuitBreakerSuite's 3 scenarios (closed/open/half-open-to-closed). [pending]
 
 ## Phase 3: Compose + Wire into order-service
 - [ ] Task: Write a failing test for the composed `Resilience.middleware` (retry wrapping circuit breaker) against a stub client, confirming retries pass through the breaker and a breaker-open rejection is not endlessly retried (Red).
