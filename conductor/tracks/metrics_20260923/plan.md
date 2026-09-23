@@ -1,10 +1,10 @@
 # Plan: purerest Metrics (RED + Resilience Signals)
 
-## Phase 1: Metrics Foundation
+## Phase 1: Metrics Foundation [checkpoint: ff0a951]
 - [x] Task: Add `opentelemetry-exporter-prometheus` dependency to `purerest`; verify it resolves via `sbt purerest/update` (adjust version/coordinates based on the real resolution, matching prior tracks' dependency-verification pattern). Document the choice in `tech-stack.md`. [244c4b6]
 - [x] Task: Write a failing test asserting `Metrics.test` (otel4s in-memory `MetricsTestkit`) records a manually-emitted counter value (Red). [a868bd9]
 - [x] Task: Implement `purerest.metrics.Metrics.oteljava` (Prometheus-exporter-backed `Meter[F]` `Resource`, port-configurable) and `Metrics.test` (in-memory testkit `Resource`), mirroring `purerest.tracing.Tracing`'s shape (Green). [a868bd9]
-- [x] Task: Conductor - User Manual Verification 'Phase 1: Metrics Foundation' (Protocol in workflow.md) — no wiring into a running service yet (that's Phase 4), so verification is the automated test suite itself: full purerest/test green (25/25), including MetricsSuite's manually-emitted-counter scenario against the in-memory testkit.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Metrics Foundation' (Protocol in workflow.md) — no wiring into a running service yet (that's Phase 4), so verification is the automated test suite itself: full purerest/test green (25/25), including MetricsSuite's manually-emitted-counter scenario against the in-memory testkit. [ff0a951]
 
 ## Phase 2: Server & Client RED Metrics
 - [ ] Task: Write failing tests against a stub `HttpRoutes[F]`/`Client[F]` and `Metrics.test`'s testkit: a handled request records a `http.server.request.duration` / `http.client.request.duration` measurement with the expected method/route-or-address/status-code attributes (Red).
