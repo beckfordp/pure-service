@@ -17,7 +17,27 @@
 - **circe** — JSON encoding/decoding, via `http4s-circe` for http4s integration. Chosen for its idiomatic Typelevel fit, mature http4s support, and typed decode errors (aligns with the typed-error-handling guideline).
 
 ## Persistence
-- **PostgreSQL**, accessed via **Skunk** or **Doobie** (order-service).
+- **PostgreSQL**, accessed via **Skunk** (`org.tpolecat`) — order-service's query library.
+- **Migrations**: **Flyway**, run automatically on `order-service` startup. Flyway is
+  JDBC-based, so `org.postgresql:postgresql` (pgjdbc) is added as a **build-only**
+  dependency solely for Flyway — Skunk still handles all runtime queries.
+- **Configuration**: **PureConfig**, loading an `application.conf` at startup. Covers
+  the Postgres connection plus settings previously read ad hoc from `sys.env`
+  (`ORDER_SERVICE_PORT`, `INVENTORY_SERVICE_BASE_URL`).
+- **Testing**: **Testcontainers** (`testcontainers-scala-postgresql`) spins up a real,
+  ephemeral Postgres for integration tests. Local/manual dev uses a separate
+  `docker-compose.yml` Postgres container (not a library dependency).
+
+### 2026-09-23: Skunk chosen over Doobie
+- Skunk was chosen for its pure-FP, no-JDBC fit with purerest's ethos — no dedicated
+  blocking thread pool for DB calls (Doobie/JDBC ties up one OS thread per in-flight
+  query even under Cats Effect 3's thread-shifting).
+- **Not** chosen for a weaker effect-typeclass requirement: Skunk's `Network[F]`
+  (fs2's NIO socket layer) needs `Async[F]` under the hood regardless, and http4s
+  server already requires `Async[F]` for any DB library choice — so there's no
+  constraint-weakening benefit either way.
+- Trade-off accepted: smaller community/fewer examples than Doobie, and no
+  equivalent to `doobie-munit`'s compile-time SQL-vs-schema `.check`/`.analyze`.
 
 ## Observability
 - **Tracing**: OpenTelemetry via **otel4s** (Typelevel's Cats-Effect-native library, `oteljava` backend) — server/client purerest middleware propagates a W3C trace context across service-to-service HTTP calls. Console exporter for local/manual verification; in-memory exporter (otel4s's `TracesTestkit`) for automated tests. Real OTLP/collector export deferred.
