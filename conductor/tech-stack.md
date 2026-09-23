@@ -159,6 +159,29 @@
 - **munit** — test framework.
 - **munit-cats-effect** — lets test bodies return `IO[Unit]` directly, used across all effectful tests.
 
+## Load Testing
+- **Gatling** (`modules/load-test`) — generates sustained, realistic traffic against a running
+  order-service/inventory-service pair, exercising purerest's RED and resilience metrics the
+  way manual curl-based `scripts/verify-*.sh` scripts can't: `gatling-sbt` `4.13.3` (the sbt
+  plugin) plus `gatling-charts-highcharts`/`gatling-test-framework` `3.15.1` (Gatling itself —
+  versioned independently of the sbt plugin).
+- `OrderPlacementSimulation` repeatedly issues `POST /orders` against a configurable base URL
+  (default `http://localhost:8080`), ramping to ~15 concurrent users over 30s then holding
+  ~5 users/sec for a further 60s (~90s total).
+- Simulations run under the plugin's dedicated `Gatling` sbt configuration
+  (`sbt loadTest/Gatling/test`), **not** the default `test` task — `loadTest` is deliberately
+  left out of root's `.aggregate(...)` in `build.sbt` too, so neither a plain `sbt test` nor
+  `sbt compile` at the repo root touches it (confirmed: `sbt projects` still lists `loadTest`,
+  but the normal fast dev/test loop's timing is unaffected).
+- `scripts/loadtest-purerest.sh` orchestrates two passes against real services (docker-compose
+  Postgres + both services): a healthy pass (`INVENTORY_INDUCED_FAILURE_RATE=0`) reporting
+  order-service's RED series (`http_server_request_duration_seconds_count`/
+  `http_client_request_duration_seconds_count`), then a degraded pass
+  (`INVENTORY_INDUCED_FAILURE_RATE=0.3`) reporting its resilience series
+  (`purerest_retry_attempts_total`, `purerest_circuit_breaker_state_transitions_total`/
+  `_calls_rejected_total`) — both real, nonzero, and (in the degraded pass) genuinely showing
+  the circuit breaker tripping and rejecting calls under sustained failure, not just retrying.
+
 ## Formatting
 - **scalafmt** — default Scala 3 style.
 
