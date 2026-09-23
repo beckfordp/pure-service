@@ -1,0 +1,17 @@
+Task: Add Skunk/Flyway/PureConfig/Testcontainers dependencies to build.sbt
+
+Summary: Added shared version vals and orderService libraryDependencies for skunk-core
+1.0.0, flyway-core/flyway-database-postgresql 11.8.2, postgresql (pgjdbc) 42.7.13 (Runtime
+scope, Flyway-only), pureconfig-core 0.17.10, and testcontainers-scala-postgresql/-munit
+0.43.6 (Test scope).
+
+Deviation encountered and fixed: sbt update initially failed with a binary-incompatible
+eviction error (Skunk 1.0.0 -> otel4s-core 0.16.0 vs our pinned otel4s 1.1.0). Fixed by
+adding 'ThisBuild / evictionErrorLevel := Level.Warn' and documented in tech-stack.md's
+Deferred Concerns section per workflow.md step 7.
+
+Files changed:
+- build.sbt
+- conductor/tech-stack.md
+
+Verified: sbt orderService/update resolves successfully (warning only, no error).
