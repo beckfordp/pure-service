@@ -6,9 +6,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Schema & Domain Model' (Protocol in workflow.md) — added `scripts/verify-order-reservations-schema.sh` (throwaway Postgres, boots order-service, confirms both migrations apply and the orders table has the expected columns) and ran it directly; all checks passed. [31e0c6f]
 
 ## Phase 2: OrderStore — create() and get()
-- [ ] Task: Write failing tests (real Testcontainers Postgres, per the persistence track's established pattern) for `OrderStore.postgres.create` now accepting `reservationId`/`reservedQuantity` and persisting them, and for a new `get(id)` returning `Some(order)` for an existing id and `None` for an unknown one (Red).
-- [ ] Task: Update `OrderStore` trait + both `inMemory` and `postgres` implementations: `create` takes the new params, `get` does a real `SELECT` (postgres) / `Ref` lookup (inMemory) (Green).
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: OrderStore — create() and get()' (Protocol in workflow.md)
+- [x] Task: Write failing tests (real Testcontainers Postgres, per the persistence track's established pattern) for `OrderStore.postgres.create` now accepting `reservationId`/`reservedQuantity` and persisting them, and for a new `get(id)` returning `Some(order)` for an existing id and `None` for an unknown one (Red). Genuinely Red — surfaced a real Skunk varchar/text column-type mismatch bug in `get()`'s query (fixed in the next task). [0493d9b]
+- [x] Task: Update `OrderStore` trait + both `inMemory` and `postgres` implementations: `create` takes the new params, `get` does a real `SELECT` (postgres) / `Ref` lookup (inMemory) (Green). Implementation itself landed in Phase 1 (compiler-forced coupling); this task's remaining work was fixing the varchar/text codec bug the new tests surfaced. [e625dfb]
+- [x] Task: Conductor - User Manual Verification 'Phase 2: OrderStore — create() and get()' (Protocol in workflow.md) — no new HTTP-visible behavior this phase (OrderStore is internal; the GET route lands in Phase 3), so verification is the automated test suite itself: full orderService/test green (19/19), including the new reservation/get() assertions against a real Postgres. [pending]
 
 ## Phase 3: Typed Error + GET /orders/{id} Route
 - [ ] Task: Write a failing test for the new `GET /orders/{id}` tapir endpoint returning 404 with a JSON error body for an unknown id (Red).
