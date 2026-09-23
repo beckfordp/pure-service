@@ -1,0 +1,30 @@
+Task: Add scripts/verify-observability-stack.sh + tech-stack.md/README.md docs (Phase 5)
+
+Summary: Wrote scripts/verify-observability-stack.sh, run twice against the
+real stack (see run logs): the first run (0.3 degraded-pass failure rate,
+matching the existing loadtest-purerest.sh convention) passed every check
+except circuit-breaker activity, which is genuinely probabilistic at that
+rate given failureThreshold=5 and maxRetries=3 — confirmed via direct
+calculation (~1 expected 5-in-a-row streak per run) rather than assumed.
+Raised the degraded rate to 0.5 and re-ran clean: all checks passed,
+including a confirmed circuit-breaker trip. Documented the reasoning in the
+script itself so a future re-run's flakiness (if any) is understood, not
+mysterious.
+
+Documented the full stack (containerization, JSON logging, compose profile
+gating, Prometheus/Grafana/Filebeat/Elasticsearch, both bugs found and
+fixed) in conductor/tech-stack.md's new "Local Observability Stack" section.
+Rewrote README.md's top with a new primary "Build, run, and observe this
+system" section — per explicit user request ("I would like this to be the
+main test reference in the readme") — covering build, full-stack startup,
+generating traffic (including inducing failures), where to look
+(Grafana/Kibana/Prometheus URLs and what each shows), and the automated
+verify script; the prior sbt/plain-Postgres instructions are kept below it
+as a secondary reference, not removed.
+
+Files changed: scripts/verify-observability-stack.sh, conductor/tech-stack.md,
+README.md
+
+Why: Completes the track's spec requirements for automated end-to-end
+verification, design documentation, and a README reference the user
+specifically asked to be the primary one.
