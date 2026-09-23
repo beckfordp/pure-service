@@ -10,12 +10,12 @@
 - [x] Task: Update `OrderStore` trait + both `inMemory` and `postgres` implementations: `create` takes the new params, `get` does a real `SELECT` (postgres) / `Ref` lookup (inMemory) (Green). Implementation itself landed in Phase 1 (compiler-forced coupling); this task's remaining work was fixing the varchar/text codec bug the new tests surfaced. [e625dfb]
 - [x] Task: Conductor - User Manual Verification 'Phase 2: OrderStore — create() and get()' (Protocol in workflow.md) — no new HTTP-visible behavior this phase (OrderStore is internal; the GET route lands in Phase 3), so verification is the automated test suite itself: full orderService/test green (19/19), including the new reservation/get() assertions against a real Postgres. [f737add]
 
-## Phase 3: Typed Error + GET /orders/{id} Route
-- [ ] Task: Write a failing test for the new `GET /orders/{id}` tapir endpoint returning 404 with a JSON error body for an unknown id (Red).
-- [ ] Task: Define `sealed trait OrderError` / `case object OrderNotFound`; add the `GET /orders/{id}` endpoint to `OrderRoutes` with `errorOut` mapping `OrderNotFound` to 404; update `POST /orders`'s handler to pass reservation id/quantity into `store.create`; extend `OrderResponse` with `status`/`createdAt` (Green).
-- [ ] Task: Write a failing end-to-end integration test: `POST /orders` then `GET /orders/{id}` returns 200 with the persisted order+reservation+status (Red — expected to fail until the full path is wired).
-- [ ] Task: Wire everything together so the end-to-end test passes (Green).
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Typed Error + GET /orders/{id} Route' (Protocol in workflow.md)
+## Phase 3: Typed Error + GET /orders/{id} Route [checkpoint: c23979f]
+- [~] Task: Write a failing test for the new `GET /orders/{id}` tapir endpoint returning 404 with a JSON error body for an unknown id (Red).
+- [x] Task: Define `sealed trait OrderError` / `case object OrderNotFound`; add the `GET /orders/{id}` endpoint to `OrderRoutes` with `errorOut` mapping `OrderNotFound` to 404; update `POST /orders`'s handler to pass reservation id/quantity into `store.create`; extend `OrderResponse` with `status`/`createdAt` (Green). [65aff66]
+- [x] Task: Write a failing end-to-end integration test: `POST /orders` then `GET /orders/{id}` returns 200 with the persisted order+reservation+status (Red — expected to fail until the full path is wired). Passed immediately — full path was already wired by prior tasks. [2aebbdf]
+- [x] Task: Wire everything together so the end-to-end test passes (Green). Already done — see above. [2aebbdf]
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Typed Error + GET /orders/{id} Route' (Protocol in workflow.md) — added `scripts/verify-order-reservations.sh` (docker-compose + both services, POST/GET/404 checks) and ran it directly. First run hit exactly the scenario spec.md's NFR anticipated: leftover V1-only rows in the docker-compose volume (from earlier verification runs) made V2's `NOT NULL` migration fail — not a bug, the documented 'assumes a resettable/dev-only database' limitation. Fixed the script to reset the volume (`docker compose down -v`) first; all checks then passed. [c23979f]
 
 ## Phase 4: Coverage & Cleanup
 - [ ] Task: Run `sbt coverage orderService/test orderService/coverageReport`; confirm 100% statement/branch coverage on every file this track adds or changes (the bar the persistence track established).
