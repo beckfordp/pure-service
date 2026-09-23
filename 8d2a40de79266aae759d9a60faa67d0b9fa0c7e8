@@ -1,0 +1,16 @@
+Task: Implement Retry.middleware (Green) — deviation documentation
+
+Summary: Documents the real architectural deviation from the plan's literal wording:
+Retry.middleware delegates its execution loop to http4s's own Retry client middleware
+(which correctly handles Resource/Hotswap lifecycle for retrying a Client[F]), using
+cats-retry's RetryPolicies purely for backoff computation under cats.Id. fullJitter
+wasn't usable (needs effectful Random[F], incompatible with http4s's pure backoff
+signature) — using limitRetries + exponentialBackoff instead. Logging goes through
+purerest's own StructuredLogger[F] convention (via AttemptCountKey/onError), not
+http4s's LoggerFactory-based internal logging (disabled via logRetries=false, with
+NoOpFactory[F] to satisfy the required context bound).
+
+Files changed:
+- conductor/tech-stack.md
+
+Verified: full purerest/test suite green (18/18).
