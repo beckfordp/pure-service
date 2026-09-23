@@ -17,5 +17,5 @@ through the spec/plan questions and promote it into a real track below.
 
 ---
 
-- [ ] **Track: Order Persistence (Skunk + PostgreSQL)**
+- [~] **Track: Order Persistence (Skunk + PostgreSQL)**
   *Link: [./tracks/persistence_20260922/](./tracks/persistence_20260922/)*
