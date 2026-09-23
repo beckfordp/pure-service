@@ -2,8 +2,8 @@
 
 ## Phase 0: Tech Stack & Build Setup
 - [x] Task: Update `conductor/tech-stack.md` — document Skunk (not Doobie) as the Postgres access library, Flyway for migrations, PureConfig for configuration, Testcontainers for integration-test Postgres. Dated note explaining the choice (per workflow.md principle: tech-stack changes documented before implementation). [9664ef9]
-- [ ] Task: Add shared dependency versions to `build.sbt` (`skunkVersion`, `flywayVersion`, `pureconfigVersion`, `testcontainersVersion`/`testcontainers-scala-postgresql`) and add them to the `orderService` module's `libraryDependencies` (`org.tpolecat %% skunk-core`, `org.flywaydb % flyway-database-postgresql` + `org.postgresql % postgresql` as a build-only JDBC driver for Flyway, `com.github.pureconfig %% pureconfig-core`; Testcontainers as `% Test`).
-- [ ] Task: Conductor - User Manual Verification 'Phase 0: Tech Stack & Build Setup' (Protocol in workflow.md)
+- [x] Task: Add shared dependency versions to `build.sbt` (`skunkVersion`, `flywayVersion`, `pureconfigVersion`, `testcontainersVersion`/`testcontainers-scala-postgresql`) and add them to the `orderService` module's `libraryDependencies` (`org.tpolecat %% skunk-core`, `org.flywaydb % flyway-database-postgresql` + `org.postgresql % postgresql` as a build-only JDBC driver for Flyway, `com.github.pureconfig %% pureconfig-core`; Testcontainers as `% Test`). [ff59d9a]
+- [x] Task: Conductor - User Manual Verification 'Phase 0: Tech Stack & Build Setup' (Protocol in workflow.md) — autonomous run: verified via `sbt orderService/update` succeeding (warning-only eviction, documented in tech-stack.md); no interactive walkthrough needed for a dependency-resolution-only phase.
 
 ## Phase 1: Configuration (PureConfig)
 - [ ] Task: Write failing test for a new `OrderServiceConfig` case class (port, inventory base URL, Postgres host/port/db/user/password) loaded via PureConfig from `application.conf` (Red).
