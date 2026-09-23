@@ -1,0 +1,16 @@
+Task: Extend OrderStore tests for reservation fields + get() (Red, mostly)
+
+Summary: Added assertions on status/reservationId/reservedQuantity round-tripping to
+existing create tests, plus new get() tests (existing id -> Some(order), unknown id ->
+None) for both inMemory and postgres. inMemory's tests passed immediately (Green
+implementation already existed from the Phase 1 coupling). The Postgres tests, however,
+were genuinely Red: get()'s SELECT query used skunk's varchar codec for the item/status
+columns, but the orders table declares them as Postgres text — Skunk's column-alignment
+check (comparing the query's asserted decoder types against the DB's actual described
+row) rejected the mismatch with a ColumnAlignmentException. Fixed by switching both the
+SELECT decoder and the INSERT's item parameter encoder from varchar to text, matching
+the actual column type.
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/OrderStoreSuite.scala
+- modules/order-service/src/test/scala/orderservice/OrderStorePostgresSuite.scala
