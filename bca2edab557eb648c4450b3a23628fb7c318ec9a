@@ -1,0 +1,21 @@
+Task: Write failing Testcontainers/Flyway migration test (Red)
+
+Summary: Added MigrationsSuite, spinning up a real Postgres via Testcontainers and
+asserting Migrations.run creates the orders table with expected columns. Confirmed Red
+(compile failure — Migrations didn't exist) before implementation.
+
+Deviation encountered and fixed: the test suite failed to even start Testcontainers —
+'Could not find a valid Docker environment' — despite Docker Desktop running. Root cause:
+known testcontainers-java/docker-java bug (testcontainers/testcontainers-java#11210,
+#11212, #11360) — bundled docker-java hardcodes API version 1.32, rejected by this
+machine's Docker Engine 29.5.2 (MinAPIVersion 1.40). Fixed via a
+docker-java.properties classpath file pinning api.version=1.44. Documented in
+tech-stack.md's Deferred Concerns per workflow.md step 7. Also needed a fresh sbt
+process (sbt's background server retains its env from first launch, so env var changes
+in a new shell invocation don't reach it) and confirming Docker Desktop's daemon was
+actually running (not just the CLI client).
+
+Files changed:
+- modules/order-service/src/test/scala/orderservice/MigrationsSuite.scala (new)
+- modules/order-service/src/test/resources/docker-java.properties (new)
+- conductor/tech-stack.md
