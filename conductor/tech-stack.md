@@ -182,6 +182,67 @@
   `_calls_rejected_total`) — both real, nonzero, and (in the degraded pass) genuinely showing
   the circuit breaker tripping and rejecting calls under sustained failure, not just retrying.
 
+## Local Observability Stack
+- **Containerization**: **sbt-native-packager** (`JavaAppPackaging` + `DockerPlugin`) builds
+  `order-service`/`inventory-service` as Docker images (`sbt orderService/Docker/publishLocal
+  inventoryService/Docker/publishLocal`) — `eclipse-temurin:21-jre` base (Debian-based; the
+  `-alpine` variant lacks the `bash` the generated launch script needs), `:latest` tag kept in
+  sync (`dockerUpdateLatest`), version sanitized for Docker's tag character set
+  (`Docker / version := version.value.replace("+", "-")`, since sbt-dynver's version string can
+  contain `+`).
+- **JSON container logging**: `modules/purerest/src/main/resources/logback-docker.xml`
+  (`net.logstash.logback:logstash-logback-encoder`) — selected only inside Docker images via
+  `Universal / javaOptions += "-Dlogback.configurationFile=logback-docker.xml"` (not
+  `Docker / javaOptions`, which the launch-script-generation task doesn't consume). Plain
+  `sbt bgRun` dev still uses the existing plain-text `logback.xml`, unchanged.
+- **Orchestration**: `docker-compose.yml` gains `order-service`, `inventory-service`,
+  `prometheus`, `grafana`, `elasticsearch`, `kibana`, `filebeat` — all under
+  `profiles: ["observability"]`. Plain `docker compose up -d` (the existing `sbt bgRun` dev loop
+  and every `scripts/verify-*.sh`) is unaffected and still starts only Postgres; the full stack
+  needs `docker compose --profile observability up -d` explicitly.
+- **Metrics**: `prom/prometheus:v3.13.3` scrapes both services' existing Prometheus exporter
+  endpoints (`observability/prometheus.yml`); `grafana/grafana-oss:13.0.2` is provisioned
+  (`observability/grafana/provisioning/`) with a Prometheus datasource and a dashboard
+  (`purerest.json`, uid `purerest-red-resilience`) covering request rate, duration percentiles,
+  error rate, retry attempts by outcome, circuit-breaker transitions/rejections/current state,
+  and order-service DB query duration/error rate.
+- **Logs**: `docker.elastic.co/beats/filebeat:8.19.19` tails both services' JSON container logs
+  and, via `decode_json_fields`, flattens the app's JSON payload out of Docker's own JSON
+  log-driver envelope so fields like `trace_id`/`order_id`/`item`/`quantity` land as top-level,
+  independently searchable fields rather than buried in a text blob — shipped to
+  `docker.elastic.co/elasticsearch/elasticsearch:8.19.19` (single-node; `discovery.type:
+  single-node`, security disabled for local dev) and browsable via
+  `docker.elastic.co/kibana/kibana:8.19.19`.
+- **Verification**: `scripts/verify-observability-stack.sh` brings up the profile, runs the
+  Gatling load-test module (a healthy pass, then a degraded pass at
+  `INVENTORY_INDUCED_FAILURE_RATE=0.3`), and confirms — via each system's own HTTP API, not just
+  that containers started — that Prometheus has scraped real request/DB-query/resilience metrics,
+  Grafana's datasource and dashboard are provisioned and its dashboard's own queries resolve
+  non-empty, and Elasticsearch has indexed structured log documents including the degraded pass's
+  induced-failure WARN log.
+
+### 2026-09-23: Prometheus exporter's loopback-only default binding
+- **Bug found and fixed**: `purerest.metrics.Metrics.oteljava`'s `PrometheusHttpServer.builder()`
+  had no explicit host, defaulting to `127.0.0.1`. Invisible in every prior manual/automated
+  verification, because those always curled the `/metrics` endpoint from the same host the
+  service ran on (loopback works). This track's real docker-compose network — Prometheus running
+  in a **sibling container**, not the same host — was the first thing that actually exercised the
+  gap, surfacing as "down"/connection-refused Prometheus targets. Fixed with `.setHost("0.0.0.0")`,
+  confirmed via `/proc/net/tcp` inspection before/after and a live scrape afterward. A real
+  correctness bug in already-shipped code from the original metrics track, not new Phase 4
+  functionality — see the fix's own commit for the full root-cause trail.
+
+### 2026-09-23: Single-node Elasticsearch disk watermark
+- **Deviation observed**: cluster health went "red" (all shards unassigned) after a burst of
+  image builds/runs filled the Docker VM's disk past Elasticsearch's default 90% high watermark.
+  Root-caused via `_cluster/allocation/explain`. Fixed by reclaiming disk via `docker builder
+  prune -f` (deliberately the safest reclaim category — never touches named images, containers,
+  or volumes) and a manual `POST _cluster/reroute?retry_failed=true` to force a retry once space
+  was free.
+- **"Yellow", not "green", is the correct steady state**: a single-node cluster can never satisfy
+  a replica shard (no second node to place it on) — 36/37 primary shards active with one
+  unassigned replica is expected, not a bug, for this local single-node setup.
+
 ## Formatting
 - **scalafmt** — default Scala 3 style.
 
