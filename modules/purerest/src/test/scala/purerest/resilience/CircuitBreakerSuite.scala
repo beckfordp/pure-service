@@ -26,6 +26,12 @@ class CircuitBreakerSuite extends CatsEffectSuite {
       })
     }
 
+  test("isFailureResult treats a 5xx response as a failure and a non-Response value as not") {
+    assert(CircuitBreaker.isFailureResult.test(Response[IO](Status.InternalServerError)))
+    assert(!CircuitBreaker.isFailureResult.test(Response[IO](Status.Ok)))
+    assert(!CircuitBreaker.isFailureResult.test("not a response"))
+  }
+
   test("stays closed and passes calls through while the underlying client succeeds") {
     for {
       counter <- Ref.of[IO, Int](0)

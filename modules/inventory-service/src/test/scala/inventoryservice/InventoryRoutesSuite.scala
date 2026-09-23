@@ -41,6 +41,23 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     } yield assertEquals(response.status, Status.InternalServerError)
   }
 
+  test("with a tiny positive induced failure rate, POST /inventory/reserve still usually succeeds") {
+    // Exercises the branch where failureRate > 0 but the random roll doesn't trigger
+    // a failure — distinct from the failureRate <= 0.0 short-circuit tested below.
+    // Flake probability is astronomically low (~1e-7).
+    for {
+      store <- InventoryStore.inMemory[IO]
+      routes = InventoryRoutes.routes[IO](
+        store,
+        NoOpLogger[IO],
+        InducedFailureConfig(failureRate = 0.0000001, delay = Duration.Zero)
+      )
+      request = Request[IO](Method.POST, uri"/inventory/reserve")
+        .withEntity(ReserveRequest("widget", 3))
+      response <- routes.orNotFound.run(request)
+    } yield assertEquals(response.status, Status.Created)
+  }
+
   test("with induced failure rate 0.0, POST /inventory/reserve still succeeds") {
     for {
       store <- InventoryStore.inMemory[IO]

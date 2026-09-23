@@ -39,8 +39,13 @@ object CircuitBreaker {
     * value (not a thrown exception) should count as a failure for the breaker's
     * sliding window. Without this, a 5xx `Response` — returned as a normal value by
     * `Client[F].run`, never thrown — would be indistinguishable from a real success.
+    *
+    * Not private: the `case _ => false` fallback (required for type-safety against
+    * resilience4j's `Predicate[Any]` signature, since `onResult` is never actually
+    * called with anything but a `Response[F]` in this codebase) is otherwise
+    * unreachable through `middleware`'s public API — tested directly instead.
     */
-  private val isFailureResult: java.util.function.Predicate[Any] =
+  private[resilience] val isFailureResult: java.util.function.Predicate[Any] =
     (result: Any) =>
       result match {
         case response: Response[?] => response.status.responseClass == org.http4s.Status.ServerError
