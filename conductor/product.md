@@ -62,9 +62,10 @@ Hands-on use of the finished stack raised the question purerest hasn't actually 
    runtime-adjustable (not just startup-config), drive it through a Gatling scenario, and use
    the result to answer concretely — do the existing retry/circuit-breaker Grafana panels show
    *effective* behavior (successful retries, timely trips, timely recovery), or just activity?
-2. **Make purerest a real, consumable library.** A tag-triggered release/publish pipeline,
-   Scaladoc for the public API, and — later — a service template so adopting purerest starts
-   from a working example instead of a blank `build.sbt`.
+2. **Make purerest a real, consumable library.** A tag-triggered release/publish pipeline and
+   Scaladoc for the public API. (A service-template generator so adopting purerest starts from
+   a working example is planned as a separate `pure-service-generator` project, not part of
+   this repo's scope.)
 3. **Reduce operational noise.** `scripts/` has been archived wholesale pending a decision on
    what's still genuinely useful; most were one-shot verification artifacts from completed
    tracks, not tools anyone reaches for day to day.
