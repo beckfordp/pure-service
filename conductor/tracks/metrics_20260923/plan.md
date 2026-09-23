@@ -9,7 +9,7 @@
 ## Phase 2: Server & Client RED Metrics
 - [x] Task: Write failing tests against a stub `HttpRoutes[F]`/`Client[F]` and `Metrics.test`'s testkit: a handled request records a `http.server.request.duration` / `http.client.request.duration` measurement with the expected method/route-or-address/status-code attributes (Red). [ba9d9a6]
 - [x] Task: Implement `ServerMetrics.middleware` and `ClientMetrics.middleware` in `purerest.metrics` (Green). [ba9d9a6]
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Server & Client RED Metrics' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Server & Client RED Metrics' (Protocol in workflow.md) — no wiring into a running service yet (Phase 4); verification is the automated test suite: full purerest/test green (28/28), including ServerMetricsSuite/ClientMetricsSuite's histogram-with-attributes scenarios.
 
 ## Phase 3: Resilience Metrics
 - [ ] Task: Write failing tests: a retried call records `purerest.retry.attempts` with the right `outcome` attribute across retried/succeeded/exhausted scenarios; a circuit breaker open/close/reject records `purerest.circuit_breaker.state_transitions` / `purerest.circuit_breaker.calls_rejected` (Red).
