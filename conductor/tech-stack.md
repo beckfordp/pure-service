@@ -56,6 +56,23 @@
 
 ## Deferred Concerns
 
+### 2026-09-23: `docker-java.properties` pins Docker API version for Testcontainers
+- **Deviation observed**: `MigrationsSuite` (Testcontainers Postgres) failed every run
+  with "Could not find a valid Docker environment", even with a working, fully up
+  Docker Desktop daemon. Root cause: a known upstream incompatibility
+  (testcontainers/testcontainers-java#11210, #11212, #11360) — testcontainers-scala
+  0.43.6 bundles a docker-java client that hardcodes Docker API version 1.32, and this
+  machine's Docker Desktop (Engine 29.5.2) enforces `MinAPIVersion: 1.40`, rejecting
+  every request with a blank-stub HTTP 400 before any container starts.
+- **Resolution**: added `modules/order-service/src/test/resources/docker-java.properties`
+  with `api.version=1.44` (within the daemon's supported 1.40-1.54 range), which
+  docker-java reads from the classpath to skip its broken default negotiation. Neither
+  the `DOCKER_API_VERSION` env var nor an sbt session restart alone fixed it — the
+  `DockerDesktopClientProviderStrategy` docker-java uses here doesn't honor that env var.
+- **Revisit when**: testcontainers-scala ships on Testcontainers 2.x (which negotiates
+  the API version with the daemon instead of hardcoding 1.32) — the properties file can
+  likely be removed then.
+
 ### 2026-09-23: `ThisBuild / evictionErrorLevel := Level.Warn`
 - **Deviation observed**: Adding Skunk 1.0.0 to `order-service` made `sbt update` fail
   outright — Skunk depends on `otel4s-core` 0.16.0 (its own optional tracing
