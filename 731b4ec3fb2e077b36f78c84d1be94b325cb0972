@@ -1,0 +1,10 @@
+Task: Write failing tests for composed Resilience.middleware (Red)
+
+Summary: Added ResilienceSuite with 2 tests: (1) retries pass through the circuit
+breaker on each attempt (breaker threshold high enough not to trip), (2) a
+breaker-open rejection is not retried (breaker trips after 1 failure, retry's own
+retry-scope predicate excludes CircuitBreakerOpen, so only 1 underlying call happens
+total). Confirmed Red: compile failure (Resilience/ResilienceConfig didn't exist).
+
+Files changed:
+- modules/purerest/src/test/scala/purerest/resilience/ResilienceSuite.scala (new)
