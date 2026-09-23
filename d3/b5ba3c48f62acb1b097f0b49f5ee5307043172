@@ -1,0 +1,5 @@
+Phase 5 task: scripts/verify-metrics-end-to-end.sh — genuine end-to-end proof that retry/circuit-breaker metrics are populated under real induced failure, not just stub-client unit tests.
+
+Scenario: 100% induced failure rate (deterministic), 6 POST /orders. order-service's ResilienceConfig (failureThreshold=5) means order 1 exhausts all 4 attempts (0 retried-outcome from order 1 is wrong — actually contributes 3 retried + 1 exhausted), and order 2's first attempt is the 5th cumulative failure, tripping the breaker CLOSED->OPEN; order 2's retry is rejected (CircuitBreakerOpen, non-retriable) so Retry gives up after 2 attempts (1 retried + 1 exhausted). Orders 3-6 are rejected immediately (0 retried + 1 exhausted each), each incrementing calls_rejected.
+
+Run result: purerest_retry_attempts_total{outcome=retried}=4, {outcome=exhausted}=6, purerest_circuit_breaker_state_transitions_total=1 (CLOSED->OPEN), purerest_circuit_breaker_calls_rejected_total=5 — all match the traced-through scenario exactly. All checks passed on first run.
