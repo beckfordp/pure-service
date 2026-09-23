@@ -1,0 +1,11 @@
+Phase 2, Tasks 1+2: failing tests for ServerMetrics/ClientMetrics (Red) + implementation (Green).
+
+What:
+- ServerMetrics.middleware[F: Async](meter)(routes: HttpRoutes[F]): HttpRoutes[F] — records http.server.request.duration (seconds) per handled request, attributes http.request.method / http.route / http.response.status_code (OTel semantic-convention names). Timed via Clock[F].monotonic around routes.run, mirroring ServerTracing.middleware's simplicity (no special exception-path handling, matching that precedent).
+- ClientMetrics.middleware[F: Async](meter)(client: Client[F]): Client[F] — records http.client.request.duration, attributes http.request.method / server.address / http.response.status_code. Resource-chained around client.run, mirroring ClientTracing.middleware's shape.
+
+Tests: ServerMetricsSuite (2), ClientMetricsSuite (1) — assert via otel4s's MetricExpectation/PointExpectation DSL (attributesSubset, to stay robust to unspecified attributes) against Metrics.test's in-memory testkit. Both went Red (Not found: ServerMetrics/ClientMetrics) then Green on first implementation attempt.
+
+Verification: full purerest/test suite green (28/28, up from 25 — 3 new tests).
+
+Files: modules/purerest/src/main/scala/purerest/metrics/{ServerMetrics,ClientMetrics}.scala, modules/purerest/src/test/scala/purerest/metrics/{ServerMetrics,ClientMetrics}Suite.scala
