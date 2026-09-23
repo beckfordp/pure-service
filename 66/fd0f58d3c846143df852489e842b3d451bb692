@@ -1,0 +1,20 @@
+Task: Make purerest publishable as a real, versioned jar
+
+Summary: Added sbt-dynver plugin (project/plugins.sbt) so purerest's version
+is derived from git tags/commits rather than a manually-maintained val;
+confirmed via `sbt purerest/version` (currently 0.0.0+263-74f2a41b+... since
+no git tags exist yet). Set `purerest / organization := "io.github.beckfordp"`
+in build.sbt, derived from this repo's own GitHub remote. Ran
+`sbt purerest/publishLocal` and confirmed a real jar landed at
+~/.ivy2/local/io.github.beckfordp/purerest_3/<version>/jars/purerest_3.jar.
+Added scripts/verify-purerest-publish.sh to automate that check going
+forward, and ran it (all checks passed).
+
+Files changed: project/plugins.sbt, build.sbt, scripts/verify-purerest-publish.sh
+
+Why: purerest needs a real Maven/Ivy coordinate and a real version to be
+published as a jar at all — sbt's defaults (no organization, "0.1.0-SNAPSHOT")
+aren't meaningful. Prep for the next backlog item (smoke-testing purerest as
+an external libraryDependencies consumer) and the eventual real extraction.
+order-service/inventory-service still consume purerest via ProjectRef, not
+the published jar.
