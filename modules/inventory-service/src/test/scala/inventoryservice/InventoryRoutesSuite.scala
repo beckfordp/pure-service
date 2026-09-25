@@ -17,7 +17,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   test("POST /inventory/reserve returns 201 with a reservation") {
     for {
       store <- InventoryStore.inMemory[IO]
-      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      configRef <- Ref.of[IO, InducedFailureConfig](
+        InducedFailureConfig.disabled
+      )
       routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
@@ -105,7 +107,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     for {
       store <- InventoryStore.inMemory[IO]
       testLogger = StructuredTestingLogger.impl[IO]()
-      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      configRef <- Ref.of[IO, InducedFailureConfig](
+        InducedFailureConfig.disabled
+      )
       routes = InventoryRoutes.routes[IO](store, testLogger, configRef)
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
@@ -163,7 +167,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   test("unmatched routes return 404") {
     for {
       store <- InventoryStore.inMemory[IO]
-      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      configRef <- Ref.of[IO, InducedFailureConfig](
+        InducedFailureConfig.disabled
+      )
       routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       request = Request[IO](Method.GET, uri"/nope")
       response <- routes.orNotFound.run(request)
@@ -176,7 +182,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     Tracing.test[IO]("inventory-service-test").use { testTracer =>
       for {
         store <- InventoryStore.inMemory[IO]
-        configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+        configRef <- Ref.of[IO, InducedFailureConfig](
+          InducedFailureConfig.disabled
+        )
         routes = ServerTracing.middleware(testTracer.tracer)(
           InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
         )
@@ -212,7 +220,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   ) {
     for {
       store <- InventoryStore.inMemory[IO]
-      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      configRef <- Ref.of[IO, InducedFailureConfig](
+        InducedFailureConfig.disabled
+      )
       routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       request = Request[IO](Method.GET, uri"/admin/induced-failure")
       response <- routes.orNotFound.run(request)
@@ -228,7 +238,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   ) {
     for {
       store <- InventoryStore.inMemory[IO]
-      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      configRef <- Ref.of[IO, InducedFailureConfig](
+        InducedFailureConfig.disabled
+      )
       routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       patchRequest = Request[IO](Method.PATCH, uri"/admin/induced-failure")
         .withEntity(InducedFailureView(failureRate = 0.5, delayMs = 100L))
@@ -240,9 +252,15 @@ class InventoryRoutesSuite extends CatsEffectSuite {
       getView <- getResponse.as[InducedFailureView]
     } yield {
       assertEquals(patchResponse.status, Status.Ok)
-      assertEquals(patchedView, InducedFailureView(failureRate = 0.5, delayMs = 100L))
+      assertEquals(
+        patchedView,
+        InducedFailureView(failureRate = 0.5, delayMs = 100L)
+      )
       assertEquals(getResponse.status, Status.Ok)
-      assertEquals(getView, InducedFailureView(failureRate = 0.5, delayMs = 100L))
+      assertEquals(
+        getView,
+        InducedFailureView(failureRate = 0.5, delayMs = 100L)
+      )
     }
   }
 
@@ -251,7 +269,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   ) {
     for {
       store <- InventoryStore.inMemory[IO]
-      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      configRef <- Ref.of[IO, InducedFailureConfig](
+        InducedFailureConfig.disabled
+      )
       routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       patchRequest = Request[IO](Method.PATCH, uri"/admin/induced-failure")
         .withEntity(InducedFailureView(failureRate = 1.5, delayMs = 0L))
@@ -270,7 +290,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   ) {
     for {
       store <- InventoryStore.inMemory[IO]
-      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      configRef <- Ref.of[IO, InducedFailureConfig](
+        InducedFailureConfig.disabled
+      )
       routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       patchRequest = Request[IO](Method.PATCH, uri"/admin/induced-failure")
         .withEntity(InducedFailureView(failureRate = 0.2, delayMs = -1L))
@@ -294,12 +316,16 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     def patch(routes: HttpRoutes[IO], failureRate: Double) =
       routes.orNotFound.run(
         Request[IO](Method.PATCH, uri"/admin/induced-failure")
-          .withEntity(InducedFailureView(failureRate = failureRate, delayMs = 0L))
+          .withEntity(
+            InducedFailureView(failureRate = failureRate, delayMs = 0L)
+          )
       )
 
     for {
       store <- InventoryStore.inMemory[IO]
-      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      configRef <- Ref.of[IO, InducedFailureConfig](
+        InducedFailureConfig.disabled
+      )
       routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       baselineGet <- routes.orNotFound.run(
         Request[IO](Method.GET, uri"/admin/induced-failure")
@@ -311,7 +337,10 @@ class InventoryRoutesSuite extends CatsEffectSuite {
       patchToHealthy <- patch(routes, 0.0)
       reserveWhileHealthy <- reserve(routes)
     } yield {
-      assertEquals(baselineView, InducedFailureView(failureRate = 0.0, delayMs = 0L))
+      assertEquals(
+        baselineView,
+        InducedFailureView(failureRate = 0.0, delayMs = 0L)
+      )
       assertEquals(baselineReserve.status, Status.Created)
       assertEquals(patchToFailing.status, Status.Ok)
       assertEquals(reserveWhileFailing.status, Status.InternalServerError)

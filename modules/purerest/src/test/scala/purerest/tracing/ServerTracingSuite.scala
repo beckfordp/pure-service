@@ -8,8 +8,9 @@ import org.http4s.{HttpRoutes, Request, Status}
 
 class ServerTracingSuite extends CatsEffectSuite {
 
-  private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] { case GET -> Root / "ping" =>
-    Ok("pong")
+  private val routes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+    case GET -> Root / "ping" =>
+      Ok("pong")
   }
 
   test("wrapped routes record a span for a handled request") {

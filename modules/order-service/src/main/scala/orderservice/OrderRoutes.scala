@@ -60,8 +60,12 @@ object OrderRoutes {
         ErrorResponse("Inventory service unavailable")
       )
 
-  private val createOrderEndpoint
-      : PublicEndpoint[CreateOrderRequest, CreateOrderError, OrderResponse, Any] =
+  private val createOrderEndpoint: PublicEndpoint[
+    CreateOrderRequest,
+    CreateOrderError,
+    OrderResponse,
+    Any
+  ] =
     endpoint.post
       .in("orders")
       .in(jsonBody[CreateOrderRequest])
@@ -110,7 +114,7 @@ object OrderRoutes {
           case Right(_) => Async[F].unit
         }
         result <- reservationAttempt match {
-          case Left(_) => Async[F].pure(Left(InventoryUnavailable))
+          case Left(_)            => Async[F].pure(Left(InventoryUnavailable))
           case Right(reservation) =>
             for {
               order <- store
@@ -122,7 +126,10 @@ object OrderRoutes {
                 )
                 .onError { case error =>
                   logger.error(
-                    Map("item" -> req.item, "quantity" -> req.quantity.toString),
+                    Map(
+                      "item" -> req.item,
+                      "quantity" -> req.quantity.toString
+                    ),
                     error
                   )(
                     "Persisting the order failed"

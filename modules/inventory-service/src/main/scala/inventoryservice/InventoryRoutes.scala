@@ -53,9 +53,9 @@ sealed trait ReserveError
 case object InducedFailureTriggered extends ReserveError
 
 /** Wire format for `/admin/induced-failure` — `InducedFailureConfig`'s
-  * `FiniteDuration` has no natural JSON shape, so this DTO exposes the delay
-  * as plain milliseconds instead, mirroring `OrderResponse`'s
-  * domain-to-DTO pattern in order-service.
+  * `FiniteDuration` has no natural JSON shape, so this DTO exposes the delay as
+  * plain milliseconds instead, mirroring `OrderResponse`'s domain-to-DTO
+  * pattern in order-service.
   */
 final case class InducedFailureView(failureRate: Double, delayMs: Long)
 
@@ -155,10 +155,15 @@ object InventoryRoutes {
           )
         )("Received request")
         induced <- configRef.get
-        outcome <- maybeInduceFailure[F](induced, logger, req.item, req.quantity)
+        outcome <- maybeInduceFailure[F](
+          induced,
+          logger,
+          req.item,
+          req.quantity
+        )
         result <- outcome match {
           case Left(error) => Async[F].pure(Left(error))
-          case Right(_) =>
+          case Right(_)    =>
             // No error-path logging here: InventoryStore.reserve is an unconditional
             // in-memory write that can't fail (see InventoryStore.inMemory) — nothing
             // to catch. order-service's InventoryClient.reserve is the real,
@@ -189,7 +194,7 @@ object InventoryRoutes {
   ): ServerEndpoint[Any, F] =
     patchInducedFailureEndpoint.serverLogic[F] { view =>
       InducedFailureConfig.validated(view.failureRate, view.delayMs) match {
-        case Left(error) => Async[F].pure(Left(error))
+        case Left(error)   => Async[F].pure(Left(error))
         case Right(config) =>
           configRef.set(config).as(Right(InducedFailureView(config)))
       }

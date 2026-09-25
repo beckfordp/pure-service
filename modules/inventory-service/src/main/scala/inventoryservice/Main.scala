@@ -53,7 +53,9 @@ object Main extends IOApp.Simple {
               )
             )("inventory-service starting")
             store <- InventoryStore.inMemory[IO]
-            inducedFailureRef <- Ref.of[IO, InducedFailureConfig](inducedFailure)
+            inducedFailureRef <- Ref.of[IO, InducedFailureConfig](
+              inducedFailure
+            )
             docsRoutes = Docs.routes[IO](
               "Inventory Service",
               "1.0",

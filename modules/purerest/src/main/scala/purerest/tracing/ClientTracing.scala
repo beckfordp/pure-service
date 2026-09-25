@@ -9,15 +9,20 @@ import org.typelevel.otel4s.trace.Tracer
 
 object ClientTracing {
 
-  /** Wraps a `Client[F]` so that outgoing requests carry the current span's trace
-    * context (W3C headers) injected, if a span is active. A no-op passthrough
-    * otherwise.
+  /** Wraps a `Client[F]` so that outgoing requests carry the current span's
+    * trace context (W3C headers) injected, if a span is active. A no-op
+    * passthrough otherwise.
     */
-  def middleware[F[_]: Concurrent](tracer: Tracer[F])(client: Client[F]): Client[F] =
+  def middleware[F[_]: Concurrent](
+      tracer: Tracer[F]
+  )(client: Client[F]): Client[F] =
     Client[F] { req =>
-      Resource.eval(tracer.propagate(Map.empty[String, String])).flatMap { carrier =>
-        val traceHeaders = carrier.toList.map { case (k, v) => Header.Raw(CIString(k), v) }
-        client.run(req.withHeaders(req.headers ++ Headers(traceHeaders)))
+      Resource.eval(tracer.propagate(Map.empty[String, String])).flatMap {
+        carrier =>
+          val traceHeaders = carrier.toList.map { case (k, v) =>
+            Header.Raw(CIString(k), v)
+          }
+          client.run(req.withHeaders(req.headers ++ Headers(traceHeaders)))
       }
     }
 }

@@ -14,7 +14,8 @@ class DocsSuite extends CatsEffectSuite {
   private val helloServerEndpoint: ServerEndpoint[Any, IO] =
     helloEndpoint.serverLogicSuccess[IO](_ => IO.pure("hi"))
 
-  private val routes = Docs.routes[IO]("Test API", "1.0", List(helloServerEndpoint))
+  private val routes =
+    Docs.routes[IO]("Test API", "1.0", List(helloServerEndpoint))
 
   test("serves the wrapped endpoint itself") {
     for {
@@ -34,7 +35,9 @@ class DocsSuite extends CatsEffectSuite {
 
   test("serves the generated OpenAPI yaml, containing the configured title") {
     for {
-      response <- routes.orNotFound.run(Request[IO](Method.GET, uri"/docs/docs.yaml"))
+      response <- routes.orNotFound.run(
+        Request[IO](Method.GET, uri"/docs/docs.yaml")
+      )
       body <- response.as[String]
     } yield {
       assertEquals(response.status, Status.Ok)

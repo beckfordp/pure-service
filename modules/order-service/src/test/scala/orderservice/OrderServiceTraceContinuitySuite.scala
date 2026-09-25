@@ -9,24 +9,34 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.{Method, Request, Status, Uri}
 import org.typelevel.log4cats.noop.NoOpLogger
-import org.typelevel.otel4s.oteljava.testkit.trace.{SpanExpectation, TraceExpectation, TraceExpectations, TraceForestExpectation}
+import org.typelevel.otel4s.oteljava.testkit.trace.{
+  SpanExpectation,
+  TraceExpectation,
+  TraceExpectations,
+  TraceForestExpectation
+}
 import purerest.client.HttpClient
 import purerest.tracing.{ClientTracing, ServerTracing, Tracing}
 
 class OrderServiceTraceContinuitySuite extends CatsEffectSuite {
 
-  test("a single trace spans the inbound order-service request and the outbound inventory-service call") {
+  test(
+    "a single trace spans the inbound order-service request and the outbound inventory-service call"
+  ) {
     Tracing.test[IO]("trace-continuity-test").use { testTracer =>
       val tracer = testTracer.tracer
 
       val resources =
         for {
-          inventoryStore <- cats.effect.Resource.eval(InventoryStore.inMemory[IO])
+          inventoryStore <- cats.effect.Resource.eval(
+            InventoryStore.inMemory[IO]
+          )
           inventoryConfigRef <- cats.effect.Resource.eval(
             Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
           )
           inventoryRoutes = ServerTracing.middleware(tracer)(
-            InventoryRoutes.routes[IO](inventoryStore, NoOpLogger[IO], inventoryConfigRef)
+            InventoryRoutes
+              .routes[IO](inventoryStore, NoOpLogger[IO], inventoryConfigRef)
           )
           inventoryServer <- EmberServerBuilder
             .default[IO]
@@ -39,9 +49,12 @@ class OrderServiceTraceContinuitySuite extends CatsEffectSuite {
 
       resources.use { case (inventoryServer, httpClient) =>
         val inventoryBaseUri =
-          Uri.unsafeFromString(s"http://127.0.0.1:${inventoryServer.address.getPort}")
+          Uri.unsafeFromString(
+            s"http://127.0.0.1:${inventoryServer.address.getPort}"
+          )
         val tracedClient = ClientTracing.middleware(tracer)(httpClient)
-        val inventoryClient = InventoryClient[IO](tracedClient, inventoryBaseUri)
+        val inventoryClient =
+          InventoryClient[IO](tracedClient, inventoryBaseUri)
 
         for {
           orderStore <- OrderStore.inMemory[IO]
@@ -61,7 +74,8 @@ class OrderServiceTraceContinuitySuite extends CatsEffectSuite {
           val expected = TraceForestExpectation.ordered(
             TraceExpectation.ordered(
               SpanExpectation.any.name("POST /orders"),
-              TraceExpectation.leaf(SpanExpectation.any.name("POST /inventory/reserve"))
+              TraceExpectation
+                .leaf(SpanExpectation.any.name("POST /inventory/reserve"))
             )
           )
           TraceExpectations.check(spans, expected) match {

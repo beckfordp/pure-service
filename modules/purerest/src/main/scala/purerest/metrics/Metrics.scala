@@ -43,7 +43,11 @@ object Metrics {
               // this track's real docker-compose network setup caught,
               // where curl-from-the-host-while-the-service-also-ran-on-the-
               // host (every prior verify-*.sh script) couldn't.
-              PrometheusHttpServer.builder().setHost("0.0.0.0").setPort(port).build()
+              PrometheusHttpServer
+                .builder()
+                .setHost("0.0.0.0")
+                .setPort(port)
+                .build()
             )
             .build()
           OpenTelemetrySdk

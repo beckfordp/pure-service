@@ -9,12 +9,16 @@ import org.http4s.{HttpApp, Request, Response}
 
 class ClientTracingSuite extends CatsEffectSuite {
 
-  test("wrapped client injects the active span's trace context into outgoing headers") {
+  test(
+    "wrapped client injects the active span's trace context into outgoing headers"
+  ) {
     Tracing.test[IO]("purerest-client-test").use { testTracer =>
       for {
         receivedHeaders <- Ref.of[IO, Map[String, String]](Map.empty)
         stubApp: HttpApp[IO] = HttpApp { req =>
-          receivedHeaders.set(req.headers.headers.map(h => h.name.toString -> h.value).toMap) *>
+          receivedHeaders.set(
+            req.headers.headers.map(h => h.name.toString -> h.value).toMap
+          ) *>
             Ok("pong")
         }
         client = Client.fromHttpApp(stubApp)
@@ -35,14 +39,19 @@ class ClientTracingSuite extends CatsEffectSuite {
       for {
         receivedHeaders <- Ref.of[IO, Map[String, String]](Map.empty)
         stubApp: HttpApp[IO] = HttpApp { req =>
-          receivedHeaders.set(req.headers.headers.map(h => h.name.toString -> h.value).toMap) *>
+          receivedHeaders.set(
+            req.headers.headers.map(h => h.name.toString -> h.value).toMap
+          ) *>
             Ok("pong")
         }
         client = Client.fromHttpApp(stubApp)
         wrapped = ClientTracing.middleware(testTracer.tracer)(client)
         _ <- wrapped.run(Request[IO](uri = uri"/ping")).use_
         headers <- receivedHeaders.get
-      } yield assert(!headers.contains("traceparent"), s"expected no traceparent header, got: $headers")
+      } yield assert(
+        !headers.contains("traceparent"),
+        s"expected no traceparent header, got: $headers"
+      )
     }
   }
 }

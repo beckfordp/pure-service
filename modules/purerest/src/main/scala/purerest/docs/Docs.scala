@@ -6,9 +6,9 @@ import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
-/** Interprets a service's tapir endpoints into both the real `HttpRoutes[F]` and a generated
-  * OpenAPI spec + browsable Swagger UI, from the same source of truth — so routes and docs can't
-  * drift apart.
+/** Interprets a service's tapir endpoints into both the real `HttpRoutes[F]`
+  * and a generated OpenAPI spec + browsable Swagger UI, from the same source of
+  * truth — so routes and docs can't drift apart.
   */
 object Docs {
   def routes[F[_]: Async](
@@ -16,7 +16,8 @@ object Docs {
       version: String,
       endpoints: List[ServerEndpoint[Any, F]]
   ): HttpRoutes[F] = {
-    val swaggerEndpoints = SwaggerInterpreter().fromServerEndpoints[F](endpoints, title, version)
+    val swaggerEndpoints =
+      SwaggerInterpreter().fromServerEndpoints[F](endpoints, title, version)
     Http4sServerInterpreter[F]().toRoutes(endpoints ++ swaggerEndpoints)
   }
 }

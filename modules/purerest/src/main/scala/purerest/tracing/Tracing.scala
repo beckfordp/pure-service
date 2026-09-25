@@ -16,47 +16,63 @@ import org.typelevel.otel4s.trace.Tracer
 
 object Tracing {
 
-  /** A tracer backed by an in-memory span exporter, exposing captured spans — for
-    * asserting on tracing behavior in tests.
+  /** A tracer backed by an in-memory span exporter, exposing captured spans —
+    * for asserting on tracing behavior in tests.
     */
-  final case class TestTracer[F[_]](tracer: Tracer[F], finishedSpans: F[List[SpanData]])
+  final case class TestTracer[F[_]](
+      tracer: Tracer[F],
+      finishedSpans: F[List[SpanData]]
+  )
 
-  /** A tracer that exports spans to the console (stdout), for manual verification
-    * when running a service locally. No real collector/backend is configured.
+  /** A tracer that exports spans to the console (stdout), for manual
+    * verification when running a service locally. No real collector/backend is
+    * configured.
     */
-  def console[F[_]: {Async, LocalContextProvider}](instrumentationName: String): Resource[F, Tracer[F]] =
+  def console[F[_]: {Async, LocalContextProvider}](
+      instrumentationName: String
+  ): Resource[F, Tracer[F]] =
     OtelJava
       .resource[F](
         Async[F].delay {
           val tracerProvider = SdkTracerProvider
             .builder()
-            .addSpanProcessor(SimpleSpanProcessor.create(LoggingSpanExporter.create()))
+            .addSpanProcessor(
+              SimpleSpanProcessor.create(LoggingSpanExporter.create())
+            )
             .build()
           OpenTelemetrySdk
             .builder()
             .setTracerProvider(tracerProvider)
             // W3C Trace Context propagator — without this, Tracer.propagate/joinOrRoot
             // are no-ops, since OpenTelemetrySdkBuilder defaults to no propagators.
-            .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
+            .setPropagators(
+              ContextPropagators.create(W3CTraceContextPropagator.getInstance())
+            )
             .build()
         }
       )
       .evalMap(_.tracerProvider.get(instrumentationName))
 
-  /** A tracer backed by an in-memory span exporter, for asserting on captured spans
-    * in tests.
+  /** A tracer backed by an in-memory span exporter, for asserting on captured
+    * spans in tests.
     */
-  def test[F[_]: {Async, LocalContextProvider}](instrumentationName: String): Resource[F, TestTracer[F]] =
+  def test[F[_]: {Async, LocalContextProvider}](
+      instrumentationName: String
+  ): Resource[F, TestTracer[F]] =
     // W3CTraceContextPropagator registered explicitly — TracesTestkit.inMemory
     // defaults to no propagators, which would make Tracer.propagate/joinOrRoot no-ops.
     TracesTestkit
-      .inMemory[F](_.addTextMapPropagators(W3CTraceContextPropagator.getInstance()))
+      .inMemory[F](
+        _.addTextMapPropagators(W3CTraceContextPropagator.getInstance())
+      )
       .evalMap { testkit =>
-        testkit.tracerProvider.get(instrumentationName).map(TestTracer(_, testkit.finishedSpans))
+        testkit.tracerProvider
+          .get(instrumentationName)
+          .map(TestTracer(_, testkit.finishedSpans))
       }
 
-  /** Manual check: run via `sbt "purerest/runMain purerest.tracing.Tracing"` and
-    * confirm a LoggingSpanExporter log line is printed for "demo-span".
+  /** Manual check: run via `sbt "purerest/runMain purerest.tracing.Tracing"`
+    * and confirm a LoggingSpanExporter log line is printed for "demo-span".
     */
   def main(args: Array[String]): Unit = {
     given cats.effect.unsafe.IORuntime = cats.effect.unsafe.implicits.global

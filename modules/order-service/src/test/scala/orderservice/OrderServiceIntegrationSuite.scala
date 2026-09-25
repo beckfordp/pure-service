@@ -13,7 +13,9 @@ import purerest.client.HttpClient
 
 class OrderServiceIntegrationSuite extends CatsEffectSuite {
 
-  test("POST /orders reserves stock on a real inventory-service and persists the order") {
+  test(
+    "POST /orders reserves stock on a real inventory-service and persists the order"
+  ) {
     val resources =
       for {
         inventoryStore <- cats.effect.Resource.eval(InventoryStore.inMemory[IO])
@@ -35,12 +37,15 @@ class OrderServiceIntegrationSuite extends CatsEffectSuite {
 
     resources.use { case (inventoryServer, httpClient) =>
       val inventoryBaseUri =
-        Uri.unsafeFromString(s"http://127.0.0.1:${inventoryServer.address.getPort}")
+        Uri.unsafeFromString(
+          s"http://127.0.0.1:${inventoryServer.address.getPort}"
+        )
       val inventoryClient = InventoryClient[IO](httpClient, inventoryBaseUri)
 
       for {
         orderStore <- OrderStore.inMemory[IO]
-        routes = OrderRoutes.routes[IO](orderStore, inventoryClient, NoOpLogger[IO])
+        routes = OrderRoutes
+          .routes[IO](orderStore, inventoryClient, NoOpLogger[IO])
         request = Request[IO](Method.POST, uri"/orders")
           .withEntity(CreateOrderRequest("widget", 5))
         response <- routes.orNotFound.run(request)

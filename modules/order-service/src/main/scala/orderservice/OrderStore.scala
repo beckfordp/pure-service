@@ -168,7 +168,7 @@ object OrderStore {
 
               def get(id: String): F[Option[Order]] =
                 scala.util.Try(UUID.fromString(id)).toOption match {
-                  case None => Sync[F].pure(None)
+                  case None       => Sync[F].pure(None)
                   case Some(uuid) =>
                     for {
                       row <- timed("select") {

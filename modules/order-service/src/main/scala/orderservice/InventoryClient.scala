@@ -25,7 +25,10 @@ trait InventoryClient[F[_]] {
 }
 
 object InventoryClient {
-  def apply[F[_]: Concurrent](client: Client[F], baseUri: Uri): InventoryClient[F] =
+  def apply[F[_]: Concurrent](
+      client: Client[F],
+      baseUri: Uri
+  ): InventoryClient[F] =
     new InventoryClient[F] {
       def reserve(item: String, quantity: Int): F[ReservationView] =
         client.expect[ReservationView](

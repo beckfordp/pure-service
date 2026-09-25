@@ -15,16 +15,21 @@ class OrderDocsSuite extends CatsEffectSuite {
       IO.pure(ReservationView("stub-reservation-id", item, quantity))
   }
 
-  test("the tapir-described endpoint is served and documented via purerest.docs") {
+  test(
+    "the tapir-described endpoint is served and documented via purerest.docs"
+  ) {
     for {
       store <- OrderStore.inMemory[IO]
-      endpoint = OrderRoutes.serverEndpoint[IO](store, stubInventory, NoOpLogger[IO])
+      endpoint = OrderRoutes
+        .serverEndpoint[IO](store, stubInventory, NoOpLogger[IO])
       routes = Docs.routes[IO]("Order Service", "1.0", List(endpoint))
       request = Request[IO](Method.POST, uri"/orders")
         .withEntity(CreateOrderRequest("widget", 4))
       response <- routes.orNotFound.run(request)
       order <- response.as[OrderResponse]
-      docsResponse <- routes.orNotFound.run(Request[IO](Method.GET, uri"/docs/docs.yaml"))
+      docsResponse <- routes.orNotFound.run(
+        Request[IO](Method.GET, uri"/docs/docs.yaml")
+      )
       docsBody <- docsResponse.bodyText.compile.string
     } yield {
       assertEquals(response.status, Status.Created)

@@ -26,7 +26,9 @@ class HttpClientSuite extends CatsEffectSuite {
 
     serverResource.use { server =>
       HttpClient.resource[IO].use { client =>
-        val uri = Uri.unsafeFromString(s"http://127.0.0.1:${server.address.getPort}/ping")
+        val uri = Uri.unsafeFromString(
+          s"http://127.0.0.1:${server.address.getPort}/ping"
+        )
         client.expect[String](uri).map(body => assertEquals(body, "pong"))
       }
     }
