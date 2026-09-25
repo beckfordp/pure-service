@@ -167,31 +167,34 @@ object OrderStore {
                 )
 
               def get(id: String): F[Option[Order]] =
-                for {
-                  uuid <- Sync[F].delay(UUID.fromString(id))
-                  row <- timed("select") {
-                    pool.use { session =>
-                      session.prepare(selectOrder).flatMap(_.option(uuid))
+                scala.util.Try(UUID.fromString(id)).toOption match {
+                  case None => Sync[F].pure(None)
+                  case Some(uuid) =>
+                    for {
+                      row <- timed("select") {
+                        pool.use { session =>
+                          session.prepare(selectOrder).flatMap(_.option(uuid))
+                        }
+                      }
+                    } yield row.map {
+                      case (
+                            item,
+                            quantity,
+                            status,
+                            reservationUuid,
+                            reservedQuantity,
+                            createdAt
+                          ) =>
+                        Order(
+                          id,
+                          item,
+                          quantity,
+                          status,
+                          reservationUuid.toString,
+                          reservedQuantity,
+                          createdAt.toInstant
+                        )
                     }
-                  }
-                } yield row.map {
-                  case (
-                        item,
-                        quantity,
-                        status,
-                        reservationUuid,
-                        reservedQuantity,
-                        createdAt
-                      ) =>
-                    Order(
-                      id,
-                      item,
-                      quantity,
-                      status,
-                      reservationUuid.toString,
-                      reservedQuantity,
-                      createdAt.toInstant
-                    )
                 }
             }
           }

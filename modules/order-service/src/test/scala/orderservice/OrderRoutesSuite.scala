@@ -139,7 +139,7 @@ class OrderRoutesSuite extends CatsEffectSuite {
       response <- routes.orNotFound.run(request)
       logged <- testLogger.logged
     } yield {
-      assertEquals(response.status, Status.InternalServerError)
+      assertEquals(response.status, Status.ServiceUnavailable)
       val errors = logged.collect { case m: ERROR => m }
       assert(
         errors.exists(m =>

@@ -95,6 +95,17 @@ class OrderStorePostgresSuite extends CatsEffectSuite with TestContainerForAll {
     }
   }
 
+  test("get returns None for a malformed (non-UUID) id") {
+    withContainers { postgres =>
+      val config = configFor(postgres)
+      Migrations.run[IO](config) *> OrderStore
+        .postgres[IO](config, Meter.noop[IO])
+        .use { store =>
+          store.get("not-a-uuid").map(assertEquals(_, None))
+        }
+    }
+  }
+
   test(
     "create and get each record a db.client.operation.duration measurement, tagged by operation"
   ) {

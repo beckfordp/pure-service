@@ -48,15 +48,26 @@ object ErrorResponse {
   implicit val codec: Codec[ErrorResponse] = deriveCodec
 }
 
+sealed trait CreateOrderError
+case object InventoryUnavailable extends CreateOrderError
+
 object OrderRoutes {
 
+  private val inventoryUnavailableOutput: EndpointOutput[CreateOrderError] =
+    statusCode(StatusCode.ServiceUnavailable)
+      .and(jsonBody[ErrorResponse])
+      .map[CreateOrderError](_ => InventoryUnavailable)(_ =>
+        ErrorResponse("Inventory service unavailable")
+      )
+
   private val createOrderEndpoint
-      : PublicEndpoint[CreateOrderRequest, Unit, OrderResponse, Any] =
+      : PublicEndpoint[CreateOrderRequest, CreateOrderError, OrderResponse, Any] =
     endpoint.post
       .in("orders")
       .in(jsonBody[CreateOrderRequest])
       .out(statusCode(StatusCode.Created))
       .out(jsonBody[OrderResponse])
+      .errorOut(inventoryUnavailableOutput)
 
   private val notFoundOutput: EndpointOutput[OrderError] =
     statusCode(StatusCode.NotFound)
@@ -77,7 +88,7 @@ object OrderRoutes {
       inventory: InventoryClient[F],
       logger: StructuredLogger[F]
   ): ServerEndpoint[Any, F] =
-    createOrderEndpoint.serverLogicSuccess[F] { req =>
+    createOrderEndpoint.serverLogic[F] { req =>
       for {
         _ <- logger.info(
           Map(
@@ -87,40 +98,47 @@ object OrderRoutes {
             "quantity" -> req.quantity.toString
           )
         )("Received request")
-        reservation <- inventory
-          .reserve(req.item, req.quantity)
-          .onError { case error =>
+        reservationAttempt <- inventory.reserve(req.item, req.quantity).attempt
+        _ <- reservationAttempt match {
+          case Left(error) =>
             logger.error(
               Map("item" -> req.item, "quantity" -> req.quantity.toString),
               error
             )(
               "Inventory reservation failed"
             )
-          }
-        order <- store
-          .create(
-            req.item,
-            req.quantity,
-            reservation.id,
-            reservation.quantity
-          )
-          .onError { case error =>
-            logger.error(
-              Map("item" -> req.item, "quantity" -> req.quantity.toString),
-              error
-            )(
-              "Persisting the order failed"
-            )
-          }
-        _ <- logger.info(
-          Map(
-            "order_id" -> order.id,
-            "item" -> order.item,
-            "quantity" -> order.quantity.toString,
-            "reservation_id" -> reservation.id
-          )
-        )("Request completed")
-      } yield OrderResponse(order)
+          case Right(_) => Async[F].unit
+        }
+        result <- reservationAttempt match {
+          case Left(_) => Async[F].pure(Left(InventoryUnavailable))
+          case Right(reservation) =>
+            for {
+              order <- store
+                .create(
+                  req.item,
+                  req.quantity,
+                  reservation.id,
+                  reservation.quantity
+                )
+                .onError { case error =>
+                  logger.error(
+                    Map("item" -> req.item, "quantity" -> req.quantity.toString),
+                    error
+                  )(
+                    "Persisting the order failed"
+                  )
+                }
+              _ <- logger.info(
+                Map(
+                  "order_id" -> order.id,
+                  "item" -> order.item,
+                  "quantity" -> order.quantity.toString,
+                  "reservation_id" -> reservation.id
+                )
+              )("Request completed")
+            } yield Right(OrderResponse(order))
+        }
+      } yield result
     }
 
   def getOrderServerEndpoint[F[_]: Async](
