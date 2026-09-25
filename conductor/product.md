@@ -68,13 +68,16 @@ Hands-on use of the finished stack raised the question purerest hasn't actually 
    under load and fully recovers once the failure rate drops, with retries succeeding at a high
    rate outside the degraded window. `scripts/verify-observability-stack.sh` automates this
    confirmation end-to-end.
-2. **Make purerest a real, consumable library.** ✅ Partially answered — a tag-triggered
-   release pipeline (`.github/workflows/release.yml`) publishes `purerestlib` to GitHub
-   Packages on every `v*` tag, gated on `sbt scalafmtCheck test`; `smoke-test/` proves external
-   resolution via an opt-in `-DresolveFromGitHubPackages=true` flag (see README's "Consuming
-   purerest as a dependency"). Scaladoc for the public API remains open (see Backlog). (A
-   service-template generator so adopting purerest starts from a working example is planned as
-   a separate `pure-service-generator` project, not part of this repo's scope.)
+2. **Make purerest a real, consumable library.** ✅ Answered — a tag-triggered release
+   pipeline (`.github/workflows/release.yml`) publishes `purerestlib` to GitHub Packages on
+   every `v*` tag, gated on `sbt scalafmtCheck test`; `smoke-test/` proves external resolution
+   via an opt-in `-DresolveFromGitHubPackages=true` flag. Every public symbol in purerestlib's
+   API now has Scaladoc, published two ways: a `-javadoc.jar` Maven artifact (automatic, via
+   sbt's default publish behavior) and a browsable site at
+   `https://beckfordp.github.io/purerest/`, deployed by the same workflow (see README's
+   "Consuming purerest as a dependency"). (A service-template generator so adopting purerest
+   starts from a working example is planned as a separate `pure-service-generator` project, not
+   part of this repo's scope.)
 3. **Reduce operational noise.** `scripts/` has been archived wholesale pending a decision on
    what's still genuinely useful; most were one-shot verification artifacts from completed
    tracks, not tools anyone reaches for day to day.
