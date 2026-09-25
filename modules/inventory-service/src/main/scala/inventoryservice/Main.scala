@@ -59,7 +59,7 @@ object Main extends IOApp.Simple {
               "1.0",
               List(
                 InventoryRoutes
-                  .serverEndpoint[IO](store, logger, inducedFailureRef),
+                  .reserveServerEndpoint[IO](store, logger, inducedFailureRef),
                 InventoryRoutes
                   .getInducedFailureServerEndpoint[IO](inducedFailureRef),
                 InventoryRoutes

@@ -49,6 +49,9 @@ object InducedFailureConfig {
 sealed trait InducedFailureConfigError
 case object InvalidInducedFailureConfig extends InducedFailureConfigError
 
+sealed trait ReserveError
+case object InducedFailureTriggered extends ReserveError
+
 /** Wire format for `/admin/induced-failure` — `InducedFailureConfig`'s
   * `FiniteDuration` has no natural JSON shape, so this DTO exposes the delay
   * as plain milliseconds instead, mirroring `OrderResponse`'s
@@ -71,13 +74,21 @@ object ErrorResponse {
 
 object InventoryRoutes {
 
+  private val reserveErrorOutput: EndpointOutput[ReserveError] =
+    statusCode(StatusCode.InternalServerError)
+      .and(jsonBody[ErrorResponse])
+      .map[ReserveError](_ => InducedFailureTriggered)(_ =>
+        ErrorResponse("Induced failure")
+      )
+
   private val reserveEndpoint
-      : PublicEndpoint[ReserveRequest, Unit, Reservation, Any] =
+      : PublicEndpoint[ReserveRequest, ReserveError, Reservation, Any] =
     endpoint.post
       .in("inventory" / "reserve")
       .in(jsonBody[ReserveRequest])
       .out(statusCode(StatusCode.Created))
       .out(jsonBody[Reservation])
+      .errorOut(reserveErrorOutput)
 
   private val getInducedFailureEndpoint
       : PublicEndpoint[Unit, Unit, InducedFailureView, Any] =
@@ -112,28 +123,28 @@ object InventoryRoutes {
       logger: StructuredLogger[F],
       item: String,
       quantity: Int
-  ): F[Unit] =
+  ): F[Either[ReserveError, Unit]] =
     Async[F].sleep(config.delay) *>
-      (if (config.failureRate <= 0.0) Async[F].unit
+      (if (config.failureRate <= 0.0) Async[F].pure(Right(()))
        else
          Async[F]
            .delay(scala.util.Random.nextDouble() < config.failureRate)
            .flatMap {
              case true =>
-               logger.warn(
-                 Map("item" -> item, "quantity" -> quantity.toString)
-               )(
-                 "Induced failure triggered"
-               ) *> Async[F].raiseError(new RuntimeException("Induced failure"))
-             case false => Async[F].unit
+               logger
+                 .warn(
+                   Map("item" -> item, "quantity" -> quantity.toString)
+                 )("Induced failure triggered")
+                 .as(Left(InducedFailureTriggered))
+             case false => Async[F].pure(Right(()))
            })
 
-  def serverEndpoint[F[_]: Async](
+  def reserveServerEndpoint[F[_]: Async](
       store: InventoryStore[F],
       logger: StructuredLogger[F],
       configRef: Ref[F, InducedFailureConfig]
   ): ServerEndpoint[Any, F] =
-    reserveEndpoint.serverLogicSuccess[F] { req =>
+    reserveEndpoint.serverLogic[F] { req =>
       for {
         _ <- logger.info(
           Map(
@@ -144,20 +155,26 @@ object InventoryRoutes {
           )
         )("Received request")
         induced <- configRef.get
-        _ <- maybeInduceFailure[F](induced, logger, req.item, req.quantity)
-        // No error-path logging here: InventoryStore.reserve is an unconditional
-        // in-memory write that can't fail (see InventoryStore.inMemory) — nothing
-        // to catch. order-service's InventoryClient.reserve is the real,
-        // catchable failure mode for this call path (see OrderRoutes.scala).
-        reservation <- store.reserve(req.item, req.quantity)
-        _ <- logger.info(
-          Map(
-            "reservation_id" -> reservation.id,
-            "item" -> reservation.item,
-            "quantity" -> reservation.quantity.toString
-          )
-        )("Request completed")
-      } yield reservation
+        outcome <- maybeInduceFailure[F](induced, logger, req.item, req.quantity)
+        result <- outcome match {
+          case Left(error) => Async[F].pure(Left(error))
+          case Right(_) =>
+            // No error-path logging here: InventoryStore.reserve is an unconditional
+            // in-memory write that can't fail (see InventoryStore.inMemory) — nothing
+            // to catch. order-service's InventoryClient.reserve is the real,
+            // catchable failure mode for this call path (see OrderRoutes.scala).
+            for {
+              reservation <- store.reserve(req.item, req.quantity)
+              _ <- logger.info(
+                Map(
+                  "reservation_id" -> reservation.id,
+                  "item" -> reservation.item,
+                  "quantity" -> reservation.quantity.toString
+                )
+              )("Request completed")
+            } yield Right(reservation)
+        }
+      } yield result
     }
 
   def getInducedFailureServerEndpoint[F[_]: Async](
@@ -185,7 +202,7 @@ object InventoryRoutes {
   ): HttpRoutes[F] =
     Http4sServerInterpreter[F]().toRoutes(
       List(
-        serverEndpoint(store, logger, configRef),
+        reserveServerEndpoint(store, logger, configRef),
         getInducedFailureServerEndpoint(configRef),
         patchInducedFailureServerEndpoint(configRef)
       )

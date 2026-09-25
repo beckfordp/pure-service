@@ -14,7 +14,7 @@ class InventoryDocsSuite extends CatsEffectSuite {
     for {
       store <- InventoryStore.inMemory[IO]
       configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
-      endpoint = InventoryRoutes.serverEndpoint[IO](store, NoOpLogger[IO], configRef)
+      endpoint = InventoryRoutes.reserveServerEndpoint[IO](store, NoOpLogger[IO], configRef)
       routes = Docs.routes[IO]("Inventory Service", "1.0", List(endpoint))
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
@@ -39,7 +39,7 @@ class InventoryDocsSuite extends CatsEffectSuite {
         "Inventory Service",
         "1.0",
         List(
-          InventoryRoutes.serverEndpoint[IO](store, NoOpLogger[IO], configRef),
+          InventoryRoutes.reserveServerEndpoint[IO](store, NoOpLogger[IO], configRef),
           InventoryRoutes.getInducedFailureServerEndpoint[IO](configRef),
           InventoryRoutes.patchInducedFailureServerEndpoint[IO](configRef)
         )
