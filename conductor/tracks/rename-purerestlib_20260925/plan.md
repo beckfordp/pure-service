@@ -1,10 +1,10 @@
 # Plan: Rename purerest module to purerestlib; rename repo/project to purerest
 
 ## Phase 1: Rename the sbt module
-- [ ] Task: `git mv modules/purerest modules/purerestlib`. In `build.sbt`: rename the `purerest` val to `purerestlib`, update `.in(file("modules/purerestlib"))`, `name := "purerest"` -> `name := "purerestlib"`. Update `.dependsOn(purerest, ...)` in order-service/inventory-service to `.dependsOn(purerestlib, ...)`.
-- [ ] Task: Run `sbt compile test` — confirm everything still builds/passes with the renamed module (package names inside are untouched, so this should be mechanical).
-- [ ] Task: Update `smoke-test/build.sbt`'s dependency coordinate and comments/error message (`purerest` -> `purerestlib`); confirm `scripts/verify-purerest-consumption.sh`-style flow still makes sense conceptually (script itself is archived, not touched).
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Rename the sbt module' (Protocol in workflow.md).
+- [x] Task: `git mv modules/purerest modules/purerestlib`. In `build.sbt`: rename the `purerest` val to `purerestlib`, update `.in(file("modules/purerestlib"))`, `name := "purerest"` -> `name := "purerestlib"`. Update `.dependsOn(purerest, ...)` in order-service/inventory-service to `.dependsOn(purerestlib, ...)`. Also had to update `.aggregate(purerest, ...)` -> `.aggregate(purerestlib, ...)` in this same task (not Phase 2 as originally planned) — the val rename makes build.sbt fail to load at all otherwise, since it's one file with one set of project definitions. [5d59948]
+- [x] Task: Run `sbt compile test` — confirmed: 29 passed, 0 failed, mechanical rename as expected.
+- [x] Task: Update `smoke-test/build.sbt`'s dependency coordinate and comments/error message (`purerest` -> `purerestlib`); `scripts/verify-purerest-consumption.sh` is archived, left untouched per spec. [5d59948] (same commit as the module rename — staged together)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Rename the sbt module' (Protocol in workflow.md). Satisfied by the `sbt compile test` run above — prompting is off (see `/prompt`), substituting for the interactive walkthrough; no dedicated verify script exists for a build-identifier rename.
 
 ## Phase 2: Rename the root project and update CI/publish references
 - [ ] Task: In `build.sbt`: `name := "pure-service"` -> `name := "purerest"` on the root project; `.aggregate(purerest, ...)` -> `.aggregate(purerestlib, ...)`; update the GitHub Packages `publishTo` URL to `.../beckfordp/purerest`.
