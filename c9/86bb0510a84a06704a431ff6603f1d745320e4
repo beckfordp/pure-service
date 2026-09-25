@@ -1,0 +1,3 @@
+Task: Add Circuit Breaker state-timeline + Retry Success Rate panels to purerest.json dashboard.
+Files: observability/grafana/provisioning/dashboards/purerest.json
+Why: Validates purerest's resilience config is effective (trip+recovery visible), not just active — per product.md's Iteration 2 open question.
