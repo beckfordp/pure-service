@@ -1,0 +1,42 @@
+name: Release
+
+# Publishes purerest to this repo's GitHub Packages Maven registry when a
+# v-prefixed tag is pushed (e.g. v1.2.3). sbt-dynver derives the published
+# version from the tag; publishTo/credentials live in build.sbt (see
+# conductor/tech-stack.md's Publishing section).
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # sbt-dynver needs full tag history to derive the version.
+          fetch-depth: 0
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Test gate
+        run: sbt scalafmtCheck test
+
+      - name: Publish purerest
+        env:
+          GITHUB_ACTOR: ${{ github.actor }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: sbt purerest/publish
