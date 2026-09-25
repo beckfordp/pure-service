@@ -2,7 +2,7 @@
 
 This file tracks all major tracks for the project.
 
-- [ ] **Track: Drive a Gatling scenario that ramps inventory-service's induced-failure rate, and add Grafana panels validating resilience effectiveness**
+- [~] **Track: Drive a Gatling scenario that ramps inventory-service's induced-failure rate, and add Grafana panels validating resilience effectiveness**
   *Link: [./tracks/resilience-validation_20260925/](./tracks/resilience-validation_20260925/)*
 
 ---
