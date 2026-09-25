@@ -2,9 +2,6 @@
 
 This file tracks all major tracks for the project.
 
-- [x] **Track: Add a tag-triggered CI release pipeline that publishes purerest to a real package repository (not just local Ivy2)**
-  *Link: [./tracks/release-pipeline_20260925/](./tracks/release-pipeline_20260925/)*
-
 ---
 
 ## Backlog
