@@ -1,0 +1,14 @@
+Phase 3 Verification Report: External resolution + documentation
+
+Automated tests: `sbt -DpurerestVersion=0.0.2-ci-test -DresolveFromGitHubPackages=true test`
+(in smoke-test/) — Passed: Total 1, Failed 0, Errors 0.
+
+Manual verification steps presented to user:
+1. Re-ran the smoke-test command above — confirmed Passed: Total 1, Failed 0.
+2. README.md's new "Consuming purerest as a dependency" section (resolver + credentials
+   snippet, PAT requirement, Packages page link) reviewed.
+3. conductor/tech-stack.md's Publishing section reviewed — "No CI/release automation yet"
+   replaced with the release pipeline description and the -DresolveFromGitHubPackages=true
+   flag.
+
+User confirmation: "Yes, confirmed" — all three items checked out as described.
