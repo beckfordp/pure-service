@@ -1,0 +1,14 @@
+Phase 2 Verification Report: Tag-triggered release workflow
+
+Automated tests: `sbt scalafmtCheck test` — Passed: Total 29, Failed 0, Errors 0.
+
+Manual verification steps presented to user:
+1. https://github.com/beckfordp/purerest/actions/runs/36192282581 — successful Release
+   workflow run (tag v0.0.2-ci-test), Test gate + Publish purerest both green.
+2. https://github.com/beckfordp/purerest/actions/runs/36194280220 — failed Release
+   workflow run (tag v0.0.3-ci-test-fail), Test gate red, Publish purerest skipped,
+   proving the gate blocks publishing on test failure.
+3. https://github.com/beckfordp/purerest/packages/3274749?version=0.0.2-ci-test —
+   io.github.beckfordp.purerestlib_3 version 0.0.2-ci-test present in GitHub Packages.
+
+User confirmation: "Yes, confirmed" — all three items checked out as described.
