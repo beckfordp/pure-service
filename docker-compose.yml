@@ -122,6 +122,10 @@ services:
           -H "kbn-xsrf: true" -H "Content-Type: application/json" \
           -d '{"changes":{"defaultIndex":"purerest-logs"}}' \
           -o /dev/null -w 'default index: %{http_code}\n' || true
+        curl -s -X POST http://kibana:5601/api/saved_objects/search/purerest-logs-search \
+          -H "kbn-xsrf: true" -H "Content-Type: application/json" \
+          -d '{"attributes":{"title":"purerest logs","columns":["service.name","level","message","logger_name","trace_id","order_id","item","quantity","reservation_id"],"sort":[["@timestamp","desc"]],"kibanaSavedObjectMeta":{"searchSourceJSON":"{\"query\":{\"query\":\"\",\"language\":\"kuery\"},\"filter\":[],\"indexRefName\":\"kibanaSavedObjectMeta.searchSourceJSON.index\"}"}},"references":[{"name":"kibanaSavedObjectMeta.searchSourceJSON.index","type":"index-pattern","id":"purerest-logs"}]}' \
+          -o /dev/null -w 'saved search: %{http_code}\n' || true
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:8.19.19
