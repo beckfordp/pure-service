@@ -3,6 +3,32 @@
 `purerest` is a reusable Cats-Effect/http4s microservice platform library, exercised by two
 reference services: `order-service` and `inventory-service`.
 
+## Consuming purerest as a dependency
+
+`purerestlib` publishes to this repo's GitHub Packages Maven registry on every `v*`-tagged
+release (`.github/workflows/release.yml`). To depend on it from another sbt project:
+
+```scala
+resolvers += "GitHub Packages" at "https://maven.pkg.github.com/beckfordp/purerest"
+
+credentials += Credentials(
+  "GitHub Package Registry",
+  "maven.pkg.github.com",
+  "<your-github-username>",
+  sys.env("GITHUB_TOKEN") // a PAT with `read:packages` scope
+)
+
+libraryDependencies += "io.github.beckfordp" %% "purerestlib" % "<version>"
+```
+
+GitHub Packages requires authentication to *read* Maven artifacts even from a public repo:
+generate a [personal access token](https://github.com/settings/tokens) with the
+`read:packages` scope and export it as `GITHUB_TOKEN`. Versions are derived from git tags via
+sbt-dynver — a `v1.2.3` tag publishes as `1.2.3`; see the repo's
+[Packages page](https://github.com/beckfordp/purerest/packages) for what's available.
+`smoke-test/build.sbt` has a working example of this exact resolver/credentials setup, gated
+behind `-DresolveFromGitHubPackages=true`.
+
 ## Build, run, and observe this system
 
 This is the main reference for exercising the whole system end to end — building both services,

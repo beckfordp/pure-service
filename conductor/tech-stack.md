@@ -6,16 +6,22 @@
 
 ## Publishing
 - **purerest** (sbt module `purerestlib`, so the root project can be named `purerest`) is
-  locally publishable (`sbt purerestlib/publishLocal`, org `io.github.beckfordp`) to the local
-  Ivy2 cache. `order-service`/`inventory-service` still consume it via `.dependsOn` internally,
-  not the published jar. `smoke-test/` is a standalone sbt build (outside the root aggregate)
-  that proves purerest works when resolved purely as a published jar, the way a real external
-  consumer would.
+  publishable both locally (`sbt purerestlib/publishLocal`, org `io.github.beckfordp`, to the
+  local Ivy2 cache) and to this repo's GitHub Packages Maven registry (`sbt
+  purerestlib/publish`, credentials via `GITHUB_ACTOR`/`GITHUB_TOKEN`).
+  `order-service`/`inventory-service` still consume it via `.dependsOn` internally, not the
+  published jar. `smoke-test/` is a standalone sbt build (outside the root aggregate) that
+  proves purerest works when resolved purely as a published jar — either from the local Ivy2
+  cache (default) or from GitHub Packages (`-DresolveFromGitHubPackages=true`), the way a real
+  external consumer would.
 - **Versioning**: sbt-dynver derives `version` from git tags/commits; `versionScheme :=
-  "early-semver"` on `purerestlib`. No git tags exist yet, so builds carry untagged
+  "early-semver"` on `purerestlib`. A `v1.2.3` tag publishes as `1.2.3`; untagged builds carry
   `0.0.0+<commit-count>-<sha>` versions.
-- **No CI/release automation yet** — a tag-triggered publish pipeline and real Scaladoc are
-  open goals (see `product.md`'s Iteration 2 section).
+- **Release pipeline**: `.github/workflows/release.yml` triggers on push of any `v*` tag — runs
+  `sbt scalafmtCheck test` as a gate, then (only on success) `sbt purerestlib/publish` to
+  GitHub Packages. See the README's "Consuming purerest as a dependency" section for how an
+  external consumer resolves the published jar. Real Scaladoc publishing remains an open goal
+  (see `product.md`'s Iteration 2 section).
 
 ## Effect System
 - **Cats Effect 3** — tagless-final, typeclass-based APIs throughout (`F[_]: Async`, etc.).
