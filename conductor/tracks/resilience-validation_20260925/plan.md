@@ -17,3 +17,6 @@
 - [x] Task: Run the fully-updated script end-to-end once more; confirm all checks (existing + new) pass. Verified: exit 0, all 7 numbered checks passed including both new panel-query assertions; 305 rejected calls, 17 retried, CLOSED->OPEN and back-to-CLOSED both observed, breaker CLOSED at run's end, 3300 indexed log docs including 17 induced-failure WARNs.
 - [x] Task: Update tech-stack.md's Load Testing / Local Observability Stack sections to document the new scenario, the recovered script, and the two new panels. [607e7df]
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Grafana panels' (Protocol in workflow.md) — bring up the stack, run the recovered script, open Grafana in a browser, and visually confirm both new panels show a real trip-and-recovery cycle from the run. User confirmed both panels look right: State Timeline showed CLOSED->OPEN->CLOSED, Retry Success Rate dipped during the failure window and recovered.
+
+## Phase: Review Fixes
+- [x] Task: Apply review suggestions — the "breaker CLOSED at end of run" check always reported OK regardless of actual state (`prom_query_sum` sums an empty result to `0`, a non-empty string, so `[ -n ... ]` never failed); swapped to `has_results`, which correctly checks for a non-empty result set. Re-ran the full script after the fix: all 7 checks still pass. [52cf020]
