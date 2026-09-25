@@ -1,0 +1,8 @@
+{
+  "track_id": "resilience-validation_20260925",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-09-25T15:52:02Z",
+  "updated_at": "2026-09-25T15:52:02Z",
+  "description": "Drive a Gatling scenario that ramps inventory-service's induced-failure rate through a sequence of values, and add Grafana panels (e.g. circuit-breaker time-to-recovery, retry success rate) that validate the resilience config's actual effectiveness, not just activity"
+}
