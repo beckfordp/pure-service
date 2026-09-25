@@ -5,8 +5,8 @@ import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.otel4s.metrics.Meter
 
-/** Config for [[Resilience.middleware]]: the retry and circuit-breaker settings composed
-  * together.
+/** Config for [[Resilience.middleware]]: the retry and circuit-breaker settings
+  * composed together.
   */
 final case class ResilienceConfig(
     retry: RetryConfig,

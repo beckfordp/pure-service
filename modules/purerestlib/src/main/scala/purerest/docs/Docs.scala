@@ -12,7 +12,8 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
   */
 object Docs {
 
-  /** Real routes for `endpoints`, plus a generated OpenAPI spec and Swagger UI. */
+  /** Real routes for `endpoints`, plus a generated OpenAPI spec and Swagger UI.
+    */
   def routes[F[_]: Async](
       title: String,
       version: String,

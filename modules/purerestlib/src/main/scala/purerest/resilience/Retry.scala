@@ -39,7 +39,9 @@ final case class RetryConfig(maxRetries: Int, baseDelay: FiniteDuration)
   */
 object Retry {
 
-  /** True for connection errors and timeouts — the exception types this middleware retries. */
+  /** True for connection errors and timeouts — the exception types this
+    * middleware retries.
+    */
   def isRetriableError(error: Throwable): Boolean = error match {
     case _: java.net.ConnectException             => true
     case _: java.util.concurrent.TimeoutException => true

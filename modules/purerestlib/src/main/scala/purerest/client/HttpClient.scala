@@ -5,8 +5,8 @@ import fs2.io.net.Network
 import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
 
-/** Builds the underlying http4s `Client[F]` used by purerest's resilient/traced/metered
-  * client combinators.
+/** Builds the underlying http4s `Client[F]` used by purerest's
+  * resilient/traced/metered client combinators.
   */
 object HttpClient {
 
