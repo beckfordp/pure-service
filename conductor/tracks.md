@@ -2,9 +2,6 @@
 
 This file tracks all major tracks for the project.
 
-- [x] **Track: Add a runtime-adjustable induced-failure endpoint to inventory-service**
-  *Link: [./tracks/induced-failure-endpoint_20260923/](./tracks/induced-failure-endpoint_20260923/)*
-
 ---
 
 ## Backlog
