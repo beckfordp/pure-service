@@ -222,4 +222,63 @@ class InventoryRoutesSuite extends CatsEffectSuite {
       assertEquals(view, InducedFailureView(failureRate = 0.0, delayMs = 0L))
     }
   }
+
+  test(
+    "PATCH /admin/induced-failure updates the live config, reflected by a subsequent GET"
+  ) {
+    for {
+      store <- InventoryStore.inMemory[IO]
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
+      patchRequest = Request[IO](Method.PATCH, uri"/admin/induced-failure")
+        .withEntity(InducedFailureView(failureRate = 0.5, delayMs = 100L))
+      patchResponse <- routes.orNotFound.run(patchRequest)
+      patchedView <- patchResponse.as[InducedFailureView]
+      getResponse <- routes.orNotFound.run(
+        Request[IO](Method.GET, uri"/admin/induced-failure")
+      )
+      getView <- getResponse.as[InducedFailureView]
+    } yield {
+      assertEquals(patchResponse.status, Status.Ok)
+      assertEquals(patchedView, InducedFailureView(failureRate = 0.5, delayMs = 100L))
+      assertEquals(getResponse.status, Status.Ok)
+      assertEquals(getView, InducedFailureView(failureRate = 0.5, delayMs = 100L))
+    }
+  }
+
+  test(
+    "PATCH /admin/induced-failure rejects failureRate outside [0.0, 1.0] with 400, leaving the config unchanged"
+  ) {
+    for {
+      store <- InventoryStore.inMemory[IO]
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
+      patchRequest = Request[IO](Method.PATCH, uri"/admin/induced-failure")
+        .withEntity(InducedFailureView(failureRate = 1.5, delayMs = 0L))
+      patchResponse <- routes.orNotFound.run(patchRequest)
+      errorBody <- patchResponse.as[ErrorResponse]
+      configAfter <- configRef.get
+    } yield {
+      assertEquals(patchResponse.status, Status.BadRequest)
+      assert(errorBody.error.nonEmpty)
+      assertEquals(configAfter, InducedFailureConfig.disabled)
+    }
+  }
+
+  test(
+    "PATCH /admin/induced-failure rejects a negative delayMs with 400, leaving the config unchanged"
+  ) {
+    for {
+      store <- InventoryStore.inMemory[IO]
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
+      patchRequest = Request[IO](Method.PATCH, uri"/admin/induced-failure")
+        .withEntity(InducedFailureView(failureRate = 0.2, delayMs = -1L))
+      patchResponse <- routes.orNotFound.run(patchRequest)
+      configAfter <- configRef.get
+    } yield {
+      assertEquals(patchResponse.status, Status.BadRequest)
+      assertEquals(configAfter, InducedFailureConfig.disabled)
+    }
+  }
 }

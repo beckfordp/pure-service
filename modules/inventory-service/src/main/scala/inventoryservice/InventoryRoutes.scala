@@ -85,6 +85,28 @@ object InventoryRoutes {
       .in("admin" / "induced-failure")
       .out(jsonBody[InducedFailureView])
 
+  private val invalidInducedFailureOutput
+      : EndpointOutput[InducedFailureConfigError] =
+    statusCode(StatusCode.BadRequest)
+      .and(jsonBody[ErrorResponse])
+      .map[InducedFailureConfigError](_ => InvalidInducedFailureConfig)(_ =>
+        ErrorResponse(
+          "failureRate must be within [0.0, 1.0] and delayMs must be >= 0"
+        )
+      )
+
+  private val patchInducedFailureEndpoint: PublicEndpoint[
+    InducedFailureView,
+    InducedFailureConfigError,
+    InducedFailureView,
+    Any
+  ] =
+    endpoint.patch
+      .in("admin" / "induced-failure")
+      .in(jsonBody[InducedFailureView])
+      .out(jsonBody[InducedFailureView])
+      .errorOut(invalidInducedFailureOutput)
+
   private def maybeInduceFailure[F[_]: Async](
       config: InducedFailureConfig,
       logger: StructuredLogger[F],
@@ -145,6 +167,17 @@ object InventoryRoutes {
       configRef.get.map(InducedFailureView(_))
     }
 
+  def patchInducedFailureServerEndpoint[F[_]: Async](
+      configRef: Ref[F, InducedFailureConfig]
+  ): ServerEndpoint[Any, F] =
+    patchInducedFailureEndpoint.serverLogic[F] { view =>
+      InducedFailureConfig.validated(view.failureRate, view.delayMs) match {
+        case Left(error) => Async[F].pure(Left(error))
+        case Right(config) =>
+          configRef.set(config).as(Right(InducedFailureView(config)))
+      }
+    }
+
   def routes[F[_]: Async](
       store: InventoryStore[F],
       logger: StructuredLogger[F],
@@ -153,7 +186,8 @@ object InventoryRoutes {
     Http4sServerInterpreter[F]().toRoutes(
       List(
         serverEndpoint(store, logger, configRef),
-        getInducedFailureServerEndpoint(configRef)
+        getInducedFailureServerEndpoint(configRef),
+        patchInducedFailureServerEndpoint(configRef)
       )
     )
 }
