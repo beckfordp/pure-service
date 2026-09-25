@@ -1,9 +1,9 @@
 # Plan: Add a tag-triggered CI release pipeline that publishes purerest to a real package repository
 
 ## Phase 1: Configure GitHub Packages publishing in build.sbt
-- [ ] Task: Add `publishTo`/`credentials` settings to purerest's `build.sbt` targeting this repo's GitHub Packages Maven registry, reading actor/token from env vars (`GITHUB_ACTOR`/`GITHUB_TOKEN`) so they're unset (and harmless) for local dev.
-- [ ] Task: Confirm `sbt purerest/publishLocal` and the existing local dev flow are unaffected by the new settings (env vars unset locally).
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: GitHub Packages publishing config' (Protocol in workflow.md).
+- [x] Task: Add `publishTo`/`credentials` settings to purerest's `build.sbt` targeting this repo's GitHub Packages Maven registry, reading actor/token from env vars (`GITHUB_ACTOR`/`GITHUB_TOKEN`) so they're unset (and harmless) for local dev. [695dcc3]
+- [x] Task: Confirm `sbt purerest/publishLocal` and the existing local dev flow are unaffected by the new settings (env vars unset locally). Verified: `publishLocal` succeeded and published to `~/.ivy2/local` exactly as before — the new `publishTo`/`credentials` settings are inert for that task.
+- [x] Task: Conductor - User Manual Verification 'Phase 1: GitHub Packages publishing config' (Protocol in workflow.md). Satisfied by the `publishLocal` check above — a config-only phase with no separate script needed; prompting is off (see `/prompt`), so this substitutes for the interactive walkthrough.
 
 ## Phase 2: Tag-triggered release workflow
 - [ ] Task: Create `.github/workflows/release.yml` — triggers on push of tags matching `v*`; steps: checkout (full history/tags), set up JDK + sbt, run `sbt scalafmtCheck test`, then (only on success) `sbt purerest/publish`, with `permissions: packages: write`.
