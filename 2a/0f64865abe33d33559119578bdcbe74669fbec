@@ -1,0 +1,13 @@
+Phase 3 verification report: Grafana panels
+
+Automated: ./scripts/verify-observability-stack.sh — all 7 checks passed (exit 0), including
+both new panel-query assertions (Circuit Breaker: State Timeline, Retry Success Rate resolve
+non-empty PromQL data). Run stats: 305 rejected calls, 17 retried, CLOSED->OPEN and back to
+CLOSED both observed, breaker CLOSED at run's end, 3300 indexed log docs incl. 17
+induced-failure WARNs.
+
+Manual: brought up --profile observability stack, ran sbt loadTest/Gatling/test directly
+(stack left up, no auto-teardown), opened Grafana at localhost:3000/d/purerest-red-resilience.
+
+User confirmation: "yes, both panels look right" — State Timeline showed CLOSED->OPEN->CLOSED;
+Retry Success Rate dipped during the failure window and recovered afterward.
