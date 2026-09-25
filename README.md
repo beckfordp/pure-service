@@ -29,6 +29,11 @@ sbt-dynver — a `v1.2.3` tag publishes as `1.2.3`; see the repo's
 `smoke-test/build.sbt` has a working example of this exact resolver/credentials setup, gated
 behind `-DresolveFromGitHubPackages=true`.
 
+API docs (Scaladoc) for the latest release are browsable at
+**[beckfordp.github.io/purerest](https://beckfordp.github.io/purerest/)**, deployed to GitHub
+Pages by the same release workflow. A `-javadoc.jar` with the same content is also published
+alongside the main jar on GitHub Packages.
+
 ## Build, run, and observe this system
 
 This is the main reference for exercising the whole system end to end — building both services,

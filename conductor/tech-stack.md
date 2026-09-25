@@ -17,11 +17,16 @@
 - **Versioning**: sbt-dynver derives `version` from git tags/commits; `versionScheme :=
   "early-semver"` on `purerestlib`. A `v1.2.3` tag publishes as `1.2.3`; untagged builds carry
   `0.0.0+<commit-count>-<sha>` versions.
-- **Release pipeline**: `.github/workflows/release.yml` triggers on push of any `v*` tag — runs
-  `sbt scalafmtCheck test` as a gate, then (only on success) `sbt purerestlib/publish` to
-  GitHub Packages. See the README's "Consuming purerest as a dependency" section for how an
-  external consumer resolves the published jar. Real Scaladoc publishing remains an open goal
-  (see `product.md`'s Iteration 2 section).
+- **Release pipeline**: `.github/workflows/release.yml` triggers on push of any `v*` tag. The
+  `release` job runs `sbt scalafmtCheck test` as a gate, then (only on success) `sbt
+  purerestlib/publish` to GitHub Packages (which also publishes a real Scaladoc `-javadoc.jar`
+  automatically, via sbt's default publish artifacts — no extra config needed for that half).
+  A second `deploy-docs` job (`needs: release`) then runs `sbt purerestlib/doc` and deploys the
+  rendered HTML to GitHub Pages at a stable "latest" URL, overwritten on every release — see
+  the README's "Consuming purerest as a dependency" section for both the dependency-resolution
+  setup and the hosted docs link. The `github-pages` deployment environment has a `v*` tag
+  policy (added via the GitHub API, since a fresh Pages environment defaults to branch-only
+  deploys) so tag-triggered deploys aren't rejected by environment protection rules.
 
 ## Effect System
 - **Cats Effect 3** — tagless-final, typeclass-based APIs throughout (`F[_]: Async`, etc.).
