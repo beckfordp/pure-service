@@ -5,9 +5,6 @@ This file tracks all major tracks for the project.
 - [x] **Track: Add a tag-triggered CI release pipeline that publishes purerest to a real package repository (not just local Ivy2)**
   *Link: [./tracks/release-pipeline_20260925/](./tracks/release-pipeline_20260925/)*
 
-- [x] **Track: Rename the purerest sbt module to purerestlib, and rename the repository/project to purerest, replacing all pure-service references accordingly**
-  *Link: [./tracks/rename-purerestlib_20260925/](./tracks/rename-purerestlib_20260925/)*
-
 ---
 
 ## Backlog
