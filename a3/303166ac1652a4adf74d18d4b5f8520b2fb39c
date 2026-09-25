@@ -1,0 +1,3 @@
+Task: Extend verify-observability-stack.sh with assertions that both new panels' PromQL queries resolve non-empty data.
+Files: scripts/verify-observability-stack.sh
+Why: Automates confirmation that the new panels are wired to real data, consistent with the script's existing Prometheus-direct assertion style.
