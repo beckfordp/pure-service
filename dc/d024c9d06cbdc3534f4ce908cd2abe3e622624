@@ -1,0 +1,9 @@
+Phase 3 Verification Report: Documentation
+
+Manual verification (prompting off — done directly, per .claude/skills/prompt/SKILL.md):
+Re-read README.md and conductor/tech-stack.md after editing. Confirmed the hosted
+Scaladoc URL (https://beckfordp.github.io/purerest/) appears in README's "Consuming
+purerest as a dependency" section alongside a note about the equivalent -javadoc.jar
+artifact; tech-stack.md's Publishing section describes the deploy-docs job, the
+automatic -javadoc.jar publishing, and the v* environment tag policy, cross-referencing
+the README rather than duplicating the URL. Result: accurate and consistent.
