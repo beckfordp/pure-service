@@ -67,6 +67,19 @@ gt_zero() {
   [ "$(echo "$1 > 0" | bc)" = "1" ]
 }
 
+# Confirms a PromQL query returns at least one series, for checks where the
+# value itself (rather than a summed count) is what matters — e.g. a Grafana
+# panel's query genuinely resolving data.
+has_results() {
+  local expr="$1"
+  curl -s -G "http://localhost:${ORDER_METRICS_PORT}/api/v1/query" --data-urlencode "query=${expr}" \
+    | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+sys.exit(0 if len(d['data']['result']) > 0 else 1)
+"
+}
+
 echo "1. docker compose --profile observability up -d (fresh volumes)..."
 docker compose --profile observability down -v >/dev/null 2>&1 || true
 docker compose --profile observability up -d
@@ -238,6 +251,21 @@ if gt_zero "$induced_failure_hits"; then
   echo "   OK: the induced-failure WARN log from the run is indexed"
 else
   echo "   FAIL: expected at least one indexed 'Induced failure triggered' log" >&2
+  FAILED=1
+fi
+
+echo
+echo "7. Confirming the two new Grafana panels' PromQL queries resolve data..."
+if has_results 'purerest_circuit_breaker_state'; then
+  echo "   OK: Circuit Breaker: State Timeline panel's query returns data"
+else
+  echo "   FAIL: expected purerest_circuit_breaker_state to have at least one series" >&2
+  FAILED=1
+fi
+if has_results 'sum(rate(purerest_retry_attempts_total{outcome="succeeded"}[1m])) / (sum(rate(purerest_retry_attempts_total{outcome="succeeded"}[1m])) + sum(rate(purerest_retry_attempts_total{outcome="exhausted"}[1m])))'; then
+  echo "   OK: Retry Success Rate panel's query returns data"
+else
+  echo "   FAIL: expected the Retry Success Rate query to return data" >&2
   FAILED=1
 fi
 
