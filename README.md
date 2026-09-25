@@ -34,8 +34,10 @@ run while images are pulled and Elasticsearch/Kibana finish starting.
 
 > Plain `docker compose up -d` (no `--profile`) starts **only Postgres**, unchanged — that's the
 > lightweight path used by `sbt bgRun`/`scripts/archive/run-services.sh` day-to-day dev and by
-> `scripts/archive/verify-*.sh`. The full stack above is opt-in. (All `scripts/` are archived
-> pending a cleanup decision; they still work from their new path.)
+> most of `scripts/archive/verify-*.sh`. The full stack above is opt-in. (Most `scripts/` are
+> archived pending a cleanup decision, and still work from their new path;
+> `verify-observability-stack.sh` has been recovered to `scripts/` since this repo actively
+> uses it.)
 
 Once it's up:
 
@@ -90,7 +92,7 @@ sbt "loadTest/Gatling/test"
 ### 5. Automated end-to-end verification
 
 ```
-./scripts/archive/verify-observability-stack.sh
+./scripts/verify-observability-stack.sh
 ```
 
 Brings the stack up fresh, runs a healthy Gatling pass and a degraded (induced-failure) Gatling

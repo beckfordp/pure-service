@@ -1,17 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Manual verification for Phase 5 (and the overall acceptance criteria) of the
-# observability-stack track: brings up the full `--profile observability` compose
-# stack, drives real traffic through it with the Gatling load-test module (a
-# healthy pass, then a degraded pass that induces retries/circuit-breaker activity
-# and a WARN-level induced-failure log), and confirms Prometheus, Grafana, and
-# Elasticsearch are all populated with real data from that traffic — not just that
-# the containers started.
+# Verifies the observability stack end-to-end: brings up the full
+# `--profile observability` compose stack, drives real traffic through it with
+# the Gatling load-test module (order placement plus a live ramp of
+# inventory-service's induced-failure rate — see OrderPlacementSimulation's
+# rampFailureRate scenario — inducing retries, a circuit-breaker trip and
+# recovery, and a WARN-level induced-failure log in one continuous run), and
+# confirms Prometheus, Grafana, and Elasticsearch are all populated with real
+# data from that traffic — not just that the containers started.
 #
-# Usage: ./scripts/archive/verify-observability-stack.sh
+# Usage: ./scripts/verify-observability-stack.sh
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
 
 ORDER_METRICS_PORT=9092  # Prometheus's own host port (see docker-compose.yml)
@@ -130,10 +131,14 @@ else
 fi
 
 echo
-echo "4. PASS 1/2 — healthy load (INVENTORY_INDUCED_FAILURE_RATE=0)..."
-echo "   Running Gatling (this takes ~90s)..."
+echo "4. Running Gatling: order placement + a live induced-failure ramp..."
+# One continuous run — OrderPlacementSimulation's rampFailureRate scenario drives
+# inventory-service's induced-failure rate through 0.0 -> 0.6 -> 0.0 live, via
+# PATCH /admin/induced-failure, concurrently with the order-placement load. No
+# container restart needed (unlike the old two-pass version of this script).
+echo "   Running Gatling (this takes ~2.5 minutes)..."
 if ! sbt -batch "loadTest/Gatling/test"; then
-  echo "   FAIL: Gatling simulation failed under healthy load" >&2
+  echo "   FAIL: Gatling simulation failed" >&2
   FAILED=1
 fi
 server_requests="$(prom_query_sum 'sum(http_server_request_duration_seconds_count)')"
@@ -141,59 +146,67 @@ db_queries="$(prom_query_sum 'sum(db_client_operation_duration_seconds_count)')"
 echo "   http_server_request_duration_seconds_count = ${server_requests}"
 echo "   db_client_operation_duration_seconds_count = ${db_queries}"
 if gt_zero "$server_requests" && gt_zero "$db_queries"; then
-  echo "   OK: healthy pass produced RED + DB-query metrics"
+  echo "   OK: the run produced RED + DB-query metrics"
 else
-  echo "   FAIL: expected nonzero request and DB-query counts from the healthy pass" >&2
+  echo "   FAIL: expected nonzero request and DB-query counts" >&2
   FAILED=1
 fi
 
 echo
-echo "5. PASS 2/2 — degraded load (INVENTORY_INDUCED_FAILURE_RATE=0.5)..."
-# 0.5, not 0.3: the circuit breaker needs failureThreshold=5 consecutive failures to
-# trip (order-service's ResilienceConfig), and with maxRetries=3 (4 attempts/request)
-# a single request alone can't reach 5 — it needs a streak spanning request
-# boundaries. At 0.3 that streak is a coin flip over one Gatling run (~1 expected
-# occurrence); 0.5 makes it reliable (~10+ expected) while still leaving roughly half
-# of attempts succeeding, so retried/exhausted/rejected outcomes all show up.
-INVENTORY_INDUCED_FAILURE_RATE="0.5" \
-  docker compose --profile observability up -d --force-recreate --no-deps inventory-service
-wait_ready 8081 "inventory-service"
-echo "   Running Gatling (this takes ~90s)..."
-if ! sbt -batch "loadTest/Gatling/test"; then
-  echo "   FAIL: Gatling simulation failed under degraded load" >&2
-  FAILED=1
-fi
+echo "5. Confirming a full circuit-breaker trip-and-recovery cycle (not just activity)..."
 retried_total="$(prom_query_sum 'sum(purerest_retry_attempts_total{outcome="retried"})')"
-transitions_total="$(prom_query_sum 'sum(purerest_circuit_breaker_state_transitions_total)')"
 rejected_total="$(prom_query_sum 'sum(purerest_circuit_breaker_calls_rejected_total)')"
-cb_state="$(prom_query_sum 'purerest_circuit_breaker_state')"
 echo "   purerest_retry_attempts_total{outcome=retried} = ${retried_total}"
-echo "   purerest_circuit_breaker_state_transitions_total = ${transitions_total}"
 echo "   purerest_circuit_breaker_calls_rejected_total = ${rejected_total}"
 if gt_zero "$retried_total"; then
-  echo "   OK: degraded pass produced retry-attempt metrics"
+  echo "   OK: the run produced retry-attempt metrics"
 else
   echo "   FAIL: expected nonzero purerest_retry_attempts_total{outcome=retried}" >&2
   FAILED=1
 fi
-if gt_zero "$transitions_total" || gt_zero "$rejected_total"; then
-  echo "   OK: degraded pass produced circuit-breaker activity"
+if gt_zero "$rejected_total"; then
+  echo "   OK: the circuit breaker rejected calls while open"
 else
-  echo "   FAIL: expected nonzero circuit-breaker state transitions or rejections" >&2
+  echo "   FAIL: expected nonzero purerest_circuit_breaker_calls_rejected_total" >&2
   FAILED=1
 fi
-if [ -n "$cb_state" ]; then
-  echo "   OK: live circuit-breaker state gauge is exposed"
+# Unaggregated (keeps from_state/to_state labels) so this checks for an actual
+# trip *and* a recovery, not just "some transition happened somewhere."
+transitions="$(curl -s -G "http://localhost:${ORDER_METRICS_PORT}/api/v1/query" \
+  --data-urlencode 'query=purerest_circuit_breaker_state_transitions_total')"
+has_transition_to() {
+  local state="$1"
+  echo "$transitions" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+sys.exit(0 if any(r['metric'].get('to_state') == '$state' for r in d['data']['result']) else 1)
+"
+}
+if has_transition_to "OPEN"; then
+  echo "   OK: a CLOSED -> OPEN transition occurred (the breaker tripped)"
 else
-  echo "   FAIL: expected a purerest_circuit_breaker_state series" >&2
+  echo "   FAIL: expected a circuit-breaker transition to OPEN" >&2
+  FAILED=1
+fi
+if has_transition_to "CLOSED"; then
+  echo "   OK: a transition back to CLOSED occurred (the breaker recovered)"
+else
+  echo "   FAIL: expected a circuit-breaker transition back to CLOSED" >&2
+  FAILED=1
+fi
+cb_state_closed="$(prom_query_sum 'purerest_circuit_breaker_state{state="CLOSED"} == 1')"
+if [ -n "$cb_state_closed" ]; then
+  echo "   OK: the circuit breaker is CLOSED at the end of the run (fully recovered)"
+else
+  echo "   FAIL: expected the live circuit-breaker state to be CLOSED at the end of the run" >&2
   FAILED=1
 fi
 
 echo
 echo "6. Confirming Elasticsearch indexed structured logs from both services,"
-echo "   including an induced-failure WARN log from the degraded pass..."
+echo "   including an induced-failure WARN log from the run..."
 # Filebeat ships on a short poll interval, but give it a moment to catch up on the
-# degraded pass's tail before searching.
+# run's tail before searching.
 sleep 10
 es_count="$(curl -s "http://localhost:9200/purerest-logs-*/_count" | python3 -c "import json,sys; print(json.load(sys.stdin)['count'])")"
 echo "   purerest-logs-* document count = ${es_count}"
@@ -222,7 +235,7 @@ induced_failure_hits="$(curl -s "http://localhost:9200/purerest-logs-*/_search" 
 }' | python3 -c "import json,sys; print(json.load(sys.stdin)['hits']['total']['value'])")"
 echo "   docs with induced-failure WARN message = ${induced_failure_hits}"
 if gt_zero "$induced_failure_hits"; then
-  echo "   OK: the induced-failure WARN log from the degraded pass is indexed"
+  echo "   OK: the induced-failure WARN log from the run is indexed"
 else
   echo "   FAIL: expected at least one indexed 'Induced failure triggered' log" >&2
   FAILED=1
