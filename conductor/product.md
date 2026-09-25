@@ -60,11 +60,13 @@ toward a real storefront, but out of current scope.
 Hands-on use of the finished stack raised the question purerest hasn't actually answered yet:
 **is this resilience/observability infrastructure good, and how would we know?**
 
-1. **Validate resilience under controlled load.** inventory-service's induced-failure rate is
-   now runtime-adjustable (`GET`/`PATCH /admin/induced-failure`, no restart needed) — remaining:
-   drive it through a Gatling scenario and use the result to answer concretely — do the existing
-   retry/circuit-breaker Grafana panels show *effective* behavior (successful retries, timely
-   trips, timely recovery), or just activity?
+1. **Validate resilience under controlled load.** ✅ Answered — a Gatling scenario ramps
+   inventory-service's induced-failure rate (0.0 -> 0.6 -> 0.0) through a single continuous run,
+   and the retry/circuit-breaker Grafana panels (plus two new ones: state-timeline,
+   retry-success-rate) show *effective* behavior, not just activity: the breaker reliably trips
+   under load and fully recovers once the failure rate drops, with retries succeeding at a high
+   rate outside the degraded window. `scripts/verify-observability-stack.sh` automates this
+   confirmation end-to-end.
 2. **Make purerest a real, consumable library.** A tag-triggered release/publish pipeline and
    Scaladoc for the public API. (A service-template generator so adopting purerest starts from
    a working example is planned as a separate `pure-service-generator` project, not part of
