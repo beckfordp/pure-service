@@ -1,0 +1,20 @@
+Phase 2 Verification Report: GitHub Pages deployment workflow
+
+Automated tests: sbt scalafmtCheck test (Passed 29/0 failed) on the same commit that
+triggered the real test-tag run below.
+
+Manual verification (prompting off — done via committed script, per
+.claude/skills/prompt/SKILL.md):
+Ran scripts/verify-scaladoc-pages-deploy.sh — Pages build_type is 'workflow', site
+root (https://beckfordp.github.io/purerest/) returns 200, and a real package page
+(tracing.html) returns 200 with the expected new Scaladoc content. Result: all
+checks passed.
+
+Real end-to-end deploy trail (test tags, both deleted afterward):
+- v0.0.4-ci-test: release job failed the test gate (scalafmt disagreed with 4 files'
+  new comments) — fixed via `sbt purerestlib/scalafmt`.
+- v0.0.5-ci-test: release job succeeded; deploy-docs was rejected by the
+  auto-created github-pages environment's branch-only protection rule. With user
+  approval, added a `v*` tag deployment policy via the GitHub API, then reran just
+  the deploy-docs job — succeeded. Confirmed the -javadoc.jar Maven artifact was
+  still published for the same version (no regression).
