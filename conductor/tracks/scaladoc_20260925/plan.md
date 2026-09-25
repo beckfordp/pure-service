@@ -13,7 +13,7 @@
 - [x] Task: Confirm the Maven package's `-javadoc.jar` artifact is still published as before (regression check against the same test-tag run). Confirmed: `purerestlib_3-0.0.5-ci-test-javadoc.jar` returned 200 from GitHub Packages.
 - [x] Task: Conductor - User Manual Verification 'Phase 2: GitHub Pages deployment workflow' (Protocol in workflow.md). Prompting is off (see `/prompt`); satisfied by `scripts/verify-scaladoc-pages-deploy.sh`, run directly — Pages build_type is 'workflow', site root and a real package page both return 200 with expected content.
 
-## Phase 3: Documentation
+## Phase 3: Documentation [checkpoint: dcd024c]
 - [x] Task: Update `README.md` with a link to and short description of the hosted Scaladoc site. Added to the existing "Consuming purerest as a dependency" section, alongside a note that the `-javadoc.jar` Maven artifact carries the same content. [a6c72af]
 - [x] Task: Update `conductor/tech-stack.md`'s Publishing section to mention the GitHub Pages Scaladoc deployment alongside the existing release-pipeline description. Documented the `deploy-docs` job, the automatic `-javadoc.jar` publishing (discovered during spec-ing this track), and the `v*` tag environment-policy fix. [a6c72af]
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Documentation' (Protocol in workflow.md). Prompting is off (see `/prompt`); satisfied by re-reading both files and confirming the hosted-docs URL appears in README.md, with tech-stack.md cross-referencing it rather than duplicating it.
