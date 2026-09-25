@@ -38,7 +38,7 @@ object InducedFailureConfig {
       failureRate: Double,
       delayMs: Long
   ): Either[InducedFailureConfigError, InducedFailureConfig] =
-    if (failureRate < 0.0 || failureRate > 1.0 || delayMs < 0)
+    if (!(failureRate >= 0.0 && failureRate <= 1.0) || delayMs < 0)
       Left(InvalidInducedFailureConfig)
     else
       Right(

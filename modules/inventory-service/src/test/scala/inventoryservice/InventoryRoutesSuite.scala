@@ -319,4 +319,13 @@ class InventoryRoutesSuite extends CatsEffectSuite {
       assertEquals(reserveWhileHealthy.status, Status.Created)
     }
   }
+
+  test(
+    "InducedFailureConfig.validated rejects a NaN failureRate (not just out-of-range values)"
+  ) {
+    assertEquals(
+      InducedFailureConfig.validated(Double.NaN, delayMs = 0L),
+      Left(InvalidInducedFailureConfig)
+    )
+  }
 }
