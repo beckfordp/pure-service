@@ -1,5 +1,12 @@
 # Plan: Add a tag-triggered CI release pipeline that publishes purerest to a real package repository
 
+> **Note (2026-09-25, track `rename-purerestlib_20260925`):** the completed tasks below
+> reference the sbt module as `purerest` and the repo as `pure-service` — accurate at the time
+> they were run. A subsequent track renamed the sbt module to `purerestlib` and the repo/root
+> project to `purerest`; `build.sbt` and `.github/workflows/release.yml` were updated in that
+> track to use `purerestlib/publish` and `.../beckfordp/purerest`. Any still-pending task below
+> should use the current names.
+
 ## Phase 1: Configure GitHub Packages publishing in build.sbt
 - [x] Task: Add `publishTo`/`credentials` settings to purerest's `build.sbt` targeting this repo's GitHub Packages Maven registry, reading actor/token from env vars (`GITHUB_ACTOR`/`GITHUB_TOKEN`) so they're unset (and harmless) for local dev. [695dcc3]
 - [x] Task: Confirm `sbt purerest/publishLocal` and the existing local dev flow are unaffected by the new settings (env vars unset locally). Verified: `publishLocal` succeeded and published to `~/.ivy2/local` exactly as before — the new `publishTo`/`credentials` settings are inert for that task.

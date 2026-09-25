@@ -1,5 +1,10 @@
 # Spec: Add a tag-triggered CI release pipeline that publishes purerest to a real package repository
 
+> **Note (2026-09-25, track `rename-purerestlib_20260925`):** this spec was written against the
+> sbt module `purerest` and the repo `pure-service`. A subsequent track renamed the sbt module
+> to `purerestlib` and the repo/root project to `purerest` — `sbt purerest/publish` below is now
+> `sbt purerestlib/publish` in the actual `build.sbt`/`.github/workflows/release.yml`.
+
 ## Overview
 Adds a GitHub Actions workflow that, on push of a `v*`-tagged commit, runs the full test suite
 and then publishes purerest to GitHub Packages (Maven registry) instead of only the local Ivy2
