@@ -71,9 +71,10 @@
   actually populate and validate purerest's RED + resilience metrics under real conditions —
   this is the primary vector for answering "is our resilience config actually effective?" (see
   `product.md`'s Iteration 2 goals).
-- `inventory-service`'s induced-failure rate is currently fixed at container-startup via an env
-  var (`INVENTORY_INDUCED_FAILURE_RATE`); making it runtime-adjustable via an admin endpoint,
-  so a load-test run can drive it through a sequence of values, is a near-term backlog item.
+- `inventory-service`'s induced-failure rate/delay is runtime-adjustable via `GET`/`PATCH
+  /admin/induced-failure` (tapir-documented, Swagger UI at `/docs`), seeded at startup from
+  `INVENTORY_INDUCED_FAILURE_RATE`/`INVENTORY_INDUCED_DELAY_MS`; a load-test run driving it
+  through a sequence of values during one run is the next backlog item.
 
 ## Local Observability Stack
 - Docker Compose `observability` profile: `order-service`/`inventory-service` (built as Docker

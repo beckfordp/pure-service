@@ -24,9 +24,9 @@ both the inbound and outbound call, and a client that retries transient failures
 circuit breaker under sustained failure — all composed via purerest's API, no annotations on
 either service.
 
-`inventory-service`'s failure/latency can be induced so it can validate purerest's resilience
-behavior under controlled conditions — currently only at container startup; making this
-runtime-adjustable is part of Iteration 2 below.
+`inventory-service`'s failure/latency can be induced, and adjusted live via a `PATCH
+/admin/induced-failure` endpoint (no restart needed), to validate purerest's resilience
+behavior under controlled conditions.
 
 ## Customer Journey (context)
 The Core Use Case above is the technical design driver, not a commitment to build a full
@@ -50,6 +50,8 @@ toward a real storefront, but out of current scope.
 - purerest: tracing, structured logging, metrics, retry, circuit breaker — as library building blocks
 - order-service: `POST /orders`, order persistence, resilient call to inventory-service
 - inventory-service: stock reservation endpoint(s)
+- inventory-service: runtime-adjustable induced-failure rate/delay via `GET`/`PATCH
+  /admin/induced-failure` (tapir-documented, no restart needed)
 - Local observability stack (Docker Compose profile): Prometheus/Grafana/Elasticsearch/Kibana/Filebeat
   wired to real request/DB/resilience metrics and correlated structured logs — see README's
   "Build, run, and observe this system"
@@ -58,10 +60,11 @@ toward a real storefront, but out of current scope.
 Hands-on use of the finished stack raised the question purerest hasn't actually answered yet:
 **is this resilience/observability infrastructure good, and how would we know?**
 
-1. **Validate resilience under controlled load.** Make inventory-service's induced-failure rate
-   runtime-adjustable (not just startup-config), drive it through a Gatling scenario, and use
-   the result to answer concretely — do the existing retry/circuit-breaker Grafana panels show
-   *effective* behavior (successful retries, timely trips, timely recovery), or just activity?
+1. **Validate resilience under controlled load.** inventory-service's induced-failure rate is
+   now runtime-adjustable (`GET`/`PATCH /admin/induced-failure`, no restart needed) — remaining:
+   drive it through a Gatling scenario and use the result to answer concretely — do the existing
+   retry/circuit-breaker Grafana panels show *effective* behavior (successful retries, timely
+   trips, timely recovery), or just activity?
 2. **Make purerest a real, consumable library.** A tag-triggered release/publish pipeline and
    Scaladoc for the public API. (A service-template generator so adopting purerest starts from
    a working example is planned as a separate `pure-service-generator` project, not part of
