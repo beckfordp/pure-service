@@ -49,16 +49,18 @@ lazy val commonSettings = Seq(
   )
 )
 
-// purerest: the platform library providing cross-cutting microservice
+// purerestlib: the platform library providing cross-cutting microservice
 // concerns (tracing, observability, resilience) as composable, annotation-free
-// building blocks. order-service and inventory-service both depend on it.
-lazy val purerest = project
-  .in(file("modules/purerest"))
+// building blocks. order-service and inventory-service both depend on it. Named
+// "purerestlib" (not "purerest") so the repo/root-project name "purerest" is
+// free at the top level — this module's own Scala packages are still purerest.*.
+lazy val purerestlib = project
+  .in(file("modules/purerestlib"))
   .settings(commonSettings)
   .settings(
-    name := "purerest",
-    // Real Maven/Ivy coordinate for publishing purerest as a jar, derived from this
-    // project's own GitHub remote (github.com/beckfordp/pure-service).
+    name := "purerestlib",
+    // Real Maven/Ivy coordinate for publishing purerestlib as a jar, derived from
+    // this project's own GitHub remote (github.com/beckfordp/purerest).
     organization := "io.github.beckfordp",
     // early-semver: purerest's own published version communicates binary
     // compatibility the way its 0.x/1.x/etc. Typelevel-ecosystem dependencies
@@ -145,7 +147,7 @@ lazy val purerest = project
 // tests — main code has no dependency on inventory-service.
 lazy val orderService = project
   .in(file("modules/order-service"))
-  .dependsOn(purerest, inventoryService % Test)
+  .dependsOn(purerestlib, inventoryService % Test)
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(commonSettings)
   .settings(
@@ -201,7 +203,7 @@ lazy val orderService = project
 // independent consumer of purerest.
 lazy val inventoryService = project
   .in(file("modules/inventory-service"))
-  .dependsOn(purerest)
+  .dependsOn(purerestlib)
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(commonSettings)
   .settings(
@@ -260,7 +262,7 @@ lazy val loadTest = project
 // them; not published itself.
 lazy val root = project
   .in(file("."))
-  .aggregate(purerest, orderService, inventoryService)
+  .aggregate(purerestlib, orderService, inventoryService)
   .settings(
     name := "pure-service",
     publish / skip := true
