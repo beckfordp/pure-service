@@ -207,8 +207,7 @@ else
   echo "   FAIL: expected a circuit-breaker transition back to CLOSED" >&2
   FAILED=1
 fi
-cb_state_closed="$(prom_query_sum 'purerest_circuit_breaker_state{state="CLOSED"} == 1')"
-if [ -n "$cb_state_closed" ]; then
+if has_results 'purerest_circuit_breaker_state{state="CLOSED"} == 1'; then
   echo "   OK: the circuit breaker is CLOSED at the end of the run (fully recovered)"
 else
   echo "   FAIL: expected the live circuit-breaker state to be CLOSED at the end of the run" >&2
