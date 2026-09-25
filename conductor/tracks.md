@@ -2,7 +2,7 @@
 
 This file tracks all major tracks for the project.
 
-- [~] **Track: Add Scaladoc to purerest's public API, published alongside releases**
+- [x] **Track: Add Scaladoc to purerest's public API, published alongside releases**
   *Link: [./tracks/scaladoc_20260925/](./tracks/scaladoc_20260925/)*
 
 ---
