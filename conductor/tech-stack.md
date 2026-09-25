@@ -73,8 +73,14 @@
   `product.md`'s Iteration 2 goals).
 - `inventory-service`'s induced-failure rate/delay is runtime-adjustable via `GET`/`PATCH
   /admin/induced-failure` (tapir-documented, Swagger UI at `/docs`), seeded at startup from
-  `INVENTORY_INDUCED_FAILURE_RATE`/`INVENTORY_INDUCED_DELAY_MS`; a load-test run driving it
-  through a sequence of values during one run is the next backlog item.
+  `INVENTORY_INDUCED_FAILURE_RATE`/`INVENTORY_INDUCED_DELAY_MS`. `OrderPlacementSimulation`'s
+  second scenario, `rampFailureRate`, drives this rate through `0.0 -> 0.6 -> 0.0` on a timed
+  schedule concurrently with the order-placement traffic, reliably tripping and recovering
+  order-service's circuit breaker within one continuous run.
+- `scripts/verify-observability-stack.sh` runs both scenarios together against a fresh
+  `--profile observability` stack and asserts, via Prometheus/Elasticsearch/Grafana, that a
+  full CLOSED -> OPEN -> CLOSED breaker cycle, retries, and induced-failure logs all show up in
+  the real data — not just that the containers started.
 
 ## Local Observability Stack
 - Docker Compose `observability` profile: `order-service`/`inventory-service` (built as Docker
@@ -84,8 +90,10 @@
   profile) is unaffected and still starts only Postgres.
 - The Grafana dashboard (`purerest.json`) covers request rate, duration percentiles, error
   rate, retry attempts by outcome, circuit-breaker state/transitions/rejections, and
-  order-service DB query duration/error rate — see README's "Build, run, and observe this
-  system" for the full walkthrough.
+  order-service DB query duration/error rate, plus two panels built to show resilience
+  *effectiveness* rather than just activity: "Circuit Breaker: State Timeline" (visual
+  trip/recovery) and "Retry Success Rate" (successful-including-retried vs exhausted trend) —
+  see README's "Build, run, and observe this system" for the full walkthrough.
 
 ## Formatting
 - **scalafmt** — default Scala 3 style.
