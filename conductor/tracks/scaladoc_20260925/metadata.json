@@ -1,0 +1,8 @@
+{
+  "track_id": "scaladoc_20260925",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-09-25T22:51:57Z",
+  "updated_at": "2026-09-25T22:51:57Z",
+  "description": "Add Scaladoc to purerest's public API, published alongside releases"
+}
