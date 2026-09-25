@@ -1,0 +1,8 @@
+{
+  "track_id": "release-pipeline_20260925",
+  "type": "chore",
+  "status": "new",
+  "created_at": "2026-09-25T20:07:02Z",
+  "updated_at": "2026-09-25T20:07:02Z",
+  "description": "Add a tag-triggered CI release pipeline that publishes purerest to a real package repository (not just local Ivy2)"
+}
