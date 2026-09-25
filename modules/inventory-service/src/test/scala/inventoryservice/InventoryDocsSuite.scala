@@ -30,4 +30,25 @@ class InventoryDocsSuite extends CatsEffectSuite {
       assert(clue(docsBody).contains("/inventory/reserve"))
     }
   }
+
+  test("the admin induced-failure endpoints are documented via purerest.docs") {
+    for {
+      store <- InventoryStore.inMemory[IO]
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      routes = Docs.routes[IO](
+        "Inventory Service",
+        "1.0",
+        List(
+          InventoryRoutes.serverEndpoint[IO](store, NoOpLogger[IO], configRef),
+          InventoryRoutes.getInducedFailureServerEndpoint[IO](configRef),
+          InventoryRoutes.patchInducedFailureServerEndpoint[IO](configRef)
+        )
+      )
+      docsResponse <- routes.orNotFound.run(Request[IO](Method.GET, uri"/docs/docs.yaml"))
+      docsBody <- docsResponse.bodyText.compile.string
+    } yield {
+      assertEquals(docsResponse.status, Status.Ok)
+      assert(clue(docsBody).contains("/admin/induced-failure"))
+    }
+  }
 }

@@ -59,7 +59,11 @@ object Main extends IOApp.Simple {
               "1.0",
               List(
                 InventoryRoutes
-                  .serverEndpoint[IO](store, logger, inducedFailureRef)
+                  .serverEndpoint[IO](store, logger, inducedFailureRef),
+                InventoryRoutes
+                  .getInducedFailureServerEndpoint[IO](inducedFailureRef),
+                InventoryRoutes
+                  .patchInducedFailureServerEndpoint[IO](inducedFailureRef)
               )
             )
             tracedRoutes = ServerTracing.middleware(tracer)(docsRoutes)

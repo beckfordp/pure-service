@@ -1,10 +1,10 @@
 package orderservice
 
-import cats.effect.IO
+import cats.effect.{IO, Ref}
 import com.comcast.ip4s._
 import com.dimafeng.testcontainers.PostgreSQLContainer
 import com.dimafeng.testcontainers.munit.TestContainerForAll
-import inventoryservice.{InventoryRoutes, InventoryStore}
+import inventoryservice.{InducedFailureConfig, InventoryRoutes, InventoryStore}
 import munit.CatsEffectSuite
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.ember.server.EmberServerBuilder
@@ -41,13 +41,16 @@ class OrderServicePostgresIntegrationSuite
           inventoryStore <- cats.effect.Resource.eval(
             InventoryStore.inMemory[IO]
           )
+          inventoryConfigRef <- cats.effect.Resource.eval(
+            Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+          )
           inventoryServer <- EmberServerBuilder
             .default[IO]
             .withHost(host"127.0.0.1")
             .withPort(port"0")
             .withHttpApp(
               InventoryRoutes
-                .routes[IO](inventoryStore, NoOpLogger[IO])
+                .routes[IO](inventoryStore, NoOpLogger[IO], inventoryConfigRef)
                 .orNotFound
             )
             .build
@@ -111,13 +114,16 @@ class OrderServicePostgresIntegrationSuite
           inventoryStore <- cats.effect.Resource.eval(
             InventoryStore.inMemory[IO]
           )
+          inventoryConfigRef <- cats.effect.Resource.eval(
+            Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+          )
           inventoryServer <- EmberServerBuilder
             .default[IO]
             .withHost(host"127.0.0.1")
             .withPort(port"0")
             .withHttpApp(
               InventoryRoutes
-                .routes[IO](inventoryStore, NoOpLogger[IO])
+                .routes[IO](inventoryStore, NoOpLogger[IO], inventoryConfigRef)
                 .orNotFound
             )
             .build

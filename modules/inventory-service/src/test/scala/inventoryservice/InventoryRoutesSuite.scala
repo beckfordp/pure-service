@@ -4,7 +4,7 @@ import cats.effect.{IO, Ref}
 import munit.CatsEffectSuite
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.implicits._
-import org.http4s.{Method, Request, Status}
+import org.http4s.{HttpRoutes, Method, Request, Status}
 import org.typelevel.log4cats.noop.NoOpLogger
 import org.typelevel.log4cats.testing.StructuredTestingLogger
 import org.typelevel.log4cats.testing.StructuredTestingLogger.{INFO, WARN}
@@ -279,6 +279,44 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     } yield {
       assertEquals(patchResponse.status, Status.BadRequest)
       assertEquals(configAfter, InducedFailureConfig.disabled)
+    }
+  }
+
+  test(
+    "the induced-failure rate takes effect live, without a restart: baseline -> PATCH to 1.0 -> reserve fails -> PATCH to 0.0 -> reserve succeeds"
+  ) {
+    def reserve(routes: HttpRoutes[IO]) =
+      routes.orNotFound.run(
+        Request[IO](Method.POST, uri"/inventory/reserve")
+          .withEntity(ReserveRequest("widget", 3))
+      )
+
+    def patch(routes: HttpRoutes[IO], failureRate: Double) =
+      routes.orNotFound.run(
+        Request[IO](Method.PATCH, uri"/admin/induced-failure")
+          .withEntity(InducedFailureView(failureRate = failureRate, delayMs = 0L))
+      )
+
+    for {
+      store <- InventoryStore.inMemory[IO]
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
+      baselineGet <- routes.orNotFound.run(
+        Request[IO](Method.GET, uri"/admin/induced-failure")
+      )
+      baselineView <- baselineGet.as[InducedFailureView]
+      baselineReserve <- reserve(routes)
+      patchToFailing <- patch(routes, 1.0)
+      reserveWhileFailing <- reserve(routes)
+      patchToHealthy <- patch(routes, 0.0)
+      reserveWhileHealthy <- reserve(routes)
+    } yield {
+      assertEquals(baselineView, InducedFailureView(failureRate = 0.0, delayMs = 0L))
+      assertEquals(baselineReserve.status, Status.Created)
+      assertEquals(patchToFailing.status, Status.Ok)
+      assertEquals(reserveWhileFailing.status, Status.InternalServerError)
+      assertEquals(patchToHealthy.status, Status.Ok)
+      assertEquals(reserveWhileHealthy.status, Status.Created)
     }
   }
 }

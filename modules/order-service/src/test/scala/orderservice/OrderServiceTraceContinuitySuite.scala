@@ -1,8 +1,8 @@
 package orderservice
 
-import cats.effect.IO
+import cats.effect.{IO, Ref}
 import com.comcast.ip4s._
-import inventoryservice.{InventoryRoutes, InventoryStore}
+import inventoryservice.{InducedFailureConfig, InventoryRoutes, InventoryStore}
 import munit.CatsEffectSuite
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.ember.server.EmberServerBuilder
@@ -22,7 +22,12 @@ class OrderServiceTraceContinuitySuite extends CatsEffectSuite {
       val resources =
         for {
           inventoryStore <- cats.effect.Resource.eval(InventoryStore.inMemory[IO])
-          inventoryRoutes = ServerTracing.middleware(tracer)(InventoryRoutes.routes[IO](inventoryStore, NoOpLogger[IO]))
+          inventoryConfigRef <- cats.effect.Resource.eval(
+            Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+          )
+          inventoryRoutes = ServerTracing.middleware(tracer)(
+            InventoryRoutes.routes[IO](inventoryStore, NoOpLogger[IO], inventoryConfigRef)
+          )
           inventoryServer <- EmberServerBuilder
             .default[IO]
             .withHost(host"127.0.0.1")
