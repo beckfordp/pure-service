@@ -13,8 +13,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Rename the root project and CI references' (Protocol in workflow.md). Satisfied by the `sbt compile test` run + YAML validation above — prompting is off (see `/prompt`).
 
 ## Phase 3: Rename the GitHub repo and update documentation
-- [ ] Task: Rename the GitHub repository — requires explicit user go-ahead, since this changes the live remote repo — via `gh repo rename purerest`; then `git remote set-url origin` locally to the new URL and confirm `git fetch` succeeds.
-- [ ] Task: Update `README.md`, `conductor/product.md` (mark the 'Future Direction' rename note as done), and `conductor/tech-stack.md` for the new repo name and `purerestlib` task paths.
-- [ ] Task: Reconcile `conductor/tracks/release-pipeline_20260925/plan.md` and `spec.md` (still open, not archived) so their recorded trail matches the renamed module/repo.
-- [ ] Task: Final repo-wide grep for `pure-service` outside `conductor/archive/`, `scripts/archive/`, `target/`, `.git/` — confirm none remain.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: GitHub repo rename and documentation' (Protocol in workflow.md).
+- [x] Task: Rename the GitHub repository — requires explicit user go-ahead, since this changes the live remote repo — via `gh repo rename purerest`; then `git remote set-url origin` locally to the new URL and confirm `git fetch` succeeds. Confirmed via user go-ahead; `gh repo view beckfordp/purerest` shows the rename, local `git fetch origin` succeeded against the new remote URL.
+- [x] Task: Update `README.md`, `conductor/product.md` (mark the 'Future Direction' rename note as done), and `conductor/tech-stack.md` for the new repo name and `purerestlib` task paths. [4acf75c]
+- [x] Task: Reconcile `conductor/tracks/release-pipeline_20260925/plan.md` and `spec.md` (still open, not archived) so their recorded trail matches the renamed module/repo. Added a reconciliation note to each rather than rewriting the historical task descriptions (which were accurate at the time they were run). [21e7ff0]
+- [x] Task: Final repo-wide grep for `pure-service` outside `conductor/archive/`, `scripts/archive/`, `target/`, `.git/` — confirm none remain. Remaining hits are all legitimate: `pure-service-generator` (a different, separately-planned project's name), `conductor/tracks.md`/this track's own docs (describing the rename task itself), and an untracked, uncommitted scratch file (`docs/purerest-call-path.html`) unrelated to this track's scope.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: GitHub repo rename and documentation' (Protocol in workflow.md). Satisfied by the repo-rename confirmation, doc diffs, and final grep above — prompting is off (see `/prompt`).
