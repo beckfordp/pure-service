@@ -1,0 +1,22 @@
+Phase Completion: Phase 1: Runtime-Adjustable Induced-Failure Config
+
+Automated test command: sbt inventoryService/test orderService/test
+Result: inventory-service 19/19 passed; order-service 28/28 passed.
+Coverage: sbt coverage inventoryService/test coverageReport ->
+InventoryRoutes.scala 100% line / 100% branch.
+
+Manual verification steps (executed against a live sbt inventoryService/bgRun instance):
+1. GET /admin/induced-failure (baseline) -> {"failureRate":0.0,"delayMs":0}
+2. POST /inventory/reserve -> 201, reservation created
+3. PATCH /admin/induced-failure {"failureRate":1.0,"delayMs":0} -> 200, echoes new config
+4. GET /admin/induced-failure -> reflects failureRate 1.0 (live, no restart)
+5. POST /inventory/reserve -> 500, {"error":"Induced failure"}
+6. PATCH /admin/induced-failure {"failureRate":0.0,"delayMs":0} -> 200
+7. POST /inventory/reserve -> 201 again, proving the change took effect live in both directions
+8. PATCH /admin/induced-failure {"failureRate":1.5,"delayMs":0} -> 400,
+   {"error":"failureRate must be within [0.0, 1.0] and delayMs must be >= 0"}
+9. GET /admin/induced-failure -> unchanged (0.0), confirming a rejected PATCH doesn't mutate state
+10. GET /docs -> 200 (after redirect); GET /docs/docs.yaml lists both `get` and `patch`
+    operations on /admin/induced-failure
+
+User confirmation: user reviewed the results table and replied "yes, checkpoint and commit".
