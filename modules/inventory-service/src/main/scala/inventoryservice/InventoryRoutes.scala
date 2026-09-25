@@ -1,7 +1,9 @@
 package inventoryservice
 
-import cats.effect.Async
+import cats.effect.{Async, Ref}
 import cats.syntax.all._
+import io.circe.Codec
+import io.circe.generic.semiauto.deriveCodec
 import org.http4s.HttpRoutes
 import org.typelevel.log4cats.StructuredLogger
 import sttp.model.StatusCode
@@ -11,7 +13,7 @@ import sttp.tapir.json.circe._
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.http4s.Http4sServerInterpreter
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.{Duration, FiniteDuration, MILLISECONDS}
 
 /** Deliberately induced failure/latency, so purerest's resilience combinators
   * can be exercised end-to-end against a real flaky service instead of only
@@ -27,6 +29,44 @@ final case class InducedFailureConfig(
 object InducedFailureConfig {
   val disabled: InducedFailureConfig =
     InducedFailureConfig(failureRate = 0.0, delay = Duration.Zero)
+
+  /** Rejects a `failureRate` outside `[0.0, 1.0]` or a negative `delayMs`,
+    * rather than silently clamping — an invalid runtime tweak should surface
+    * immediately to whoever's driving the experiment, not distort it quietly.
+    */
+  def validated(
+      failureRate: Double,
+      delayMs: Long
+  ): Either[InducedFailureConfigError, InducedFailureConfig] =
+    if (failureRate < 0.0 || failureRate > 1.0 || delayMs < 0)
+      Left(InvalidInducedFailureConfig)
+    else
+      Right(
+        InducedFailureConfig(failureRate, FiniteDuration(delayMs, MILLISECONDS))
+      )
+}
+
+sealed trait InducedFailureConfigError
+case object InvalidInducedFailureConfig extends InducedFailureConfigError
+
+/** Wire format for `/admin/induced-failure` — `InducedFailureConfig`'s
+  * `FiniteDuration` has no natural JSON shape, so this DTO exposes the delay
+  * as plain milliseconds instead, mirroring `OrderResponse`'s
+  * domain-to-DTO pattern in order-service.
+  */
+final case class InducedFailureView(failureRate: Double, delayMs: Long)
+
+object InducedFailureView {
+  implicit val codec: Codec[InducedFailureView] = deriveCodec
+
+  def apply(config: InducedFailureConfig): InducedFailureView =
+    InducedFailureView(config.failureRate, config.delay.toMillis)
+}
+
+final case class ErrorResponse(error: String)
+
+object ErrorResponse {
+  implicit val codec: Codec[ErrorResponse] = deriveCodec
 }
 
 object InventoryRoutes {
@@ -38,6 +78,12 @@ object InventoryRoutes {
       .in(jsonBody[ReserveRequest])
       .out(statusCode(StatusCode.Created))
       .out(jsonBody[Reservation])
+
+  private val getInducedFailureEndpoint
+      : PublicEndpoint[Unit, Unit, InducedFailureView, Any] =
+    endpoint.get
+      .in("admin" / "induced-failure")
+      .out(jsonBody[InducedFailureView])
 
   private def maybeInduceFailure[F[_]: Async](
       config: InducedFailureConfig,
@@ -63,7 +109,7 @@ object InventoryRoutes {
   def serverEndpoint[F[_]: Async](
       store: InventoryStore[F],
       logger: StructuredLogger[F],
-      induced: InducedFailureConfig = InducedFailureConfig.disabled
+      configRef: Ref[F, InducedFailureConfig]
   ): ServerEndpoint[Any, F] =
     reserveEndpoint.serverLogicSuccess[F] { req =>
       for {
@@ -75,6 +121,7 @@ object InventoryRoutes {
             "quantity" -> req.quantity.toString
           )
         )("Received request")
+        induced <- configRef.get
         _ <- maybeInduceFailure[F](induced, logger, req.item, req.quantity)
         // No error-path logging here: InventoryStore.reserve is an unconditional
         // in-memory write that can't fail (see InventoryStore.inMemory) — nothing
@@ -91,12 +138,22 @@ object InventoryRoutes {
       } yield reservation
     }
 
+  def getInducedFailureServerEndpoint[F[_]: Async](
+      configRef: Ref[F, InducedFailureConfig]
+  ): ServerEndpoint[Any, F] =
+    getInducedFailureEndpoint.serverLogicSuccess[F] { _ =>
+      configRef.get.map(InducedFailureView(_))
+    }
+
   def routes[F[_]: Async](
       store: InventoryStore[F],
       logger: StructuredLogger[F],
-      induced: InducedFailureConfig = InducedFailureConfig.disabled
+      configRef: Ref[F, InducedFailureConfig]
   ): HttpRoutes[F] =
     Http4sServerInterpreter[F]().toRoutes(
-      List(serverEndpoint(store, logger, induced))
+      List(
+        serverEndpoint(store, logger, configRef),
+        getInducedFailureServerEndpoint(configRef)
+      )
     )
 }

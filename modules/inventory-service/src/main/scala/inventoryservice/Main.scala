@@ -1,6 +1,6 @@
 package inventoryservice
 
-import cats.effect.{IO, IOApp}
+import cats.effect.{IO, IOApp, Ref}
 import com.comcast.ip4s._
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
@@ -53,12 +53,13 @@ object Main extends IOApp.Simple {
               )
             )("inventory-service starting")
             store <- InventoryStore.inMemory[IO]
+            inducedFailureRef <- Ref.of[IO, InducedFailureConfig](inducedFailure)
             docsRoutes = Docs.routes[IO](
               "Inventory Service",
               "1.0",
               List(
                 InventoryRoutes
-                  .serverEndpoint[IO](store, logger, inducedFailure)
+                  .serverEndpoint[IO](store, logger, inducedFailureRef)
               )
             )
             tracedRoutes = ServerTracing.middleware(tracer)(docsRoutes)

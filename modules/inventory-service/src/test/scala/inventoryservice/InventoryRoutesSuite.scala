@@ -1,6 +1,6 @@
 package inventoryservice
 
-import cats.effect.IO
+import cats.effect.{IO, Ref}
 import munit.CatsEffectSuite
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.implicits._
@@ -17,7 +17,8 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   test("POST /inventory/reserve returns 201 with a reservation") {
     for {
       store <- InventoryStore.inMemory[IO]
-      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO])
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
       response <- routes.orNotFound.run(request)
@@ -34,11 +35,10 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   ) {
     for {
       store <- InventoryStore.inMemory[IO]
-      routes = InventoryRoutes.routes[IO](
-        store,
-        NoOpLogger[IO],
+      configRef <- Ref.of[IO, InducedFailureConfig](
         InducedFailureConfig(failureRate = 1.0, delay = Duration.Zero)
       )
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
       response <- routes.orNotFound.run(request)
@@ -53,11 +53,10 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     // Flake probability is astronomically low (~1e-7).
     for {
       store <- InventoryStore.inMemory[IO]
-      routes = InventoryRoutes.routes[IO](
-        store,
-        NoOpLogger[IO],
+      configRef <- Ref.of[IO, InducedFailureConfig](
         InducedFailureConfig(failureRate = 0.0000001, delay = Duration.Zero)
       )
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
       response <- routes.orNotFound.run(request)
@@ -69,11 +68,10 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   ) {
     for {
       store <- InventoryStore.inMemory[IO]
-      routes = InventoryRoutes.routes[IO](
-        store,
-        NoOpLogger[IO],
+      configRef <- Ref.of[IO, InducedFailureConfig](
         InducedFailureConfig(failureRate = 0.0, delay = Duration.Zero)
       )
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
       response <- routes.orNotFound.run(request)
@@ -83,11 +81,10 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   test("induced delay measurably delays the response") {
     for {
       store <- InventoryStore.inMemory[IO]
-      routes = InventoryRoutes.routes[IO](
-        store,
-        NoOpLogger[IO],
+      configRef <- Ref.of[IO, InducedFailureConfig](
         InducedFailureConfig(failureRate = 0.0, delay = 200.millis)
       )
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
       start <- IO.monotonic
@@ -108,7 +105,8 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     for {
       store <- InventoryStore.inMemory[IO]
       testLogger = StructuredTestingLogger.impl[IO]()
-      routes = InventoryRoutes.routes[IO](store, testLogger)
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      routes = InventoryRoutes.routes[IO](store, testLogger, configRef)
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
       response <- routes.orNotFound.run(request)
@@ -140,11 +138,10 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     for {
       store <- InventoryStore.inMemory[IO]
       testLogger = StructuredTestingLogger.impl[IO]()
-      routes = InventoryRoutes.routes[IO](
-        store,
-        testLogger,
+      configRef <- Ref.of[IO, InducedFailureConfig](
         InducedFailureConfig(failureRate = 1.0, delay = Duration.Zero)
       )
+      routes = InventoryRoutes.routes[IO](store, testLogger, configRef)
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
       response <- routes.orNotFound.run(request)
@@ -166,7 +163,8 @@ class InventoryRoutesSuite extends CatsEffectSuite {
   test("unmatched routes return 404") {
     for {
       store <- InventoryStore.inMemory[IO]
-      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO])
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
       request = Request[IO](Method.GET, uri"/nope")
       response <- routes.orNotFound.run(request)
     } yield assertEquals(response.status, Status.NotFound)
@@ -178,8 +176,9 @@ class InventoryRoutesSuite extends CatsEffectSuite {
     Tracing.test[IO]("inventory-service-test").use { testTracer =>
       for {
         store <- InventoryStore.inMemory[IO]
+        configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
         routes = ServerTracing.middleware(testTracer.tracer)(
-          InventoryRoutes.routes[IO](store, NoOpLogger[IO])
+          InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
         )
         request = Request[IO](Method.POST, uri"/inventory/reserve")
           .withEntity(ReserveRequest("widget", 3))
@@ -189,6 +188,38 @@ class InventoryRoutesSuite extends CatsEffectSuite {
         assertEquals(response.status, Status.Created)
         assertEquals(spans.map(_.getName), List("POST /inventory/reserve"))
       }
+    }
+  }
+
+  test("GET /admin/induced-failure returns the current config") {
+    for {
+      store <- InventoryStore.inMemory[IO]
+      configRef <- Ref.of[IO, InducedFailureConfig](
+        InducedFailureConfig(failureRate = 0.25, delay = 50.millis)
+      )
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
+      request = Request[IO](Method.GET, uri"/admin/induced-failure")
+      response <- routes.orNotFound.run(request)
+      view <- response.as[InducedFailureView]
+    } yield {
+      assertEquals(response.status, Status.Ok)
+      assertEquals(view, InducedFailureView(failureRate = 0.25, delayMs = 50L))
+    }
+  }
+
+  test(
+    "GET /admin/induced-failure reflects the disabled default when unset"
+  ) {
+    for {
+      store <- InventoryStore.inMemory[IO]
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      routes = InventoryRoutes.routes[IO](store, NoOpLogger[IO], configRef)
+      request = Request[IO](Method.GET, uri"/admin/induced-failure")
+      response <- routes.orNotFound.run(request)
+      view <- response.as[InducedFailureView]
+    } yield {
+      assertEquals(response.status, Status.Ok)
+      assertEquals(view, InducedFailureView(failureRate = 0.0, delayMs = 0L))
     }
   }
 }

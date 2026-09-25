@@ -1,8 +1,8 @@
 # Plan: Add a runtime-adjustable induced-failure endpoint to inventory-service
 
 ## Phase 1: Runtime-Adjustable Induced-Failure Config
-- [ ] Task: Write failing tests (Red) for `GET /admin/induced-failure` returning the current config, backed by a `Ref[F, InducedFailureConfig]` seeded with a known value.
-- [ ] Task: Change `InventoryRoutes` to hold induced-failure config in a `Ref[F, InducedFailureConfig]` instead of a plain value (`serverEndpoint`/`routes` now take the Ref; `/inventory/reserve` reads it fresh per request); add the `GET /admin/induced-failure` tapir endpoint. Update existing tests to construct via `Ref.of(...)`. Implement to pass (Green).
+- [x] Task: Write failing tests (Red) for `GET /admin/induced-failure` returning the current config, backed by a `Ref[F, InducedFailureConfig]` seeded with a known value.
+- [x] Task: Change `InventoryRoutes` to hold induced-failure config in a `Ref[F, InducedFailureConfig]` instead of a plain value (`serverEndpoint`/`routes` now take the Ref; `/inventory/reserve` reads it fresh per request); add the `GET /admin/induced-failure` tapir endpoint. Update existing tests to construct via `Ref.of(...)`. Implement to pass (Green).
 - [ ] Task: Write failing tests (Red) for `PATCH /admin/induced-failure` with a valid body updating the Ref, and a subsequent `GET` reflecting the new values.
 - [ ] Task: Implement the `PATCH` endpoint (Green).
 - [ ] Task: Write failing tests (Red) asserting `PATCH` rejects `failureRate` outside `[0.0, 1.0]` and negative `delayMs` with 400 + a typed JSON error body, leaving the live config unchanged.

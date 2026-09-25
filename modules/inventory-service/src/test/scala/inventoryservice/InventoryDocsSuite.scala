@@ -1,6 +1,6 @@
 package inventoryservice
 
-import cats.effect.IO
+import cats.effect.{IO, Ref}
 import munit.CatsEffectSuite
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.implicits._
@@ -13,7 +13,8 @@ class InventoryDocsSuite extends CatsEffectSuite {
   test("the tapir-described endpoint is served and documented via purerest.docs") {
     for {
       store <- InventoryStore.inMemory[IO]
-      endpoint = InventoryRoutes.serverEndpoint[IO](store, NoOpLogger[IO])
+      configRef <- Ref.of[IO, InducedFailureConfig](InducedFailureConfig.disabled)
+      endpoint = InventoryRoutes.serverEndpoint[IO](store, NoOpLogger[IO], configRef)
       routes = Docs.routes[IO]("Inventory Service", "1.0", List(endpoint))
       request = Request[IO](Method.POST, uri"/inventory/reserve")
         .withEntity(ReserveRequest("widget", 3))
