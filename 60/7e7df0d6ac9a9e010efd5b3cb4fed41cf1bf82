@@ -1,0 +1,3 @@
+Task: Update tech-stack.md's Load Testing / Local Observability Stack sections.
+Files: conductor/tech-stack.md
+Why: Documents the rampFailureRate scenario, the recovered verify-observability-stack.sh, and the two new Grafana panels — tech stack changes must be documented per workflow.md.
