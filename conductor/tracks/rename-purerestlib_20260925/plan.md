@@ -7,10 +7,10 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Rename the sbt module' (Protocol in workflow.md). Satisfied by the `sbt compile test` run above — prompting is off (see `/prompt`), substituting for the interactive walkthrough; no dedicated verify script exists for a build-identifier rename.
 
 ## Phase 2: Rename the root project and update CI/publish references
-- [ ] Task: In `build.sbt`: `name := "pure-service"` -> `name := "purerest"` on the root project; `.aggregate(purerest, ...)` -> `.aggregate(purerestlib, ...)`; update the GitHub Packages `publishTo` URL to `.../beckfordp/purerest`.
-- [ ] Task: Update `.github/workflows/release.yml`'s `sbt purerest/publish` -> `sbt purerestlib/publish`.
-- [ ] Task: Run `sbt compile test` again to confirm the root-project rename didn't break anything.
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Rename the root project and CI references' (Protocol in workflow.md).
+- [x] Task: In `build.sbt`: `name := "pure-service"` -> `name := "purerest"` on the root project (`.aggregate` already updated in Phase 1, forced by the val rename); update the GitHub Packages `publishTo` URL to `.../beckfordp/purerest`. [030ad5c]
+- [x] Task: Update `.github/workflows/release.yml`'s `sbt purerest/publish` -> `sbt purerestlib/publish`. [030ad5c] (same commit — YAML syntax re-validated)
+- [x] Task: Run `sbt compile test` again to confirm the root-project rename didn't break anything. Verified: 29 passed, 0 failed.
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Rename the root project and CI references' (Protocol in workflow.md). Satisfied by the `sbt compile test` run + YAML validation above — prompting is off (see `/prompt`).
 
 ## Phase 3: Rename the GitHub repo and update documentation
 - [ ] Task: Rename the GitHub repository — requires explicit user go-ahead, since this changes the live remote repo — via `gh repo rename purerest`; then `git remote set-url origin` locally to the new URL and confirm `git fetch` succeeds.
