@@ -2,16 +2,17 @@
 
 ## Language & Build
 - **Scala** 3.9.0
-- **sbt** — multi-module build: `purerest`, `order-service`, `inventory-service` (`modules/*`)
+- **sbt** — multi-module build: `purerestlib`, `order-service`, `inventory-service` (`modules/*`)
 
 ## Publishing
-- **purerest** is locally publishable (`sbt purerest/publishLocal`, org `io.github.beckfordp`) to
-  the local Ivy2 cache. `order-service`/`inventory-service` still consume it via `.dependsOn`
-  internally, not the published jar. `smoke-test/` is a standalone sbt build (outside the root
-  aggregate) that proves purerest works when resolved purely as a published jar, the way a real
-  external consumer would.
+- **purerest** (sbt module `purerestlib`, so the root project can be named `purerest`) is
+  locally publishable (`sbt purerestlib/publishLocal`, org `io.github.beckfordp`) to the local
+  Ivy2 cache. `order-service`/`inventory-service` still consume it via `.dependsOn` internally,
+  not the published jar. `smoke-test/` is a standalone sbt build (outside the root aggregate)
+  that proves purerest works when resolved purely as a published jar, the way a real external
+  consumer would.
 - **Versioning**: sbt-dynver derives `version` from git tags/commits; `versionScheme :=
-  "early-semver"` on purerest. No git tags exist yet, so builds carry untagged
+  "early-semver"` on `purerestlib`. No git tags exist yet, so builds carry untagged
   `0.0.0+<commit-count>-<sha>` versions.
 - **No CI/release automation yet** — a tag-triggered publish pipeline and real Scaladoc are
   open goals (see `product.md`'s Iteration 2 section).

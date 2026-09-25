@@ -1,7 +1,8 @@
 # Product Guide
 
 ## Vision
-`pure-service` is the home of **purerest** — a pure-functional-programming platform library
+This repository (`purerest`) is the home of **purerest** — a pure-functional-programming
+platform library
 (Scala 3, Cats Effect, http4s) that gives every microservice in an estate the same
 observability (tracing, structured logging, metrics) and resilience (retry, circuit breaker)
 infrastructure, consistently, as composable building blocks rather than per-service
@@ -88,11 +89,11 @@ Hands-on use of the finished stack raised the question purerest hasn't actually 
   sufficiency can actually be judged
 
 ## Future Direction (under consideration)
-- **Renaming this repo to `purerest`** and restructuring it so the library is the primary,
-  CI-published artifact, with `order-service`/`inventory-service` and the load-test/observability
-  stack recast as supporting tooling for *evaluating* the library rather than a multi-service
-  product in their own right. Not decided or scheduled — matches where Iteration 2 already
-  points (purerest is the actual point of the project), reinforced by moving the service-template
-  idea out to its own `pure-service-generator` project. When this is picked up, treat it as its
-  own structural track (repo rename, CI setup, deciding what moves vs. stays local), not a
-  routine backlog item.
+- **Repo renamed to `purerest`** (2026-09-25) — the library's own sbt module is now
+  `purerestlib` (Scala packages stay `purerest.*`) so the root project/GitHub repo could take
+  the name `purerest`. The larger restructuring this was in service of — recasting
+  `order-service`/`inventory-service` and the load-test/observability stack as supporting
+  tooling for *evaluating* the library rather than a multi-service product in their own right —
+  is still not decided or scheduled, reinforced by moving the service-template idea out to its
+  own `pure-service-generator` project. When that fuller restructuring is picked up, treat it as
+  its own structural track, not a routine backlog item.

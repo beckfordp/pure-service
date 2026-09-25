@@ -1,4 +1,4 @@
-## pure-service
+## purerest
 
 `purerest` is a reusable Cats-Effect/http4s microservice platform library, exercised by two
 reference services: `order-service` and `inventory-service`.
