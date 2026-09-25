@@ -11,6 +11,7 @@ import org.typelevel.otel4s.oteljava.context.LocalContextProvider
 import org.typelevel.otel4s.oteljava.testkit.metrics.MetricsTestkit
 import org.typelevel.otel4s.metrics.Meter
 
+/** Meter construction for purerest's Prometheus/OTel-based metrics. */
 object Metrics {
 
   /** A meter backed by an in-memory metric reader, exposing collected metrics —

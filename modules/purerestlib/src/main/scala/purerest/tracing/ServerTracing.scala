@@ -5,6 +5,7 @@ import cats.effect.Concurrent
 import org.http4s.HttpRoutes
 import org.typelevel.otel4s.trace.Tracer
 
+/** Server-side span-per-request middleware for http4s. */
 object ServerTracing {
 
   /** Wraps `HttpRoutes[F]` with a span per handled request. If the inbound

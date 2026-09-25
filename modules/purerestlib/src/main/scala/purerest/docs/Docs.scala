@@ -11,6 +11,8 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
   * truth — so routes and docs can't drift apart.
   */
 object Docs {
+
+  /** Real routes for `endpoints`, plus a generated OpenAPI spec and Swagger UI. */
   def routes[F[_]: Async](
       title: String,
       version: String,

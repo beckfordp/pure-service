@@ -6,6 +6,7 @@ import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.typelevel.otel4s.trace.Tracer
 
+/** Structured, trace-correlated logging built on log4cats. */
 object Logging {
 
   /** A trace-correlated structured logger backed by SLF4J, for

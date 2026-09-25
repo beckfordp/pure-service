@@ -14,6 +14,7 @@ import org.typelevel.otel4s.oteljava.context.LocalContextProvider
 import org.typelevel.otel4s.oteljava.testkit.trace.TracesTestkit
 import org.typelevel.otel4s.trace.Tracer
 
+/** Tracer construction for purerest's OpenTelemetry-based tracing. */
 object Tracing {
 
   /** A tracer backed by an in-memory span exporter, exposing captured spans —

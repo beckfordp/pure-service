@@ -10,6 +10,7 @@ import org.typelevel.otel4s.metrics.{Histogram, Meter}
 import scala.concurrent.duration.SECONDS
 import scala.util.control.Exception.allCatch
 
+/** Server-side RED metrics middleware for http4s. */
 object ServerMetrics {
 
   /** Approximates the OTel-recommended low-cardinality route template for the

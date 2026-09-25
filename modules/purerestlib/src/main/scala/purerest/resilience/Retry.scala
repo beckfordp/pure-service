@@ -39,12 +39,14 @@ final case class RetryConfig(maxRetries: Int, baseDelay: FiniteDuration)
   */
 object Retry {
 
+  /** True for connection errors and timeouts — the exception types this middleware retries. */
   def isRetriableError(error: Throwable): Boolean = error match {
     case _: java.net.ConnectException             => true
     case _: java.util.concurrent.TimeoutException => true
     case _                                        => false
   }
 
+  /** True for 5xx responses — the response class this middleware retries. */
   def isRetriableResponse[F[_]](response: Response[F]): Boolean =
     response.status.responseClass == org.http4s.Status.ServerError
 
@@ -62,6 +64,7 @@ object Retry {
       }
   }
 
+  /** The retrying `Client[F]` middleware described above. */
   def middleware[F[_]: Async](
       config: RetryConfig
   )(

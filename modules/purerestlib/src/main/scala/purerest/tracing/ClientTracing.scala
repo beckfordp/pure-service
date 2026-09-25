@@ -7,6 +7,7 @@ import org.http4s.client.Client
 import org.typelevel.ci.CIString
 import org.typelevel.otel4s.trace.Tracer
 
+/** Client-side trace-context propagation middleware for http4s. */
 object ClientTracing {
 
   /** Wraps a `Client[F]` so that outgoing requests carry the current span's

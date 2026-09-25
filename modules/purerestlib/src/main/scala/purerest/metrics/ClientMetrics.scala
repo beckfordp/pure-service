@@ -8,6 +8,7 @@ import org.typelevel.otel4s.metrics.{Histogram, Meter}
 
 import scala.concurrent.duration.SECONDS
 
+/** Client-side RED metrics middleware for http4s. */
 object ClientMetrics {
 
   /** Wraps a `Client[F]` with a `http.client.request.duration` histogram

@@ -5,6 +5,9 @@ import org.http4s.client.Client
 import org.typelevel.log4cats.StructuredLogger
 import org.typelevel.otel4s.metrics.Meter
 
+/** Config for [[Resilience.middleware]]: the retry and circuit-breaker settings composed
+  * together.
+  */
 final case class ResilienceConfig(
     retry: RetryConfig,
     circuitBreaker: CircuitBreakerConfig
@@ -19,6 +22,8 @@ final case class ResilienceConfig(
   * budget is exhausted.
   */
 object Resilience {
+
+  /** The combined retry + circuit-breaker `Client[F]` middleware. */
   def middleware[F[_]: Async](
       config: ResilienceConfig
   )(

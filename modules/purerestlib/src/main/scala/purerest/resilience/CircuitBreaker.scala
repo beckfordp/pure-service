@@ -67,6 +67,7 @@ object CircuitBreaker {
         case _ => false
       }
 
+  /** The circuit-breaking `Client[F]` middleware described above. */
   def middleware[F[_]: Async](
       config: CircuitBreakerConfig
   )(meter: Meter[F])(client: Client[F]): Client[F] = {
