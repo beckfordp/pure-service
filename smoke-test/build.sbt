@@ -18,11 +18,36 @@ val purerestVersion = sys.props.getOrElse(
   )
 )
 
+// Opt-in: resolve purerestlib from this repo's GitHub Packages Maven registry
+// instead of the local Ivy2 cache (sbt's default). Pass
+// -DresolveFromGitHubPackages=true, plus GITHUB_ACTOR/GITHUB_TOKEN (a PAT with
+// read:packages scope) in the environment — GitHub Packages requires auth to
+// read Maven artifacts even from a public repo.
+val resolveFromGitHubPackages =
+  sys.props.get("resolveFromGitHubPackages").contains("true")
+
 lazy val root = project
   .in(file("."))
   .settings(
     name := "purerest-consumer-smoke-test",
     scalaVersion := "3.9.0",
+    resolvers ++= (
+      if (resolveFromGitHubPackages)
+        Seq("GitHub Packages" at "https://maven.pkg.github.com/beckfordp/purerest")
+      else Seq.empty
+    ),
+    credentials ++= (
+      if (resolveFromGitHubPackages)
+        Seq(
+          Credentials(
+            "GitHub Package Registry",
+            "maven.pkg.github.com",
+            sys.env.getOrElse("GITHUB_ACTOR", ""),
+            sys.env.getOrElse("GITHUB_TOKEN", "")
+          )
+        )
+      else Seq.empty
+    ),
     libraryDependencies ++= Seq(
       // The whole point of this build: purerest resolved as an ordinary published
       // artifact from the local Ivy2 cache, not this repo's internal ProjectRef.
