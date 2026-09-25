@@ -66,6 +66,17 @@ lazy val purerest = project
     // published as a real jar) have real semver metadata to reason about instead
     // of guessing. See conductor/tech-stack.md's "Transitive version drift" note.
     versionScheme := Some("early-semver"),
+    // Publishes to this repo's GitHub Packages Maven registry on a tag push (see
+    // .github/workflows/release.yml). Credentials come from env vars the workflow
+    // sets from its built-in GITHUB_TOKEN — unset locally, so `publishLocal` (which
+    // ignores publishTo/credentials entirely) is unaffected.
+    publishTo := Some("GitHub Packages" at "https://maven.pkg.github.com/beckfordp/pure-service"),
+    credentials += Credentials(
+      "GitHub Package Registry",
+      "maven.pkg.github.com",
+      sys.env.getOrElse("GITHUB_ACTOR", ""),
+      sys.env.getOrElse("GITHUB_TOKEN", "")
+    ),
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-effect" % catsEffectVersion,
       "org.http4s" %% "http4s-ember-client" % http4sVersion,
