@@ -124,3 +124,11 @@
 - **Testcontainers/Docker API pin.** `modules/order-service/src/test/resources/docker-java.properties`
   (`api.version=1.44`) works around a known testcontainers-scala/docker-java incompatibility
   with newer Docker Desktop daemons. Remove once testcontainers-scala ships on Testcontainers 2.x.
+- **Scaladoc jQuery injection.** `.github/workflows/release.yml`'s `deploy-docs` job `sed`-injects
+  a jQuery CDN `<script>` tag into every generated `.html` file before deploying to GitHub Pages.
+  Scala 3.9.0's Scaladoc removed the bundled jQuery script, but its generated `ux.js` still calls
+  `$.get(...)` to intercept link clicks for AJAX-style navigation — without jQuery, every click
+  silently fails (`$ is not defined`), though "open in new tab" still works since it bypasses the
+  handler (known upstream regression, scala/scala3#22014). Remove once a Scala 3 release fixes
+  this. Note: the separately-published `-javadoc.jar` Maven artifact is not patched by this
+  workaround and still has the same broken navigation if browsed locally.
