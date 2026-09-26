@@ -72,6 +72,11 @@ jobs:
       - name: Generate Scaladoc
         run: sbt purerestlib/doc
 
+      - name: Work around missing jQuery in Scala 3.9.0's Scaladoc output (scala/scala3#22014)
+        run: |
+          find modules/purerestlib/target/scala-3.9.0/api -name "*.html" -exec \
+            sed -i 's#<head>#<head><script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>#' {} +
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
